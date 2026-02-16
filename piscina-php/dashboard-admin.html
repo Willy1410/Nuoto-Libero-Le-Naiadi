@@ -72,8 +72,18 @@ svg{width:100%;height:220px;display:block;border:1px solid #e5e7eb;border-radius
 </div>
 <div id="p_modules" class="pane">
 <form id="moduleForm" class="tools" enctype="multipart/form-data" style="margin-bottom:12px">
-<input id="m_slug" name="slug" placeholder="Slug (es. modulo-iscrizione)" required>
-<input id="m_name" name="nome" placeholder="Nome modulo (es. Modulo Iscrizione)" required>
+<select id="m_template" required onchange="applyModuleTemplate()">
+<option value="">Seleziona modulo da aggiornare</option>
+<option value="modulo-iscrizione" data-nome="Modulo Iscrizione" data-target="moduli.html -> card Modulo Iscrizione Nuoto Libero">Modulo Iscrizione (modulo-iscrizione)</option>
+<option value="regolamento-piscina" data-nome="Regolamento Piscina" data-target="moduli.html -> card Regolamento Piscina">Regolamento Piscina (regolamento-piscina)</option>
+<option value="informativa-privacy" data-nome="Informativa Privacy" data-target="moduli.html -> card Informativa Privacy">Informativa Privacy (informativa-privacy)</option>
+<option value="certificato-medico-info" data-nome="Certificato Medico - Indicazioni" data-target="moduli.html -> card Certificato Medico - Indicazioni">Certificato Medico - Indicazioni (certificato-medico-info)</option>
+<option value="liberatoria-minori" data-nome="Liberatoria per Minori" data-target="moduli.html -> card Liberatoria per Minori">Liberatoria per Minori (liberatoria-minori)</option>
+<option value="listino-prezzi" data-nome="Listino Prezzi Completo" data-target="moduli.html -> card Listino Prezzi Completo">Listino Prezzi Completo (listino-prezzi)</option>
+</select>
+<input id="m_slug" name="slug" placeholder="Slug modulo" required readonly>
+<input id="m_name" name="nome" placeholder="Nome modulo" required readonly>
+<input id="m_target" placeholder="Dove appare nel sito" readonly>
 <input id="m_file" name="file" type="file" accept=".pdf,.doc,.docx" required>
 <label style="display:flex;align-items:center;gap:6px;font-size:12px;"><input id="m_replace" name="replace" type="checkbox" value="1">Sostituisci se esiste</label>
 <button class="btn btn-primary" type="submit">Carica modulo</button>
@@ -102,7 +112,7 @@ if(!TOKEN||USER.ruolo!=='admin'){location.href='../login.html';}
 document.getElementById('uname').textContent=`${USER.nome||''} ${USER.cognome||''}`.trim();
 
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('p_'+btn.dataset.pane).classList.add('active');}));
-const moduleForm=document.getElementById('moduleForm');if(moduleForm){moduleForm.addEventListener('submit',submitModuleForm);}
+const moduleForm=document.getElementById('moduleForm');if(moduleForm){moduleForm.addEventListener('submit',submitModuleForm);}applyModuleTemplate();
 
 function alertBox(msg,type='success'){const b=document.getElementById('alerts');b.innerHTML=`<div class="alert ${type}">${msg}</div>`;if(type==='success'){setTimeout(()=>b.innerHTML='',3200);}}
 function eur(v){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(v||0));}
@@ -129,8 +139,9 @@ async function loadDocs(){try{const d=await api(`${API}/documenti.php?action=pen
 async function reviewDoc(id,s){let n='';if(s==='rejected'){n=prompt('Motivo rifiuto');if(!n)return;}try{const d=await api(`${API}/documenti.php?action=review&id=${encodeURIComponent(id)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({stato:s,note_revisione:n})});alertBox(d.message||'Documento aggiornato');await loadDocs();await loadStats();}catch(e){alertBox(e.message,'error')}}
 
 async function loadModules(){try{const d=await api(`${API}/moduli.php`);tb_modules.innerHTML=(d.moduli||[]).map(m=>`<tr><td>${m.nome}<br><small>v${m.version_num}</small></td><td><code>${m.slug}</code></td><td>${m.original_name}<br><small>${Number(m.size_kb||0).toFixed(2)} KB</small></td><td>${new Date(m.updated_at).toLocaleString('it-IT')}</td><td>${m.uploader_nome} ${m.uploader_cognome}</td><td><div class="actions"><a class="btn btn-outline" href="${m.download_url}" target="_blank" rel="noopener">Scarica</a><button class="btn btn-warning" onclick="prefillReplace('${m.slug.replace(/'/g,"\\'")}','${m.nome.replace(/'/g,"\\'")}')">Sostituisci</button><button class="btn btn-danger" onclick="deleteModulo(${m.id})">Elimina</button></div></td></tr>`).join('')||'<tr><td colspan="6">Nessun modulo caricato</td></tr>';}catch(e){alertBox(e.message,'error')}}
-function prefillReplace(slug,nome){m_slug.value=slug;m_name.value=nome;m_replace.checked=true;m_file.focus()}
-async function submitModuleForm(e){e.preventDefault();const slug=m_slug.value.trim();const nome=m_name.value.trim();const file=m_file.files[0];if(!slug||!nome||!file){alertBox('Compila slug, nome e file','error');return;}const fd=new FormData();fd.append('slug',slug);fd.append('nome',nome);fd.append('replace',m_replace.checked?'1':'0');fd.append('file',file);try{const r=await fetch(`${API}/moduli.php`,{method:'POST',headers:{Authorization:`Bearer ${TOKEN}`},body:fd});const t=await r.text();let d={};try{d=JSON.parse(t);}catch(x){throw new Error('Risposta API non valida')}if(!r.ok||d.success===false)throw new Error(d.message||'Errore upload modulo');alertBox(d.message||'Modulo salvato');moduleForm.reset();await loadModules();}catch(err){alertBox(err.message,'error')}}
+function applyModuleTemplate(){const s=document.getElementById('m_template');const target=document.getElementById('m_target');if(!s)return;const o=s.options[s.selectedIndex];if(!o||!o.value){m_slug.value='';m_name.value='';if(target)target.value='';return;}m_slug.value=o.value;m_name.value=o.dataset.nome||'';if(target)target.value=o.dataset.target||''}
+function prefillReplace(slug,nome){const s=document.getElementById('m_template');const target=document.getElementById('m_target');if(s){const opt=[...s.options].find(x=>x.value===slug);if(opt){s.value=slug;applyModuleTemplate();}else{s.value='';m_slug.value=slug;m_name.value=nome;if(target)target.value='Slug personalizzato (non mappato nel menu)';}}m_name.value=nome;m_replace.checked=true;m_file.focus()}
+async function submitModuleForm(e){e.preventDefault();const slug=m_slug.value.trim();const nome=m_name.value.trim();const file=m_file.files[0];if(!slug||!nome||!file){alertBox('Compila slug, nome e file','error');return;}const fd=new FormData();fd.append('slug',slug);fd.append('nome',nome);fd.append('replace',m_replace.checked?'1':'0');fd.append('file',file);try{const r=await fetch(`${API}/moduli.php`,{method:'POST',headers:{Authorization:`Bearer ${TOKEN}`},body:fd});const t=await r.text();let d={};try{d=JSON.parse(t);}catch(x){throw new Error('Risposta API non valida')}if(!r.ok||d.success===false)throw new Error(d.message||'Errore upload modulo');alertBox(d.message||'Modulo salvato');moduleForm.reset();applyModuleTemplate();await loadModules();}catch(err){alertBox(err.message,'error')}}
 async function deleteModulo(id){if(!confirm('Confermi eliminazione modulo?'))return;try{const d=await api(`${API}/moduli.php?id=${encodeURIComponent(id)}`,{method:'DELETE'});alertBox(d.message||'Modulo eliminato');await loadModules();}catch(e){alertBox(e.message,'error')}}
 
 function toggleRange(){const c=r_period.value==='custom';r_from.classList.toggle('hidden',!c);r_to.classList.toggle('hidden',!c)}
