@@ -1,185 +1,188 @@
-# ISTRUZIONI_SETUP_E_TEST.md
+﻿# ISTRUZIONI SETUP E TEST - Nuoto Libero (XAMPP)
 
 Data: 2026-02-16
-Ambiente target: XAMPP locale (Apache + PHP + MySQL/MariaDB)
+Ambiente: locale/test only
 
-## 1) Posizionamento progetto
-Percorso consigliato:
-- `C:\xampp\htdocs\nuoto-libero`
+## 0) Prerequisiti
+- XAMPP con Apache e MySQL/MariaDB avviati
+- PHP CLI disponibile (incluso in XAMPP)
+- Browser desktop + smartphone/tablet per test UI mobile
+- Composer (solo se devi reinstallare dipendenze)
 
-URL base:
-- `http://localhost/nuoto-libero/`
+## 1) Posizione progetto in htdocs (o VirtualHost)
 
-Login unico:
-- `http://localhost/nuoto-libero/login.html`
+### Opzione A - htdocs (consigliata)
+1. Copia il progetto in:
+   - `C:\xampp\htdocs\nuoto-libero`
+2. Apri il sito:
+   - `http://localhost/nuoto-libero/`
 
-## 2) Configurazione log errori (obbligatoria)
-Cartella/file:
-- `logs/error.log`
+Nota: evita cartelle con spazi nel nome URL per ridurre problemi di percorso.
 
-La configurazione è già nel bootstrap API (`api/config.php`):
-- `error_reporting = E_ALL`
-- `display_errors = Off`
-- `log_errors = On`
-- `error_log = /logs/error.log`
+### Opzione B - VirtualHost
+1. Punta DocumentRoot alla root del progetto.
+2. Riavvia Apache.
+3. Verifica che root sito e API rispondano.
 
-Come leggere il log:
-- apri `logs/error.log`
-
-Come svuotarlo in sicurezza (test locali):
-1. Ferma eventuali test in corso.
-2. Apri PowerShell nella root progetto.
-3. Esegui:
-   - `Clear-Content .\logs\error.log`
-
-## 3) Creazione DB da zero
-File SQL unico:
-- `db/CREATE_DATABASE_FROM_ZERO.sql`
-
-Import da phpMyAdmin:
+## 2) Creazione DB da zero (phpMyAdmin)
 1. Apri `http://localhost/phpmyadmin`.
-2. Tab `SQL`.
-3. Incolla/esegui tutto il contenuto di `db/CREATE_DATABASE_FROM_ZERO.sql`.
+2. Vai su tab `SQL`.
+3. Incolla tutto il file:
+   - `db/CREATE_DATABASE_FROM_ZERO.sql`
+4. Esegui.
 
-Il file crea:
+Lo script crea:
 - database `nuoto_libero`
-- tabelle complete (utenti, ruoli, pacchetti, acquisti, check-in, documenti)
-- tabelle sicurezza/notifiche (`password_reset_tokens`, `notifiche_email`)
-- indici, vincoli, seed e utenti test
+- tabelle, indici, vincoli
+- seed minimi
+- utenti test
 
-## 4) Config DB nel progetto
-File:
+## 3) Credenziali DB nel progetto
+File da controllare:
 - `api/config.php`
 
-Default locale:
+Default locale gia impostati:
 - `DB_HOST=localhost`
 - `DB_USER=root`
-- `DB_PASS=` (vuota in XAMPP standard)
+- `DB_PASS=` (vuoto)
 - `DB_NAME=nuoto_libero`
 
-Se usi credenziali diverse, modifica variabili ambiente o valori locali.
+Se in XAMPP usi credenziali diverse, modifica questi valori (o variabili ambiente).
 
-## 5) Login, dashboard e ruoli
-Dopo login, redirect automatico:
-- admin -> `piscina-php/dashboard-admin.html`
-- ufficio/segreteria -> `piscina-php/dashboard-ufficio.html`
-- bagnino -> `piscina-php/dashboard-bagnino.html`
-- utente -> `piscina-php/dashboard-utente.html`
+## 4) Avvio e test flussi principali (login, area admin, QR/scansione)
 
-Credenziali test:
-- vedi `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`
+### URL base
+- Homepage: `http://localhost/nuoto-libero/`
+- Login area riservata: `http://localhost/nuoto-libero/login.html`
 
-## 6) Reset password
-Flusso implementato:
-1. In `login.html` clicca `Hai dimenticato la password?`
-2. Inserisci email account.
-3. Ricevi mail con link `reset-password.html?token=...`
-4. Imposta nuova password.
+### Login e redirect ruoli
+1. Apri `login.html`.
+2. Usa credenziali test da:
+   - `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`
+3. Verifica redirect:
+   - admin -> `piscina-php/dashboard-admin.html`
+   - ufficio -> `piscina-php/dashboard-ufficio.html`
+   - bagnino -> `piscina-php/dashboard-bagnino.html`
+   - utente -> `piscina-php/dashboard-utente.html`
 
-Token reset:
-- univoco
-- scadenza 60 minuti
-- one-time use
+### Test admin
+- In `piscina-php/dashboard-admin.html` verifica:
+  - statistiche dashboard
+  - tab documenti pending
+  - tab acquisti pending con bottone conferma pagamento
+  - report giornaliero
+  - accesso a `CMS Contenuti` (pagina `piscina-php/dashboard-contenuti.html`)
 
-## 7) Test hamburger mobile + bottone Area Riservata
-### Hamburger
-1. Apri homepage da mobile/tablet.
+### Test ufficio/segreteria
+- In `piscina-php/dashboard-ufficio.html` verifica:
+  - lista acquisti pending
+  - conferma pagamento (genera QR e invia mail di conferma)
+  - revisione documenti
+  - accesso a `CMS Contenuti`
+
+### Test QR / scansione (bagnino)
+- In `piscina-php/dashboard-bagnino.html` verifica:
+  - avvio camera da telefono/tablet
+  - scansione QR automatica (fallback manuale disponibile)
+  - registrazione check-in
+  - storico check-in giornata
+
+### Test area utente (acquisto + QR PDF)
+- In `piscina-php/dashboard-utente.html` verifica:
+  - scelta metodo pagamento prima dell'acquisto (carta/paypal/bonifico/in struttura)
+  - comportamento stato:
+    - carta/paypal => conferma immediata + QR disponibile
+    - bonifico/in struttura => pending finche conferma ufficio/admin
+  - visualizzazione QR in dashboard
+  - download PDF QR da `api/qr.php?action=download&acquisto_id=...`
+
+## 5) Test bug UI richiesti
+
+### Bug 1 - Hamburger scrollabile (mobile/tablet)
+1. Apri homepage da telefono/tablet.
 2. Apri menu hamburger.
-3. Verifica scroll interno completo fino all’ultima voce.
+3. Verifica che il menu scrolli fino all'ultima voce (Area Riservata inclusa).
 
-### Bottone Area Riservata
-1. Sempre su mobile/tablet, osserva il pulsante `Area Riservata`.
-2. Lo sfondo deve coprire tutta la scritta.
+### Bug 2 - Bottone Area Riservata
+1. Sempre da mobile/tablet, verifica il bottone `Area Riservata` nel menu.
+2. Controlla che lo sfondo azzurro copra tutta la scritta.
 
-## 8) Email SMTP Gmail (locale test)
-File:
-- `config/mail.php`
+## 6) Configurazione email SMTP + test invio
 
-Parametri già predisposti:
-- host: `smtp.gmail.com`
-- porta: `587`
-- encryption: `tls`
-- password app: `yyvb ckzs zvpi rwdb` (test locale)
+### Configurazione
+1. Apri `config/mail.php`.
+2. Imposta:
+   - `enabled => true`
+   - host/porta/username/password SMTP test
+   - `from_email`, `admin_email`
 
-Dato ancora necessario:
-- imposta `GMAIL_SMTP_USER` (casella Gmail da usare)
+Dettaglio completo:
+- `DOCUMENTAZIONE_E_CONFIG/CONFIG_EMAIL.md`
 
-Esempio PowerShell prima di avviare test:
-- `$env:GMAIL_SMTP_USER='tuacasella@gmail.com'`
+### Test invio
+1. Apri `contatti.html` e invia un messaggio.
+2. Verifica risposta positiva UI.
+3. Controlla log:
+   - `logs/mail.log`
 
-Log email:
-- `logs/mail.log`
+Nota: se SMTP non configurato, gli endpoint rispondono con errore gestito (comportamento previsto).
 
-## 9) Pagamenti Stripe/PayPal + bonifico
-File:
+## 7) Configurazione Stripe/PayPal (solo test/sandbox)
+
+File da compilare:
 - `config/payments.php`
 
-Solo placeholder test:
-- Stripe (`pk_test`, `sk_test`, `whsec`)
-- PayPal sandbox (`client_id`, `client_secret`, `webhook_id`)
+Imposta solo chiavi test:
+- Stripe: `pk_test`, `sk_test`, `whsec_...`
+- PayPal: `client_id`, `client_secret`, `webhook_id` sandbox
 
-Bonifico:
-- dati visualizzati da config (intestatario, IBAN, causale)
-- notifica inviata via `api/bonifico-notify.php` all’email amministrazione
+Dettaglio completo:
+- `DOCUMENTAZIONE_E_CONFIG/CONFIG_PAGAMENTI_STRIPE_PAYPAL.md`
 
-## 10) QR, scansione telefono e check-in
-- Vista QR pubblica/read-only: `qr-view.html?qr=CODICE`
-- Scan bagnino con camera: `piscina-php/dashboard-bagnino.html`
+Webhook:
+- Stripe: endpoint applicativo da configurare lato provider se attivi flusso server completo
+- PayPal: endpoint webhook sandbox coerente con il tuo ambiente locale/tunnel
 
-Permessi:
-- non loggato: sola lettura
-- bagnino loggato: check-in abilitato
-- admin/ufficio: funzioni gestione complete su dashboard
+## 8) Bonifico - cosa fai tu e cosa vede l'utente
 
-## 11) Smoke test consigliato
-1. Homepage e pagine principali caricabili.
-2. Login admin e apertura dashboard admin.
-3. Login bagnino e check-in QR.
-4. Login utente e visualizzazione QR/storici.
-5. Reset password completo via email.
-6. Report dashboard con grafico e breakdown pagamenti.
-7. Verifica `logs/error.log` e `logs/mail.log`.
+### Cosa fai tu
+1. Compila dati bonifico test in `config/payments.php`:
+   - intestatario, iban, banca, causale, email conferma
+2. Configura SMTP (fase email) per ricevere notifiche bonifico.
 
-## 12) Troubleshooting rapido
-- Errore `JSON.parse` su login:
-  - verificare che chiami `api/auth.php?action=login` sotto `/nuoto-libero`
-- Errore DB:
-  - verificare import SQL + MySQL avviato
-- Email non inviata:
-  - verificare `GMAIL_SMTP_USER`, connessione SMTP e `logs/mail.log`
-- Camera non disponibile:
-  - usare browser mobile compatibile e HTTPS/localhost; fallback input manuale nel dashboard bagnino
+### Cosa vede l'utente
+1. In `pacchetti.html` seleziona metodo `Bonifico bancario`.
+2. Visualizza dati bonifico.
+3. Inserisce riferimento + data bonifico.
+4. Clicca `Ho effettuato il bonifico`.
 
-## 13) Moduli scaricabili (CMS Admin/Ufficio)
-### Dove si gestiscono
-- `piscina-php/dashboard-admin.html` tab `Moduli`
-- `piscina-php/dashboard-ufficio.html` tab `Moduli`
+### Cosa succede
+- Il frontend chiama `api/bonifico-notify.php`.
+- L'admin riceve email notifica (se SMTP configurato).
+- L'utente riceve conferma a schermo di notifica registrata.
 
-### Come caricare un modulo nuovo
-1. Apri tab `Moduli`.
-2. Inserisci `Slug` stabile (es. `modulo-iscrizione`).
-3. Inserisci `Nome modulo`.
-4. Seleziona file (`.pdf`, `.doc`, `.docx`).
-5. Premi `Carica modulo`.
+## 9) Checklist rapida finale
+- [ ] Apache e MySQL avviati
+- [ ] `db/CREATE_DATABASE_FROM_ZERO.sql` importato senza errori
+- [ ] Login con utenti test funzionante
+- [ ] Redirect ruolo corretto (admin/ufficio/bagnino/utente)
+- [ ] Dashboard admin caricata
+- [ ] Test check-in QR lato bagnino
+- [ ] Menu hamburger mobile scrollabile
+- [ ] Bottone Area Riservata con sfondo corretto
+- [ ] SMTP test configurato e invio contatti funzionante
+- [ ] Log mail scritto in `logs/mail.log`
+- [ ] Config test Stripe/PayPal compilata (senza chiavi reali)
+- [ ] Flusso bonifico + notifica admin verificato
 
-### Come sostituire un modulo esistente
-1. Dalla tabella moduli clicca `Sostituisci` (prefill automatico slug/nome).
-2. Carica il nuovo file.
-3. Lascia attivo checkbox `Sostituisci se esiste`.
-4. Salva: la versione vecchia viene automaticamente disattivata e archiviata.
-
-### Come eliminare un modulo
-1. In tabella clicca `Elimina`.
-2. Conferma operazione.
-3. Il modulo attivo viene disattivato e il file archiviato.
-
-### Link pubblico stabile per utenti
-- Endpoint: `api/moduli-download.php?slug={slug}`
-- Esempio: `api/moduli-download.php?slug=modulo-iscrizione`
-- In `moduli.html` i pulsanti download puntano a questo endpoint stabile.
-
-### Come verificare che l'utente scarichi sempre l'ultima versione
-1. Carica una prima versione per uno slug (es. `modulo-iscrizione`).
-2. Scarica da `moduli.html` e controlla file.
-3. Sostituisci con nuova versione mantenendo lo stesso slug.
-4. Riscarica dallo stesso link: il file servito e la versione aggiornata.
+## Troubleshooting veloce
+1. API login da errore 500:
+   - verifica MySQL avviato
+   - verifica import SQL completato
+   - verifica credenziali DB in `api/config.php`
+2. Email non parte:
+   - verifica `config/mail.php` (`enabled`, host, credenziali)
+   - controlla `logs/mail.log`
+3. Dashboard vuote:
+   - verifica token in localStorage
+   - verifica seed utenti presenti nel DB

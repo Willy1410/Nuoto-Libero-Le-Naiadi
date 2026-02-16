@@ -1,57 +1,662 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Utente</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827}
-.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
-.header h1{font-size:28px}.container{max-width:1200px;margin:20px auto;padding:0 14px}
-.btn{border:none;border-radius:8px;padding:8px 11px;font-weight:600;cursor:pointer;color:#fff;font-size:12px}.btn-danger{background:#dc2626}.btn-primary{background:#667eea}.btn-success{background:#059669}.btn-muted{background:#6b7280}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}.stat{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:10px;padding:12px;text-align:center}.stat b{font-size:26px}
-.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:14px}
-.table-wrap{overflow:auto}.t{width:100%;border-collapse:collapse;min-width:650px}.t th{background:#f9fafb;font-size:12px;text-align:left;padding:8px;border-bottom:1px solid #e5e7eb}.t td{padding:8px;border-bottom:1px solid #f0f0f0;font-size:13px;vertical-align:top}
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}.ok{background:#d1fae5;color:#065f46}.warn{background:#fef3c7;color:#92400e}.err{background:#fee2e2;color:#991b1b}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.tools input,.tools select{padding:8px;border:1px solid #d1d5db;border-radius:8px}
-.alert{padding:10px 12px;border-radius:8px;margin-bottom:10px;font-weight:600}.alert.success{background:#d1fae5;color:#065f46}.alert.error{background:#fee2e2;color:#991b1b}
-#qrCanvas{display:block;margin:10px auto;background:#fff;padding:8px;border-radius:8px;border:1px solid #e5e7eb}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Utente - Gli Squaletti</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #00a8e8;
+            --primary-dark: #0077b6;
+            --bg: #f3f6f9;
+            --text: #1f2937;
+            --muted: #64748b;
+            --white: #ffffff;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 { font-size: 24px; }
+        .header small { opacity: 0.92; }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-logout { background: rgba(255,255,255,0.2); color: #fff; }
+        .btn-primary { background: var(--primary-dark); color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-warning { background: var(--warning); color: #fff; }
+
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat h2 { color: var(--primary-dark); font-size: 32px; margin-bottom: 6px; }
+        .stat p { color: var(--muted); font-size: 13px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .card h3 { margin-bottom: 12px; color: #0f172a; }
+
+        .qr-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .qr-box {
+            width: 220px;
+            min-height: 220px;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .muted { color: var(--muted); font-size: 14px; }
+        .small { font-size: 12px; color: var(--muted); }
+
+        .package-list { display: grid; gap: 10px; }
+        .package-item {
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .package-meta strong { display: block; margin-bottom: 4px; }
+        .package-meta p { font-size: 13px; color: var(--muted); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 13px; }
+        th { background: #f8fafc; }
+
+        .badge {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        .alert {
+            display: none;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .alert.ok { display: block; background: #dcfce7; color: #166534; }
+        .alert.err { display: block; background: #fee2e2; color: #991b1b; }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 999;
+        }
+
+        .overlay.open { display: flex; }
+
+        .modal {
+            width: 100%;
+            max-width: 560px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .modal h4 { margin-bottom: 10px; }
+        .modal .row { margin-bottom: 10px; }
+        .modal label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .modal textarea,
+        .modal input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .payment-option {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+            .payment-options { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-<div class="header"><div><h1>Dashboard Utente</h1><small id="uname"></small></div><button class="btn btn-danger" onclick="logout()">Esci</button></div>
-<div class="container">
-<div id="alerts"></div>
-<div class="stats"><div class="stat"><b id="s_entries">-</b><div>Ingressi rimanenti</div></div><div class="stat"><b id="s_checkins">-</b><div>Check-in totali</div></div><div class="stat"><b id="s_days">-</b><div>Giorni validita</div></div></div>
-<div class="card"><h3>Il tuo QR</h3><canvas id="qrCanvas" width="220" height="220"></canvas><div style="text-align:center" id="qrCodeText">Nessun QR disponibile</div><div class="tools" style="justify-content:center"><button class="btn btn-primary" onclick="openQrView()">Apri vista QR</button><button class="btn btn-muted" onclick="printQr()">Stampa QR</button></div></div>
-<div class="card"><h3>Acquista pacchetto</h3><div id="pkgList"></div></div>
-<div class="card"><h3>I tuoi acquisti</h3><div class="table-wrap"><table class="t"><thead><tr><th>Pacchetto</th><th>Data</th><th>Stato</th><th>Ingressi</th><th>Scadenza</th></tr></thead><tbody id="tb_purchases"></tbody></table></div></div>
-<div class="card"><h3>Documenti</h3><p><strong>Mancanti:</strong> <span id="docMissing">-</span></p><div class="table-wrap"><table class="t"><thead><tr><th>Tipo</th><th>Stato</th><th>Data</th></tr></thead><tbody id="tb_docs"></tbody></table></div></div>
-<div class="card"><h3>Storico check-in</h3><div class="table-wrap"><table class="t"><thead><tr><th>Data</th><th>Fascia</th><th>Pacchetto</th></tr></thead><tbody id="tb_checkins"></tbody></table></div></div>
-</div>
-<script>
-const API='../api';const TOKEN=localStorage.getItem('token');const USER=JSON.parse(localStorage.getItem('user')||'{}');if(!TOKEN||!USER.id)location.href='../login.html';
-uname.textContent=`${USER.nome||''} ${USER.cognome||''}`.trim();let lastQr='';
-function alertBox(m,t='success'){alerts.innerHTML=`<div class="alert ${t}">${m}</div>`;if(t==='success')setTimeout(()=>alerts.innerHTML='',3200)}
-function eur(v){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(v||0));}
-async function api(url,opt={}){const r=await fetch(url,{...opt,headers:{Authorization:`Bearer ${TOKEN}`,...(opt.headers||{})}});const tx=await r.text();let d={};try{d=JSON.parse(tx);}catch(e){throw new Error('Risposta API non valida')}if(!r.ok||d.success===false)throw new Error(d.message||`Errore ${r.status}`);return d}
-function daysLeft(dateStr){if(!dateStr)return '-';const d=Math.ceil((new Date(dateStr)-new Date())/(1000*60*60*24));return d>0?d:0}
-async function loadPurchases(){try{const d=await api(`${API}/pacchetti.php?action=my-purchases`);const list=d.acquisti||[];tb_purchases.innerHTML=list.map(a=>`<tr><td>${a.pacchetto_nome}</td><td>${new Date(a.data_acquisto).toLocaleDateString('it-IT')}</td><td>${a.stato_pagamento==='confirmed'?'<span class="badge ok">confirmed</span>':'<span class="badge warn">'+a.stato_pagamento+'</span>'}</td><td>${a.ingressi_rimanenti} / ${a.num_ingressi||'-'}</td><td>${a.data_scadenza||'-'}</td></tr>`).join('')||'<tr><td colspan="5">Nessun acquisto</td></tr>';
-const conf=list.filter(a=>a.stato_pagamento==='confirmed');const entries=conf.reduce((s,a)=>s+Number(a.ingressi_rimanenti||0),0);s_entries.textContent=entries;const top=conf[0];if(top&&top.qr_code){lastQr=top.qr_code;qrCodeText.textContent=top.qr_code;QRCode.toCanvas(document.getElementById('qrCanvas'),top.qr_code,{width:220},()=>{});s_days.textContent=daysLeft(top.data_scadenza);}else{lastQr='';qrCodeText.textContent='Nessun QR disponibile';const ctx=qrCanvas.getContext('2d');ctx.clearRect(0,0,220,220);s_days.textContent='-';}}catch(e){alertBox(e.message,'error')}}
+    <div class="header">
+        <div>
+            <h1>Dashboard Utente</h1>
+            <small id="userName"></small>
+        </div>
+        <button class="btn btn-logout" onclick="logout()">Esci</button>
+    </div>
 
-async function loadCheckins(){try{const d=await api(`${API}/checkin.php?action=history`);const rows=d.checkins||[];s_checkins.textContent=rows.length;tb_checkins.innerHTML=rows.map(c=>`<tr><td>${new Date(c.timestamp).toLocaleString('it-IT')}</td><td>${c.fascia_oraria}</td><td>${c.pacchetto_nome}</td></tr>`).join('')||'<tr><td colspan="3">Nessun check-in</td></tr>';}catch(e){alertBox(e.message,'error')}}
+    <div class="container">
+        <div id="alertBox" class="alert"></div>
 
-async function loadDocs(){try{const d=await api(`${API}/documenti.php`);docMissing.textContent=d.documenti_obbligatori_mancanti;tb_docs.innerHTML=(d.documenti||[]).map(x=>`<tr><td>${x.tipo_nome}</td><td>${x.stato==='approved'?'<span class="badge ok">approved</span>':x.stato==='rejected'?'<span class="badge err">rejected</span>':'<span class="badge warn">pending</span>'}</td><td>${x.data_caricamento?new Date(x.data_caricamento).toLocaleDateString('it-IT'):'-'}</td></tr>`).join('')||'<tr><td colspan="3">Nessun documento</td></tr>';}catch(e){alertBox(e.message,'error')}}
+        <div class="stats">
+            <div class="stat">
+                <h2 id="statIngressi">0</h2>
+                <p>Ingressi rimanenti</p>
+            </div>
+            <div class="stat">
+                <h2 id="statCheckin">0</h2>
+                <p>Check-in totali</p>
+            </div>
+            <div class="stat">
+                <h2 id="statScadenza">-</h2>
+                <p>Giorni a scadenza</p>
+            </div>
+        </div>
 
-async function loadPackages(){try{const d=await fetch(`${API}/pacchetti.php`);const tx=await d.text();const j=JSON.parse(tx);if(!d.ok||!j.success)throw new Error(j.message||'Errore pacchetti');pkgList.innerHTML=(j.pacchetti||[]).map(p=>`<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><strong>${p.nome}</strong> - ${eur(p.prezzo)}<br><small>${p.descrizione||''}</small></div><button class="btn btn-success" onclick="buyPackage(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Acquista</button></div>`).join('')||'Nessun pacchetto disponibile';}catch(e){alertBox(e.message,'error')}}
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <h3>Il tuo QR code</h3>
+                    <div id="qrSection" class="muted">Nessun QR disponibile. Acquista un pacchetto confermato.</div>
+                </div>
 
-async function buyPackage(id,name){if(!confirm(`Confermi acquisto: ${name}?`))return;try{const d=await api(`${API}/pacchetti.php`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pacchetto_id:id,metodo_pagamento:'bonifico'})});alertBox(d.message||'Acquisto registrato');await loadPurchases();}catch(e){alertBox(e.message,'error')}}
-function openQrView(){if(!lastQr){alertBox('Nessun QR disponibile','error');return;}window.open(`../qr-view.html?qr=${encodeURIComponent(lastQr)}`,'_blank');}
-function printQr(){if(!lastQr){alertBox('Nessun QR disponibile','error');return;}const data=qrCanvas.toDataURL('image/png');const w=window.open('','_blank');w.document.write(`<html><head><title>QR ${lastQr}</title></head><body style="font-family:Arial;text-align:center;padding:20px"><h2>Codice QR</h2><img src="${data}" style="width:280px;height:280px"><p><strong>${lastQr}</strong></p></body></html>`);w.document.close();w.focus();w.print();}
-function logout(){localStorage.clear();location.href='../login.html'}
-async function init(){try{await loadPurchases();await loadCheckins();await loadDocs();await loadPackages();}catch(e){alertBox(e.message,'error')}}init();
-</script>
+                <div class="card">
+                    <h3>Acquista pacchetto</h3>
+                    <div id="packageList" class="package-list">Caricamento pacchetti...</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h3>I miei acquisti</h3>
+                    <div style="overflow:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pacchetto</th>
+                                    <th>Data</th>
+                                    <th>Stato</th>
+                                    <th>Ingressi</th>
+                                    <th>Azione</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchasesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Storico check-in</h3>
+                    <div style="overflow:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data/Ora</th>
+                                    <th>Fascia</th>
+                                    <th>Pacchetto</th>
+                                    <th>Bagnino</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checkinBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Documenti</h3>
+            <p class="muted">Documenti obbligatori mancanti: <strong id="missingDocs">0</strong></p>
+            <div id="docList"></div>
+        </div>
+    </div>
+
+    <div id="purchaseOverlay" class="overlay">
+        <div class="modal">
+            <h4 id="purchaseTitle">Conferma acquisto</h4>
+            <p class="small" id="purchaseMeta"></p>
+
+            <div class="row">
+                <label>Metodo pagamento</label>
+                <div class="payment-options">
+                    <label class="payment-option"><input type="radio" name="paymentMethod" value="carta" checked> Carta</label>
+                    <label class="payment-option"><input type="radio" name="paymentMethod" value="paypal"> PayPal</label>
+                    <label class="payment-option"><input type="radio" name="paymentMethod" value="bonifico"> Bonifico</label>
+                    <label class="payment-option"><input type="radio" name="paymentMethod" value="contanti"> In struttura</label>
+                </div>
+            </div>
+
+            <div class="row">
+                <label for="paymentReference">Riferimento pagamento (consigliato)</label>
+                <input id="paymentReference" type="text" placeholder="ID transazione, CRO, note pagamento...">
+            </div>
+
+            <div class="row">
+                <label for="paymentNote">Note</label>
+                <textarea id="paymentNote" placeholder="Note aggiuntive (facoltative)"></textarea>
+            </div>
+
+            <p class="small" id="paymentHint"></p>
+
+            <div class="modal-actions">
+                <button class="btn" type="button" onclick="closePurchaseModal()">Annulla</button>
+                <button class="btn btn-success" id="confirmPurchaseBtn" type="button" onclick="confirmPurchase()">Conferma acquisto</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '../api';
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+        let selectedPackage = null;
+        let myPurchases = [];
+
+        if (!token || !user) {
+            window.location.href = '../login.html';
+        }
+
+        document.getElementById('userName').textContent = `${user.nome} ${user.cognome}`;
+
+        function showAlert(message, type = 'ok') {
+            const box = document.getElementById('alertBox');
+            box.className = `alert ${type === 'error' ? 'err' : 'ok'}`;
+            box.textContent = message;
+            if (type !== 'error') {
+                setTimeout(() => {
+                    box.className = 'alert';
+                    box.textContent = '';
+                }, 4500);
+            }
+        }
+
+        async function fetchJson(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                }
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Errore richiesta API');
+            }
+            return data;
+        }
+
+        function formatDate(value) {
+            if (!value) return '-';
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return value;
+            return d.toLocaleDateString('it-IT');
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '-';
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return value;
+            return `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
+        }
+
+        function getStatusBadge(status) {
+            if (status === 'confirmed') {
+                return '<span class="badge badge-success">confermato</span>';
+            }
+            if (status === 'pending') {
+                return '<span class="badge badge-warning">pending</span>';
+            }
+            return '<span class="badge badge-danger">annullato</span>';
+        }
+
+        function getLatestConfirmedPurchase() {
+            const confirmed = myPurchases
+                .filter(item => item.stato_pagamento === 'confirmed' && item.qr_code)
+                .sort((a, b) => new Date(b.data_conferma || b.data_acquisto) - new Date(a.data_conferma || a.data_acquisto));
+            return confirmed[0] || null;
+        }
+
+        function renderQrSection(purchase) {
+            const section = document.getElementById('qrSection');
+            if (!purchase) {
+                section.innerHTML = '<p class="muted">Nessun QR disponibile. I pagamenti pending vengono attivati da segreteria.</p>';
+                document.getElementById('statScadenza').textContent = '-';
+                return;
+            }
+
+            const daysToExpire = purchase.data_scadenza
+                ? Math.max(0, Math.ceil((new Date(purchase.data_scadenza) - new Date()) / 86400000))
+                : '-';
+            document.getElementById('statScadenza').textContent = daysToExpire;
+
+            section.innerHTML = `
+                <div class="qr-wrap">
+                    <div class="qr-box" id="qrBox"></div>
+                    <div>
+                        <p><strong>Codice:</strong> <code>${purchase.qr_code}</code></p>
+                        <p><strong>Pacchetto:</strong> ${purchase.pacchetto_nome}</p>
+                        <p><strong>Scadenza:</strong> ${formatDate(purchase.data_scadenza)}</p>
+                        <p><strong>Ingressi rimanenti:</strong> ${purchase.ingressi_rimanenti}</p>
+                        <p style="margin-top:10px;">
+                            <a class="btn btn-primary" href="../api/qr.php?action=download&acquisto_id=${encodeURIComponent(purchase.id)}">Scarica PDF QR</a>
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            const qrTarget = document.getElementById('qrBox');
+            if (window.QRCode && qrTarget) {
+                qrTarget.innerHTML = '';
+                new QRCode(qrTarget, {
+                    text: purchase.qr_code,
+                    width: 200,
+                    height: 200,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        }
+
+        async function loadPackages() {
+            const data = await fetchJson(`${API_URL}/pacchetti.php`, { method: 'GET' });
+            const list = document.getElementById('packageList');
+
+            if (!Array.isArray(data.pacchetti) || !data.pacchetti.length) {
+                list.innerHTML = '<p class="muted">Nessun pacchetto disponibile.</p>';
+                return;
+            }
+
+            list.innerHTML = data.pacchetti.map(pkg => `
+                <div class="package-item">
+                    <div class="package-meta">
+                        <strong>${pkg.nome}</strong>
+                        <p>${pkg.descrizione || 'Pacchetto nuoto libero'}</p>
+                        <p>${pkg.num_ingressi} ingressi - validita ${pkg.validita_giorni} giorni</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700; margin-bottom:8px;">${formatCurrency(pkg.prezzo)}</div>
+                        <button
+                            class="btn btn-success js-buy-btn"
+                            data-id="${pkg.id}"
+                            data-name="${encodeURIComponent(pkg.nome)}"
+                            data-price="${Number(pkg.prezzo)}"
+                        >Acquista</button>
+                    </div>
+                </div>
+            `).join('');
+
+            list.querySelectorAll('.js-buy-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    openPurchaseModal(
+                        Number(button.dataset.id),
+                        decodeURIComponent(button.dataset.name || ''),
+                        Number(button.dataset.price || 0)
+                    );
+                });
+            });
+        }
+
+        async function loadPurchases() {
+            const data = await fetchJson(`${API_URL}/pacchetti.php?action=my-purchases`, { method: 'GET' });
+            myPurchases = Array.isArray(data.acquisti) ? data.acquisti : [];
+
+            const body = document.getElementById('purchasesBody');
+            if (!myPurchases.length) {
+                body.innerHTML = '<tr><td colspan="5">Nessun acquisto registrato.</td></tr>';
+                renderQrSection(null);
+                document.getElementById('statIngressi').textContent = '0';
+                return;
+            }
+
+            body.innerHTML = myPurchases.map(item => {
+                const downloadAction = item.stato_pagamento === 'confirmed' && item.qr_code
+                    ? `<a href="../api/qr.php?action=download&acquisto_id=${encodeURIComponent(item.id)}">PDF QR</a>`
+                    : '-';
+
+                return `
+                    <tr>
+                        <td>${item.pacchetto_nome}</td>
+                        <td>${formatDate(item.data_acquisto)}</td>
+                        <td>${getStatusBadge(item.stato_pagamento)}</td>
+                        <td>${item.ingressi_rimanenti} / ${item.num_ingressi || '-'}</td>
+                        <td>${downloadAction}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalRemaining = myPurchases
+                .filter(item => item.stato_pagamento === 'confirmed')
+                .reduce((sum, item) => sum + Number(item.ingressi_rimanenti || 0), 0);
+
+            document.getElementById('statIngressi').textContent = String(totalRemaining);
+            renderQrSection(getLatestConfirmedPurchase());
+        }
+
+        async function loadCheckins() {
+            const data = await fetchJson(`${API_URL}/checkin.php?action=history`, { method: 'GET' });
+            const rows = Array.isArray(data.checkins) ? data.checkins : [];
+            document.getElementById('statCheckin').textContent = String(rows.length);
+
+            const body = document.getElementById('checkinBody');
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="4">Nessun check-in registrato.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = rows.slice(0, 15).map(row => `
+                <tr>
+                    <td>${formatDateTime(row.timestamp)}</td>
+                    <td>${row.fascia_oraria || '-'}</td>
+                    <td>${row.pacchetto_nome || '-'}</td>
+                    <td>${row.bagnino_nome || '-'} ${row.bagnino_cognome || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadDocuments() {
+            const data = await fetchJson(`${API_URL}/documenti.php`, { method: 'GET' });
+            const rows = Array.isArray(data.documenti) ? data.documenti : [];
+            document.getElementById('missingDocs').textContent = String(data.documenti_obbligatori_mancanti || 0);
+
+            const list = document.getElementById('docList');
+            if (!rows.length) {
+                list.innerHTML = '<p class="muted">Nessun documento caricato.</p>';
+                return;
+            }
+
+            list.innerHTML = rows.map(row => {
+                const statusClass = row.stato === 'approved' ? 'badge-success' : (row.stato === 'pending' ? 'badge-warning' : 'badge-danger');
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-top:8px;">
+                        <div>
+                            <strong>${row.tipo_nome}</strong>
+                            <div class="small">Caricato: ${formatDate(row.data_caricamento)}</div>
+                        </div>
+                        <span class="badge ${statusClass}">${row.stato}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openPurchaseModal(id, name, price) {
+            selectedPackage = { id, name, price };
+            document.getElementById('purchaseTitle').textContent = `Acquisto: ${name}`;
+            document.getElementById('purchaseMeta').textContent = `Importo: ${formatCurrency(price)} - Conferma metodo di pagamento.`;
+            document.getElementById('paymentReference').value = '';
+            document.getElementById('paymentNote').value = '';
+            document.querySelector('input[name="paymentMethod"][value="carta"]').checked = true;
+            updatePaymentHint();
+            document.getElementById('purchaseOverlay').classList.add('open');
+        }
+
+        function closePurchaseModal() {
+            document.getElementById('purchaseOverlay').classList.remove('open');
+            selectedPackage = null;
+        }
+
+        function updatePaymentHint() {
+            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'carta';
+            const hint = document.getElementById('paymentHint');
+
+            if (method === 'carta' || method === 'paypal') {
+                hint.textContent = 'Pagamento online (test locale): il pacchetto viene confermato subito e il QR viene generato immediatamente.';
+                return;
+            }
+
+            hint.textContent = 'Metodo offline: l\'acquisto resta pending finche segreteria non conferma il pagamento.';
+        }
+
+        async function confirmPurchase() {
+            if (!selectedPackage) return;
+
+            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'carta';
+            const reference = document.getElementById('paymentReference').value.trim();
+            const note = document.getElementById('paymentNote').value.trim();
+            const button = document.getElementById('confirmPurchaseBtn');
+
+            if (method === 'bonifico' && reference.length < 3) {
+                showAlert('Inserisci un riferimento bonifico valido.', 'error');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Elaborazione...';
+
+            try {
+                const payload = {
+                    pacchetto_id: selectedPackage.id,
+                    metodo_pagamento: method,
+                    riferimento_pagamento: reference,
+                    note_pagamento: note
+                };
+
+                const data = await fetchJson(`${API_URL}/pacchetti.php`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                showAlert(data.message || 'Acquisto completato.', 'ok');
+                closePurchaseModal();
+                await loadPurchases();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Conferma acquisto';
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '../login.html';
+        }
+
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
+            input.addEventListener('change', updatePaymentHint);
+        });
+
+        document.getElementById('purchaseOverlay').addEventListener('click', (event) => {
+            if (event.target.id === 'purchaseOverlay') {
+                closePurchaseModal();
+            }
+        });
+
+        Promise.all([loadPackages(), loadPurchases(), loadCheckins(), loadDocuments()])
+            .catch(error => showAlert(error.message, 'error'));
+
+        window.openPurchaseModal = openPurchaseModal;
+        window.closePurchaseModal = closePurchaseModal;
+        window.confirmPurchase = confirmPurchase;
+        window.logout = logout;
+    </script>
 </body>
 </html>

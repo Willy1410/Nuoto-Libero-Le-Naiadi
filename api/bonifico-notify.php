@@ -1,107 +1,148 @@
 <?php
-declare(strict_types=1);
-
 /**
- * Notifica bonifico da frontend pubblico
+ * Bank transfer notification endpoint
+ * POST /api/bonifico-notify.php
  */
 
 require_once __DIR__ . '/config.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-    sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Metodo non consentito']);
+    exit();
 }
 
-$data = getJsonInput();
-if (!$data) {
-    sendJson(400, ['success' => false, 'message' => 'Payload non valido']);
+$data = json_decode(file_get_contents('php://input'), true);
+if (!is_array($data)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Payload non valido']);
+    exit();
 }
 
-$firstName = sanitizeText((string)($data['firstName'] ?? ''), 100);
-$lastName = sanitizeText((string)($data['lastName'] ?? ''), 100);
-$email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
-$phone = sanitizeText((string)($data['phone'] ?? ''), 40);
-$package = sanitizeText((string)($data['package'] ?? ''), 120);
+$firstName = sanitizeInput($data['firstName'] ?? '');
+$lastName = sanitizeInput($data['lastName'] ?? '');
+$email = sanitizeInput($data['email'] ?? '');
+$phone = sanitizeInput($data['phone'] ?? '');
+$package = sanitizeInput($data['package'] ?? '');
 $amount = (float)($data['amount'] ?? 0);
-$transferReference = sanitizeText((string)($data['transferReference'] ?? ''), 120);
-$transferDate = sanitizeText((string)($data['transferDate'] ?? ''), 20);
-$notes = sanitizeText((string)($data['notes'] ?? ''), 1200);
+$transferReference = sanitizeInput($data['transferReference'] ?? '');
+$transferDate = sanitizeInput($data['transferDate'] ?? '');
+$notes = sanitizeInput($data['notes'] ?? '');
 
 if ($firstName === '' || $lastName === '' || $email === '' || $package === '' || $transferReference === '' || $transferDate === '') {
-    sendJson(400, ['success' => false, 'message' => 'Compila tutti i campi obbligatori del bonifico']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Compila tutti i campi obbligatori del bonifico']);
+    exit();
 }
 
 if (!validateEmail($email)) {
-    sendJson(400, ['success' => false, 'message' => 'Email non valida']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Email non valida']);
+    exit();
 }
 
 if (!isMailConfigured()) {
-    sendJson(503, [
-        'success' => false,
-        'message' => 'SMTP non configurato. Controlla config/mail.php e logs/mail.log',
+    logMailEvent('warning', 'Bonifico notification rejected: SMTP not configured', [
+        'email' => $email,
+        'package' => $package,
     ]);
+    http_response_code(503);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Servizio email non configurato in locale. Controlla config/mail.php e logs/mail.log',
+    ]);
+    exit();
 }
 
-$paymentsConfigPath = PROJECT_ROOT . '/config/payments.php';
+$paymentsConfigPath = __DIR__ . '/../config/payments.php';
 $paymentsConfig = file_exists($paymentsConfigPath) ? require $paymentsConfigPath : [];
-$bonificoEmail = sanitizeText((string)($paymentsConfig['bonifico']['email_conferma'] ?? ($MAIL_CONFIG['admin_email'] ?? '')), 255);
-if ($bonificoEmail === '' || !validateEmail($bonificoEmail)) {
-    $bonificoEmail = sanitizeText((string)($MAIL_CONFIG['admin_email'] ?? ''), 255);
-}
-
-if ($bonificoEmail === '' || !validateEmail($bonificoEmail)) {
-    sendJson(500, ['success' => false, 'message' => 'Email amministrazione non configurata']);
+$bonificoEmail = $paymentsConfig['bonifico']['email_conferma'] ?? ($MAIL_CONFIG['admin_email'] ?? '');
+$bonificoEmail = is_string($bonificoEmail) ? trim($bonificoEmail) : '';
+if ($bonificoEmail === '') {
+    $bonificoEmail = (string)($MAIL_CONFIG['admin_email'] ?? '');
 }
 
 $orderId = 'BON-' . strtoupper(substr(str_replace('-', '', generateUuid()), 0, 10));
+$subject = '[Bonifico] Notifica pagamento ' . $orderId;
 $fullName = trim($firstName . ' ' . $lastName);
 
-$body = '<p><strong>Nuova notifica bonifico</strong></p>'
-    . '<p><strong>Ordine:</strong> ' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</p>'
-    . '<p><strong>Cliente:</strong> ' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</p>'
-    . '<p><strong>Email:</strong> ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</p>'
-    . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? htmlspecialchars($phone, ENT_QUOTES, 'UTF-8') : '-') . '</p>'
-    . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars($package, ENT_QUOTES, 'UTF-8') . '</p>'
+$htmlContent = '<h2>Nuova notifica bonifico</h2>'
+    . '<p><strong>Ordine:</strong> ' . $orderId . '</p>'
+    . '<p><strong>Cliente:</strong> ' . $fullName . '</p>'
+    . '<p><strong>Email:</strong> ' . $email . '</p>'
+    . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? $phone : '-') . '</p>'
+    . '<p><strong>Pacchetto:</strong> ' . $package . '</p>'
     . '<p><strong>Importo:</strong> EUR ' . number_format($amount, 2, ',', '.') . '</p>'
-    . '<p><strong>Riferimento bonifico:</strong> ' . htmlspecialchars($transferReference, ENT_QUOTES, 'UTF-8') . '</p>'
-    . '<p><strong>Data bonifico:</strong> ' . htmlspecialchars($transferDate, ENT_QUOTES, 'UTF-8') . '</p>'
-    . '<p><strong>Note:</strong><br>' . ($notes !== '' ? nl2br(htmlspecialchars($notes, ENT_QUOTES, 'UTF-8')) : '-') . '</p>';
+    . '<p><strong>Riferimento bonifico:</strong> ' . $transferReference . '</p>'
+    . '<p><strong>Data bonifico:</strong> ' . $transferDate . '</p>'
+    . '<p><strong>Note:</strong><br>' . ($notes !== '' ? nl2br($notes) : '-') . '</p>';
 
-$sent = sendTemplateEmail(
+$textContent = "Nuova notifica bonifico\n"
+    . "Ordine: {$orderId}\n"
+    . "Cliente: {$fullName}\n"
+    . "Email: {$email}\n"
+    . 'Telefono: ' . ($phone !== '' ? $phone : '-') . "\n"
+    . "Pacchetto: {$package}\n"
+    . 'Importo: EUR ' . number_format($amount, 2, ',', '.') . "\n"
+    . "Riferimento: {$transferReference}\n"
+    . "Data bonifico: {$transferDate}\n"
+    . 'Note: ' . ($notes !== '' ? $notes : '-') . "\n";
+
+$adminSent = sendBrandedEmail(
     $bonificoEmail,
     'Amministrazione',
-    '[Bonifico] Notifica ' . $orderId,
+    $subject,
     'Nuova notifica bonifico',
-    $body,
-    'Notifica bonifico da ' . $fullName
+    $htmlContent,
+    'Notifica bonifico ricevuta',
+    $textContent
 );
 
-if (!$sent) {
-    sendJson(500, ['success' => false, 'message' => 'Invio notifica bonifico non riuscito. Verifica logs/mail.log']);
+if (!$adminSent) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invio notifica bonifico non riuscito. Verifica logs/mail.log',
+    ]);
+    exit();
 }
 
 $customerBody = '<p>Ciao <strong>' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
     . '<p>abbiamo ricevuto la tua segnalazione di bonifico.</p>'
-    . '<p><strong>Ordine:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+    . '<p><strong>Riferimento ordine:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
     . '<strong>Pacchetto:</strong> ' . htmlspecialchars($package, ENT_QUOTES, 'UTF-8') . '<br>'
     . '<strong>Importo:</strong> EUR ' . number_format($amount, 2, ',', '.') . '<br>'
     . '<strong>Riferimento bonifico:</strong> ' . htmlspecialchars($transferReference, ENT_QUOTES, 'UTF-8') . '<br>'
     . '<strong>Data bonifico:</strong> ' . htmlspecialchars($transferDate, ENT_QUOTES, 'UTF-8') . '</p>'
-    . '<p>Ti invieremo una conferma finale appena la segreteria completa la verifica contabile.</p>';
+    . '<p>Ti invieremo una conferma finale appena la segreteria completera la verifica contabile.</p>';
 
-$customerSent = sendTemplateEmail(
+$customerText = "Conferma ricezione bonifico\n"
+    . "Ordine: {$orderId}\n"
+    . "Pacchetto: {$package}\n"
+    . 'Importo: EUR ' . number_format($amount, 2, ',', '.') . "\n"
+    . "Riferimento bonifico: {$transferReference}\n"
+    . "Data bonifico: {$transferDate}\n";
+
+$customerSent = sendBrandedEmail(
     $email,
     $fullName,
     'Conferma ricezione bonifico - Gli Squaletti',
     'Richiesta bonifico ricevuta',
     $customerBody,
-    'Conferma ricezione bonifico'
+    'Conferma ricezione bonifico',
+    $customerText
 );
 
 if (!$customerSent) {
-    sendJson(500, ['success' => false, 'message' => 'Bonifico registrato ma email cliente non inviata. Verifica logs/mail.log']);
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Bonifico registrato ma invio email cliente non riuscito. Verifica logs/mail.log',
+    ]);
+    exit();
 }
 
-sendJson(200, [
+echo json_encode([
     'success' => true,
     'orderId' => $orderId,
     'message' => 'Notifica bonifico inviata. Ti contatteremo dopo la verifica.',

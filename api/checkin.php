@@ -1,8 +1,11 @@
-<?php
-declare(strict_types=1);
+﻿<?php
 
 /**
- * API check-in e verifica QR
+ * API check-in
+ * POST /api/checkin.php
+ * GET  /api/checkin.php?qr=...
+ * GET  /api/checkin.php?action=history
+ * GET  /api/checkin.php?action=today
  */
 
 require_once __DIR__ . '/config.php';
@@ -19,132 +22,112 @@ if ($method === 'POST' && $action === '') {
 } elseif ($method === 'GET' && $action === 'today') {
     getTodayCheckIns();
 } else {
-    sendJson(404, ['success' => false, 'message' => 'Endpoint non trovato']);
+    http_response_code(404);
+    echo json_encode(['success' => false, 'message' => 'Endpoint non trovato']);
 }
 
 function verificaQR(): void
 {
     global $pdo;
 
-    $qrCode = sanitizeText((string)($_GET['qr'] ?? ''), 120);
+    requireRole(2);
+    $qrCode = sanitizeInput($_GET['qr'] ?? '');
+
     if ($qrCode === '') {
-        sendJson(400, ['success' => false, 'message' => 'Codice QR mancante']);
-    }
-
-    $authUser = getCurrentUser();
-    $canCheckIn = false;
-    $role = 'guest';
-
-    if ($authUser && !empty($authUser['user_id'])) {
-        $stmt = $pdo->prepare(
-            'SELECT r.nome, r.livello
-             FROM profili p
-             JOIN ruoli r ON r.id = p.ruolo_id
-             WHERE p.id = ? AND p.attivo = 1
-             LIMIT 1'
-        );
-        $stmt->execute([$authUser['user_id']]);
-        $profile = $stmt->fetch();
-
-        if ($profile) {
-            $role = (string)$profile['nome'];
-            $canCheckIn = (int)$profile['livello'] >= 2;
-        }
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Codice QR mancante']);
+        return;
     }
 
     try {
         $stmt = $pdo->prepare(
-            'SELECT a.id, a.user_id, a.qr_code, a.ingressi_rimanenti, a.data_scadenza, a.stato_pagamento,
+            'SELECT a.id, a.user_id, a.qr_code, a.stato_pagamento, a.ingressi_rimanenti, a.data_scadenza,
                     p.nome AS pacchetto_nome,
-                    u.nome AS user_nome, u.cognome AS user_cognome, u.telefono AS user_telefono
+                    prof.nome AS user_nome,
+                    prof.cognome AS user_cognome,
+                    prof.telefono AS user_telefono
              FROM acquisti a
              JOIN pacchetti p ON p.id = a.pacchetto_id
-             JOIN profili u ON u.id = a.user_id
-             WHERE a.qr_code = ?
+             JOIN profili prof ON prof.id = a.user_id
+             WHERE a.qr_code = ? AND a.stato_pagamento = \'confirmed\'
              LIMIT 1'
         );
         $stmt->execute([$qrCode]);
-        $purchase = $stmt->fetch();
+        $acquisto = $stmt->fetch();
 
-        if (!$purchase) {
-            sendJson(404, [
+        if (!$acquisto) {
+            http_response_code(404);
+            echo json_encode([
                 'success' => false,
                 'valid' => false,
-                'message' => 'QR code non trovato',
-                'can_checkin' => false,
-                'role' => $role,
+                'message' => 'QR non valido o acquisto non confermato',
             ]);
+            return;
         }
 
-        if ($purchase['stato_pagamento'] !== 'confirmed') {
-            sendJson(200, [
-                'success' => true,
+        if (!empty($acquisto['data_scadenza']) && (string)$acquisto['data_scadenza'] < date('Y-m-d')) {
+            echo json_encode([
+                'success' => false,
                 'valid' => false,
-                'message' => 'Pacchetto non ancora confermato',
-                'can_checkin' => false,
-                'role' => $role,
-                'acquisto' => [
-                    'id' => $purchase['id'],
-                    'pacchetto_nome' => $purchase['pacchetto_nome'],
-                    'ingressi_rimanenti' => (int)$purchase['ingressi_rimanenti'],
-                    'data_scadenza' => $purchase['data_scadenza'],
-                    'stato_pagamento' => $purchase['stato_pagamento'],
-                ],
-                'utente' => [
-                    'nome' => $purchase['user_nome'],
-                    'cognome' => $purchase['user_cognome'],
-                    'telefono' => $purchase['user_telefono'],
-                ],
+                'message' => 'Pacchetto scaduto',
+                'data_scadenza' => $acquisto['data_scadenza'],
             ]);
+            return;
         }
 
-        $today = date('Y-m-d');
-        $isExpired = !empty($purchase['data_scadenza']) && $purchase['data_scadenza'] < $today;
-        $hasEntries = (int)$purchase['ingressi_rimanenti'] > 0;
+        if ((int)$acquisto['ingressi_rimanenti'] <= 0) {
+            echo json_encode([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Ingressi esauriti',
+                'ingressi_rimanenti' => 0,
+            ]);
+            return;
+        }
 
-        $fascia = getFasciaOraria(date('H:i:s'));
+        $fasciaCorrente = getFasciaOraria(date('H:i:s'));
+
         $stmt = $pdo->prepare(
-            'SELECT COUNT(*) AS total
+            'SELECT COUNT(*) AS count
              FROM check_ins
-             WHERE acquisto_id = ? AND DATE(timestamp) = CURDATE() AND fascia_oraria = ?'
+             WHERE acquisto_id = ?
+               AND DATE(timestamp) = CURDATE()
+               AND fascia_oraria = ?'
         );
-        $stmt->execute([$purchase['id'], $fascia]);
-        $alreadyCheckedInFascia = ((int)$stmt->fetch()['total']) > 0;
+        $stmt->execute([$acquisto['id'], $fasciaCorrente]);
+        $alreadyChecked = (int)($stmt->fetch()['count'] ?? 0);
 
-        $valid = !$isExpired && $hasEntries;
-        $message = 'QR valido';
-        if ($isExpired) {
-            $message = 'Pacchetto scaduto';
-        } elseif (!$hasEntries) {
-            $message = 'Ingressi esauriti';
-        } elseif ($alreadyCheckedInFascia) {
-            $message = 'Check-in gia effettuato in questa fascia oraria';
-            $valid = false;
+        if ($alreadyChecked > 0) {
+            echo json_encode([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Check-in gia effettuato in questa fascia oraria',
+                'fascia_oraria' => $fasciaCorrente,
+            ]);
+            return;
         }
 
-        sendJson(200, [
+        echo json_encode([
             'success' => true,
-            'valid' => $valid,
-            'message' => $message,
-            'role' => $role,
-            'can_checkin' => $canCheckIn && $valid,
-            'read_only' => !$canCheckIn,
+            'valid' => true,
+            'message' => 'QR valido',
             'acquisto' => [
-                'id' => $purchase['id'],
-                'pacchetto_nome' => $purchase['pacchetto_nome'],
-                'ingressi_rimanenti' => (int)$purchase['ingressi_rimanenti'],
-                'data_scadenza' => $purchase['data_scadenza'],
-                'stato_pagamento' => $purchase['stato_pagamento'],
+                'id' => $acquisto['id'],
+                'pacchetto_nome' => $acquisto['pacchetto_nome'],
+                'ingressi_rimanenti' => (int)$acquisto['ingressi_rimanenti'],
+                'data_scadenza' => $acquisto['data_scadenza'],
+                'qr_code' => $acquisto['qr_code'],
             ],
             'utente' => [
-                'nome' => $purchase['user_nome'],
-                'cognome' => $purchase['user_cognome'],
-                'telefono' => $purchase['user_telefono'],
+                'nome' => $acquisto['user_nome'],
+                'cognome' => $acquisto['user_cognome'],
+                'telefono' => $acquisto['user_telefono'],
             ],
         ]);
     } catch (Throwable $e) {
         error_log('verificaQR error: ' . $e->getMessage());
-        sendJson(500, ['success' => false, 'message' => 'Errore verifica QR']);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Errore verifica QR']);
     }
 }
 
@@ -152,113 +135,130 @@ function registraCheckIn(): void
 {
     global $pdo;
 
-    $operator = requireRole(2);
-    $data = getJsonInput();
+    $currentUser = requireRole(2);
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($data)) {
+        $data = [];
+    }
 
-    $qrCode = sanitizeText((string)($data['qr_code'] ?? ''), 120);
-    $note = sanitizeText((string)($data['note'] ?? ''), 500);
+    $qrCode = sanitizeInput($data['qr_code'] ?? '');
+    $note = sanitizeInput($data['note'] ?? '');
 
     if ($qrCode === '') {
-        sendJson(400, ['success' => false, 'message' => 'Codice QR mancante']);
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Codice QR mancante']);
+        return;
     }
+
+    $fasciaCorrente = getFasciaOraria(date('H:i:s'));
 
     try {
         $pdo->beginTransaction();
 
         $stmt = $pdo->prepare(
-            'SELECT a.id, a.user_id, a.ingressi_rimanenti, a.data_scadenza, a.stato_pagamento,
-                    u.nome, u.cognome, u.email,
-                    p.nome AS pacchetto_nome
+            'SELECT a.id, a.user_id, a.ingressi_rimanenti, a.data_scadenza,
+                    prof.nome, prof.cognome
              FROM acquisti a
-             JOIN profili u ON u.id = a.user_id
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             WHERE a.qr_code = ?
+             JOIN profili prof ON prof.id = a.user_id
+             WHERE a.qr_code = ? AND a.stato_pagamento = \'confirmed\'
              LIMIT 1
              FOR UPDATE'
         );
         $stmt->execute([$qrCode]);
-        $purchase = $stmt->fetch();
+        $acquisto = $stmt->fetch();
 
-        if (!$purchase) {
+        if (!$acquisto) {
             $pdo->rollBack();
-            sendJson(404, ['success' => false, 'message' => 'QR code non valido']);
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'QR non valido']);
+            return;
         }
 
-        if ($purchase['stato_pagamento'] !== 'confirmed') {
+        if (!empty($acquisto['data_scadenza']) && (string)$acquisto['data_scadenza'] < date('Y-m-d')) {
             $pdo->rollBack();
-            sendJson(400, ['success' => false, 'message' => 'Pacchetto non confermato']);
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Pacchetto scaduto']);
+            return;
         }
 
-        if (!empty($purchase['data_scadenza']) && $purchase['data_scadenza'] < date('Y-m-d')) {
+        if ((int)$acquisto['ingressi_rimanenti'] <= 0) {
             $pdo->rollBack();
-            sendJson(400, ['success' => false, 'message' => 'Pacchetto scaduto']);
-        }
-
-        if ((int)$purchase['ingressi_rimanenti'] <= 0) {
-            $pdo->rollBack();
-            sendJson(400, ['success' => false, 'message' => 'Ingressi esauriti']);
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Ingressi esauriti']);
+            return;
         }
 
         $stmt = $pdo->prepare(
-            'SELECT COUNT(*) AS total
+            'SELECT COUNT(*) AS count
              FROM check_ins
              WHERE acquisto_id = ?
-               AND timestamp >= DATE_SUB(NOW(), INTERVAL 20 SECOND)'
+               AND DATE(timestamp) = CURDATE()
+               AND fascia_oraria = ?'
         );
-        $stmt->execute([$purchase['id']]);
-        if ((int)$stmt->fetch()['total'] > 0) {
+        $stmt->execute([$acquisto['id'], $fasciaCorrente]);
+        $alreadyChecked = (int)($stmt->fetch()['count'] ?? 0);
+
+        if ($alreadyChecked > 0) {
             $pdo->rollBack();
-            sendJson(409, ['success' => false, 'message' => 'Doppio scan rilevato. Attendere qualche secondo.']);
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Check-in gia registrato in questa fascia oraria']);
+            return;
         }
 
-        $fascia = getFasciaOraria(date('H:i:s'));
-        $stmt = $pdo->prepare(
-            'SELECT COUNT(*) AS total
-             FROM check_ins
-             WHERE acquisto_id = ? AND DATE(timestamp) = CURDATE() AND fascia_oraria = ?'
-        );
-        $stmt->execute([$purchase['id'], $fascia]);
-        if ((int)$stmt->fetch()['total'] > 0) {
-            $pdo->rollBack();
-            sendJson(400, ['success' => false, 'message' => 'Check-in gia effettuato in questa fascia oraria']);
-        }
-
-        $checkInId = generateUuid();
         $stmt = $pdo->prepare(
             'INSERT INTO check_ins (id, acquisto_id, user_id, bagnino_id, fascia_oraria, note)
-             VALUES (?, ?, ?, ?, ?, NULLIF(?, ""))'
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
-            $checkInId,
-            $purchase['id'],
-            $purchase['user_id'],
-            $operator['user_id'],
-            $fascia,
+            generateUuid(),
+            $acquisto['id'],
+            $acquisto['user_id'],
+            $currentUser['user_id'],
+            $fasciaCorrente,
             $note,
         ]);
 
-        $newEntries = (int)$purchase['ingressi_rimanenti'] - 1;
-        $stmt = $pdo->prepare('UPDATE acquisti SET ingressi_rimanenti = ? WHERE id = ?');
-        $stmt->execute([$newEntries, $purchase['id']]);
+        $stmt = $pdo->prepare(
+            'UPDATE acquisti
+             SET ingressi_rimanenti = ingressi_rimanenti - 1
+             WHERE id = ? AND ingressi_rimanenti > 0'
+        );
+        $stmt->execute([$acquisto['id']]);
+
+        if ($stmt->rowCount() < 1) {
+            $pdo->rollBack();
+            http_response_code(409);
+            echo json_encode(['success' => false, 'message' => 'Check-in non completato, riprovare']);
+            return;
+        }
+
+        $stmt = $pdo->prepare('SELECT ingressi_rimanenti FROM acquisti WHERE id = ? LIMIT 1');
+        $stmt->execute([$acquisto['id']]);
+        $remaining = (int)($stmt->fetch()['ingressi_rimanenti'] ?? 0);
+
+        logActivity(
+            (string)$currentUser['user_id'],
+            'check_in',
+            'Check-in registrato per ' . (string)$acquisto['nome'] . ' ' . (string)$acquisto['cognome'],
+            'check_ins',
+            (string)$acquisto['id']
+        );
 
         $pdo->commit();
 
-        logActivity((string)$operator['user_id'], 'check_in', 'Check-in registrato per ' . $purchase['nome'] . ' ' . $purchase['cognome'], 'check_ins', $checkInId);
-
-        maybeSendOneEntryReminder((string)$purchase['id'], $newEntries);
-        maybeSendExpiryReminder((string)$purchase['id']);
-
-        sendJson(201, [
+        http_response_code(201);
+        echo json_encode([
             'success' => true,
             'message' => 'Check-in registrato con successo',
-            'ingressi_rimanenti' => $newEntries,
+            'ingressi_rimanenti' => $remaining,
         ]);
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
         error_log('registraCheckIn error: ' . $e->getMessage());
-        sendJson(500, ['success' => false, 'message' => 'Errore registrazione check-in']);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Errore registrazione check-in']);
     }
 }
 
@@ -268,41 +268,20 @@ function getHistory(): void
 
     $currentUser = requireAuth();
 
-    $targetUserId = (string)$currentUser['user_id'];
-    $requestedUserId = sanitizeText((string)($_GET['user_id'] ?? ''), 36);
+    $stmt = $pdo->prepare(
+        'SELECT c.*, a.qr_code, p.nome AS pacchetto_nome,
+                prof.nome AS bagnino_nome, prof.cognome AS bagnino_cognome
+         FROM check_ins c
+         JOIN acquisti a ON c.acquisto_id = a.id
+         JOIN pacchetti p ON a.pacchetto_id = p.id
+         JOIN profili prof ON c.bagnino_id = prof.id
+         WHERE c.user_id = ?
+         ORDER BY c.timestamp DESC
+         LIMIT 100'
+    );
+    $stmt->execute([$currentUser['user_id']]);
 
-    if ($requestedUserId !== '') {
-        try {
-            $staff = requireRole(3);
-            $targetUserId = $requestedUserId;
-        } catch (Throwable $e) {
-            // fallback to own history
-            $targetUserId = (string)$currentUser['user_id'];
-        }
-    }
-
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT c.id, c.timestamp, c.fascia_oraria, c.note,
-                    a.qr_code,
-                    p.nome AS pacchetto_nome,
-                    b.nome AS bagnino_nome,
-                    b.cognome AS bagnino_cognome
-             FROM check_ins c
-             JOIN acquisti a ON a.id = c.acquisto_id
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             JOIN profili b ON b.id = c.bagnino_id
-             WHERE c.user_id = ?
-             ORDER BY c.timestamp DESC
-             LIMIT 250'
-        );
-        $stmt->execute([$targetUserId]);
-
-        sendJson(200, ['success' => true, 'checkins' => $stmt->fetchAll()]);
-    } catch (Throwable $e) {
-        error_log('getHistory error: ' . $e->getMessage());
-        sendJson(500, ['success' => false, 'message' => 'Errore recupero storico check-in']);
-    }
+    echo json_encode(['success' => true, 'checkins' => $stmt->fetchAll()]);
 }
 
 function getTodayCheckIns(): void
@@ -311,134 +290,40 @@ function getTodayCheckIns(): void
 
     requireRole(2);
 
-    try {
-        $stmt = $pdo->query(
-            'SELECT c.id, c.timestamp, c.fascia_oraria,
-                    u.nome AS user_nome, u.cognome AS user_cognome, u.telefono AS user_telefono,
-                    p.nome AS pacchetto_nome
-             FROM check_ins c
-             JOIN profili u ON u.id = c.user_id
-             JOIN acquisti a ON a.id = c.acquisto_id
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             WHERE DATE(c.timestamp) = CURDATE()
-             ORDER BY c.timestamp DESC'
-        );
+    $stmt = $pdo->query(
+        'SELECT c.timestamp, c.fascia_oraria, c.note,
+                prof.nome AS user_nome,
+                prof.cognome AS user_cognome,
+                prof.telefono AS user_telefono,
+                p.nome AS pacchetto_nome
+         FROM check_ins c
+         JOIN profili prof ON c.user_id = prof.id
+         JOIN acquisti a ON c.acquisto_id = a.id
+         JOIN pacchetti p ON a.pacchetto_id = p.id
+         WHERE DATE(c.timestamp) = CURDATE()
+         ORDER BY c.timestamp DESC'
+    );
+    $checkins = $stmt->fetchAll();
 
-        $rows = $stmt->fetchAll();
-
-        $mattina = 0;
-        $pomeriggio = 0;
-        foreach ($rows as $row) {
-            if ($row['fascia_oraria'] === 'mattina') {
-                $mattina++;
-            } else {
-                $pomeriggio++;
-            }
+    $mattina = 0;
+    $pomeriggio = 0;
+    foreach ($checkins as $checkin) {
+        if ((string)$checkin['fascia_oraria'] === 'mattina') {
+            $mattina++;
+        } else {
+            $pomeriggio++;
         }
-
-        sendJson(200, [
-            'success' => true,
-            'checkins' => $rows,
-            'stats' => [
-                'totale' => count($rows),
-                'mattina' => $mattina,
-                'pomeriggio' => $pomeriggio,
-            ],
-        ]);
-    } catch (Throwable $e) {
-        error_log('getTodayCheckIns error: ' . $e->getMessage());
-        sendJson(500, ['success' => false, 'message' => 'Errore caricamento check-in di oggi']);
     }
+
+    echo json_encode([
+        'success' => true,
+        'checkins' => $checkins,
+        'stats' => [
+            'totale' => count($checkins),
+            'mattina' => $mattina,
+            'pomeriggio' => $pomeriggio,
+        ],
+    ]);
 }
 
-function maybeSendOneEntryReminder(string $acquistoId, int $newEntries): void
-{
-    global $pdo;
 
-    if ($newEntries !== 1 || wasNotificationSent($acquistoId, 'one_entry')) {
-        return;
-    }
-
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT a.id, a.data_scadenza, p.nome AS pacchetto_nome,
-                    u.nome, u.cognome, u.email
-             FROM acquisti a
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             JOIN profili u ON u.id = a.user_id
-             WHERE a.id = ?
-             LIMIT 1'
-        );
-        $stmt->execute([$acquistoId]);
-        $row = $stmt->fetch();
-
-        if (!$row) {
-            return;
-        }
-
-        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$row['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
-            . '<p>ti segnaliamo che sul pacchetto <strong>' . htmlspecialchars((string)$row['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '</strong> e rimasto solo <strong>1 ingresso</strong>.</p>'
-            . '<p>Scadenza pacchetto: <strong>' . htmlspecialchars((string)$row['data_scadenza'], ENT_QUOTES, 'UTF-8') . '</strong></p>';
-
-        if (sendTemplateEmail(
-            (string)$row['email'],
-            trim((string)$row['nome'] . ' ' . (string)$row['cognome']),
-            'Avviso ingressi residui',
-            'Ti resta 1 ingresso',
-            $body
-        )) {
-            markNotificationSent($acquistoId, 'one_entry');
-        }
-    } catch (Throwable $e) {
-        error_log('maybeSendOneEntryReminder error: ' . $e->getMessage());
-    }
-}
-
-function maybeSendExpiryReminder(string $acquistoId): void
-{
-    global $pdo;
-
-    if (wasNotificationSent($acquistoId, 'expiry_7days')) {
-        return;
-    }
-
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT a.id, a.data_scadenza, DATEDIFF(a.data_scadenza, CURDATE()) AS giorni_alla_scadenza,
-                    p.nome AS pacchetto_nome,
-                    u.nome, u.cognome, u.email
-             FROM acquisti a
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             JOIN profili u ON u.id = a.user_id
-             WHERE a.id = ? AND a.stato_pagamento = "confirmed" AND a.data_scadenza IS NOT NULL
-             LIMIT 1'
-        );
-        $stmt->execute([$acquistoId]);
-        $row = $stmt->fetch();
-
-        if (!$row) {
-            return;
-        }
-
-        $days = (int)$row['giorni_alla_scadenza'];
-        if ($days < 0 || $days > 7) {
-            return;
-        }
-
-        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$row['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
-            . '<p>il tuo pacchetto <strong>' . htmlspecialchars((string)$row['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '</strong> scadra tra circa <strong>' . $days . ' giorni</strong>.</p>'
-            . '<p>Data scadenza: <strong>' . htmlspecialchars((string)$row['data_scadenza'], ENT_QUOTES, 'UTF-8') . '</strong></p>';
-
-        if (sendTemplateEmail(
-            (string)$row['email'],
-            trim((string)$row['nome'] . ' ' . (string)$row['cognome']),
-            'Promemoria scadenza pacchetto',
-            'Pacchetto in scadenza',
-            $body
-        )) {
-            markNotificationSent($acquistoId, 'expiry_7days');
-        }
-    } catch (Throwable $e) {
-        error_log('maybeSendExpiryReminder error: ' . $e->getMessage());
-    }
-}

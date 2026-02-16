@@ -1,16 +1,14 @@
 <?php
-declare(strict_types=1);
-
 /**
- * Configurazione SMTP locale (XAMPP)
+ * SMTP Gmail configuration (local test/XAMPP).
  *
- * IMPORTANTE:
- * - Solo ambiente locale/test.
- * - Password app Gmail fornita dall'utente.
- * - Inserire la casella Gmail reale in GMAIL_SMTP_USER.
+ * NOTE:
+ * - Use ONLY local/test credentials.
+ * - You can override values with environment variables:
+ *   GMAIL_SMTP_USER, GMAIL_SMTP_APP_PASSWORD, MAIL_ENABLED
  */
 
-$gmailUser = getenv('GMAIL_SMTP_USER') ?: 'supergullo21@gmail.com';
+$gmailUser = getenv('GMAIL_SMTP_USER') ?: 'info@glisqualetti.it';
 $gmailAppPassword = getenv('GMAIL_SMTP_APP_PASSWORD') ?: 'yyvb ckzs zvpi rwdb';
 $mailEnabledEnv = getenv('MAIL_ENABLED');
 $mailEnabled = $mailEnabledEnv === false ? true : filter_var($mailEnabledEnv, FILTER_VALIDATE_BOOLEAN);
@@ -18,9 +16,9 @@ $mailEnabled = $mailEnabledEnv === false ? true : filter_var($mailEnabledEnv, FI
 return [
     'enabled' => $mailEnabled,
     'from_email' => $gmailUser,
-    'from_name' => 'Nuoto Libero',
+    'from_name' => 'Gli Squaletti',
     'admin_email' => $gmailUser,
-    'admin_name' => 'Segreteria Nuoto Libero',
+    'admin_name' => 'Segreteria Gli Squaletti',
     'send_copy_to_sender' => false,
     'smtp' => [
         'host' => 'smtp.gmail.com',
