@@ -238,7 +238,7 @@ CREATE TABLE gallery (
 -- SEED UTENTI TEST (password per tutti: password123)
 -- hash bcrypt (compatibile con password_verify)
 -- =====================================================
-SET @pwd = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+SET @pwd = '$2y$10$bqtEH.g7eB6WRTsQFPXL3.L9hHQezXFzTiVhTH7/id6Tn5E9B10Fq';
 
 INSERT INTO profili (id, ruolo_id, email, password_hash, nome, cognome, telefono, codice_fiscale, attivo, email_verificata)
 VALUES
