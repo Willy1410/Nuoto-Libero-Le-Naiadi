@@ -261,6 +261,14 @@
                                 </label>
 
                                 <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="bonifico">
+                                    <div class="payment-option-content">
+                                        <i class="fas fa-university"></i>
+                                        <span>Bonifico Bancario</span>
+                                    </div>
+                                </label>
+
+                                <label class="payment-option">
                                     <input type="radio" name="paymentMethod" value="instore">
                                     <div class="payment-option-content">
                                         <i class="fas fa-store"></i>
@@ -278,6 +286,32 @@
                                 <div id="card-errors" class="stripe-errors"></div>
                                 <button type="button" id="stripe-submit" class="btn btn-primary btn-block">
                                     <i class="fas fa-lock"></i> Paga con Carta
+                                </button>
+                            </div>
+
+                            <!-- Bank Transfer -->
+                            <div id="bank-transfer-container" class="payment-container" style="display: none;">
+                                <div class="instore-info">
+                                    <i class="fas fa-university"></i>
+                                    <p><strong>Dati bonifico (test locale):</strong><br>
+                                    Intestatario: Nuoto Libero SSD<br>
+                                    IBAN: IT00X0000000000000000000000<br>
+                                    Causale suggerita: Nome Cognome - Pacchetto - Email</p>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="bonificoReference">Riferimento bonifico *</label>
+                                        <input type="text" id="bonificoReference" placeholder="es. CRO/TRN/ID operazione" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="bonificoDate">Data bonifico *</label>
+                                        <input type="date" id="bonificoDate" required>
+                                    </div>
+                                </div>
+
+                                <button type="submit" id="bonifico-submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-university"></i> Ho effettuato il bonifico
                                 </button>
                             </div>
 

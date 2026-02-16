@@ -151,6 +151,8 @@ function initCheckoutForm() {
         
         if (paymentMethod === 'instore') {
             handleInStorePayment();
+        } else if (paymentMethod === 'bonifico') {
+            handleBankTransferNotice();
         }
         // PayPal and Stripe are handled by their respective buttons
     });
@@ -163,6 +165,7 @@ function initPaymentMethods() {
     const paymentOptions = document.querySelectorAll('input[name="paymentMethod"]');
     const paypalContainer = document.getElementById('paypal-button-container');
     const stripeContainer = document.getElementById('stripe-payment-container');
+    const bankTransferContainer = document.getElementById('bank-transfer-container');
     const instoreContainer = document.getElementById('instore-payment-container');
     
     paymentOptions.forEach(option => {
@@ -170,6 +173,7 @@ function initPaymentMethods() {
             // Hide all payment containers
             if (paypalContainer) paypalContainer.style.display = 'none';
             if (stripeContainer) stripeContainer.style.display = 'none';
+            if (bankTransferContainer) bankTransferContainer.style.display = 'none';
             if (instoreContainer) instoreContainer.style.display = 'none';
             
             // Show selected payment container
@@ -188,6 +192,11 @@ function initPaymentMethods() {
                         initStripe();
                     }
                     break;
+                case 'bonifico':
+                    if (bankTransferContainer) {
+                        bankTransferContainer.style.display = 'block';
+                    }
+                    break;
                 case 'instore':
                     if (instoreContainer) {
                         instoreContainer.style.display = 'block';
@@ -196,6 +205,12 @@ function initPaymentMethods() {
             }
         });
     });
+
+    // Show selected method container at first render
+    const selectedOption = document.querySelector('input[name="paymentMethod"]:checked');
+    if (selectedOption) {
+        selectedOption.dispatchEvent(new Event('change'));
+    }
 }
 
 // ===================================
@@ -380,6 +395,74 @@ function handleInStorePayment() {
 }
 
 // ===================================
+// Bank Transfer Notice
+// ===================================
+async function handleBankTransferNotice() {
+    const formData = getFormData();
+
+    if (!validateFormData(formData)) {
+        return;
+    }
+
+    const transferReference = document.getElementById('bonificoReference')?.value.trim();
+    const transferDate = document.getElementById('bonificoDate')?.value;
+    const submitButton = document.getElementById('bonifico-submit');
+
+    if (!transferReference || !transferDate) {
+        window.GliSqualetti.showNotification('Inserisci riferimento e data del bonifico.', 'error');
+        return;
+    }
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio notifica...';
+    }
+
+    try {
+        const response = await fetch('api/bonifico-notify.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                ...formData,
+                package: paymentState.packageName,
+                amount: paymentState.packagePrice,
+                transferReference,
+                transferDate
+            })
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Invio notifica bonifico non riuscito');
+        }
+
+        const orderId = result.orderId || window.GliSqualetti.generateOrderId();
+        const orderData = {
+            orderId,
+            ...formData,
+            package: paymentState.packageName,
+            price: paymentState.packagePrice,
+            paymentMethod: 'bonifico',
+            transferReference,
+            transferDate,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+        };
+
+        redirectToConfirmation(orderId, 'bonifico', orderData);
+    } catch (error) {
+        window.GliSqualetti.showNotification(error.message || 'Errore invio bonifico.', 'error');
+    } finally {
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-university"></i> Ho effettuato il bonifico';
+        }
+    }
+}
+
+// ===================================
 // Payment Success Handler
 // ===================================
 function handlePaymentSuccess(method, transactionId, details) {
@@ -470,9 +553,11 @@ function redirectToConfirmation(orderId, method, orderData) {
                     </div>
                     <h1 style="color: #0077b6; margin-bottom: 1rem;">Ordine Confermato!</h1>
                     <p style="font-size: 1.125rem; margin-bottom: 2rem; color: #6c757d;">
-                        ${method === 'instore' 
-                            ? 'La tua prenotazione è stata registrata con successo.' 
-                            : 'Il tuo pagamento è stato completato con successo.'}
+                        ${method === 'instore'
+                            ? 'La tua prenotazione e stata registrata con successo.'
+                            : method === 'bonifico'
+                                ? 'La tua notifica di bonifico e stata registrata con successo.'
+                                : 'Il tuo pagamento e stato completato con successo.'}
                     </p>
                     
                     <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; text-align: left;">
@@ -497,9 +582,11 @@ function redirectToConfirmation(orderId, method, orderData) {
                     <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid #00a8e8;">
                         <p style="margin: 0; color: #495057;">
                             <i class="fas fa-info-circle" style="color: #00a8e8; margin-right: 0.5rem;"></i>
-                            ${method === 'instore' 
-                                ? 'Presentati in reception con questo codice ordine per completare il pagamento e attivare il pacchetto.' 
-                                : 'Riceverai una email di conferma con tutti i dettagli. Presentati in reception con questo codice per attivare il tuo pacchetto.'}
+                            ${method === 'instore'
+                                ? 'Presentati in reception con questo codice ordine per completare il pagamento e attivare il pacchetto.'
+                                : method === 'bonifico'
+                                    ? 'Abbiamo registrato la tua notifica di bonifico. Lo staff verifichera il pagamento e ti aggiornera via email.'
+                                    : 'Riceverai una email di conferma con tutti i dettagli. Presentati in reception con questo codice per attivare il tuo pacchetto.'}
                         </p>
                     </div>
                     
