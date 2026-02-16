@@ -90,6 +90,10 @@ body {
     overflow-x: hidden;
 }
 
+body.menu-open {
+    overflow: hidden;
+}
+
 img {
     max-width: 100%;
     height: auto;
@@ -1864,13 +1868,17 @@ section {
         top: 0;
         right: -100%;
         width: 300px;
-        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
         background: var(--white);
         flex-direction: column;
         padding: 5rem 2rem 2rem;
         box-shadow: var(--shadow-xl);
         transition: right var(--transition-normal);
         gap: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         z-index: 999;
     }
     
@@ -2288,12 +2296,15 @@ section {
 .btn-login {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: var(--white) !important;
     border-radius: var(--radius-full);
     font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
     transition: var(--transition-fast);
 }
 
@@ -2308,6 +2319,13 @@ section {
 
 /* Responsive */
 @media (max-width: 991px) {
+    .nav-menu .btn-login {
+        display: flex;
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: var(--radius-md);
+    }
+
     .about-content,
     .facility-content {
         grid-template-columns: 1fr;

@@ -34,28 +34,35 @@ function initNavigation() {
     
     // Hamburger menu toggle
     if (hamburger && navMenu) {
+        const setMenuOpen = (isOpen) => {
+            hamburger.classList.toggle('active', isOpen);
+            navMenu.classList.toggle('active', isOpen);
+            document.body.classList.toggle('menu-open', isOpen);
+        };
+
         hamburger.addEventListener('click', function() {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-            document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+            setMenuOpen(!navMenu.classList.contains('active'));
         });
         
         // Close menu when clicking on a link
         const navLinks = navMenu.querySelectorAll('a');
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                document.body.style.overflow = '';
+                setMenuOpen(false);
             });
         });
         
         // Close menu when clicking outside
         document.addEventListener('click', function(event) {
             if (!hamburger.contains(event.target) && !navMenu.contains(event.target)) {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                document.body.style.overflow = '';
+                setMenuOpen(false);
+            }
+        });
+
+        // Ensure mobile menu state is reset on desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 991) {
+                setMenuOpen(false);
             }
         });
     }
