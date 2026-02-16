@@ -65,7 +65,7 @@
     </div>
 
     <script>
-        const API_URL = '/api';
+        const API_URL = 'api';
         const ROLE_REDIRECTS = {
             admin: 'piscina-php/dashboard-admin.html',
             ufficio: 'piscina-php/dashboard-ufficio.html',
@@ -108,7 +108,13 @@
                     },
                     body: JSON.stringify({ email, password })
                 });
-                const data = await response.json();
+                const raw = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(raw);
+                } catch (parseError) {
+                    throw new Error('Risposta non valida dal server. Controlla percorso API e configurazione XAMPP.');
+                }
 
                 if (!response.ok || !data.success) {
                     throw new Error(data.message || 'Credenziali non valide');
@@ -131,3 +137,4 @@
     </script>
 </body>
 </html>
+

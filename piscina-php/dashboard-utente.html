@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -37,7 +37,7 @@
 <body>
     <div class="header">
         <div>
-            <h1>🏊 Dashboard Utente</h1>
+            <h1>ðŸŠ Dashboard Utente</h1>
             <small id="user-name"></small>
         </div>
         <button class="logout-btn" onclick="logout()">Esci</button>
@@ -56,7 +56,7 @@
             </div>
             <div class="stat-box">
                 <h3 id="giorni-validita">-</h3>
-                <p>Giorni Validità</p>
+                <p>Giorni ValiditÃ </p>
             </div>
         </div>
 
@@ -115,7 +115,7 @@
     </div>
 
     <script>
-        const API_URL = '/api';
+        const API_URL = '../api';
         let token = localStorage.getItem('token');
         let user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -165,7 +165,7 @@
                     if (ultimo && ultimo.qr_code) {
                         document.getElementById('qr-section').innerHTML = `
                             <div class="qr-container">
-                                <div class="qr-code">📱</div>
+                                <div class="qr-code">ðŸ“±</div>
                                 <h3>${ultimo.qr_code}</h3>
                                 <p>Mostra questo codice all'ingresso</p>
                                 <button class="btn btn-primary" onclick="downloadQR('${ultimo.qr_code}')">Scarica QR</button>
@@ -237,7 +237,7 @@
                     list.innerHTML = data.pacchetti.map(p => `
                         <div class="doc-item">
                             <div>
-                                <strong>${p.nome}</strong> - €${p.prezzo}
+                                <strong>${p.nome}</strong> - â‚¬${p.prezzo}
                                 <br><small>${p.descrizione}</small>
                             </div>
                             <button class="btn btn-success" onclick="acquistaPacchetto(${p.id}, '${p.nome}')">Acquista</button>
@@ -273,7 +273,7 @@
         }
 
         function downloadQR(code) {
-            alert(`QR Code: ${code}\n\nIn produzione, qui verrà generato un PDF scaricabile.`);
+            alert(`QR Code: ${code}\n\nIn produzione, qui verrÃ  generato un PDF scaricabile.`);
         }
 
         function logout() {
@@ -286,3 +286,4 @@
     </script>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -32,7 +32,7 @@
 <body>
     <div class="header">
         <div>
-            <h1>🏊 Dashboard Bagnino</h1>
+            <h1>ðŸŠ Dashboard Bagnino</h1>
             <small id="user-name"></small>
         </div>
         <button class="btn btn-danger" onclick="logout()">Esci</button>
@@ -57,12 +57,12 @@
 
         <!-- Scanner QR -->
         <div class="card">
-            <h2>📱 Scansiona Codice QR</h2>
+            <h2>ðŸ“± Scansiona Codice QR</h2>
             
             <div id="alert-box"></div>
 
             <div class="scanner-box">
-                <div class="scanner-icon">📷</div>
+                <div class="scanner-icon">ðŸ“·</div>
                 <h3>Inserisci o scansiona il codice QR</h3>
                 <br>
                 <input type="text" id="qr-input" placeholder="PSC-xxxxx-xxxxx" autofocus>
@@ -92,7 +92,7 @@
     </div>
 
     <script>
-        const API_URL = '/api';
+        const API_URL = '../api';
         let token = localStorage.getItem('token');
         let user = JSON.parse(localStorage.getItem('user') || '{}');
         let currentQRData = null;
@@ -124,11 +124,11 @@
 
                 if (data.valid) {
                     currentQRData = data;
-                    showAlert('✅ QR valido! Conferma check-in', 'success');
+                    showAlert('âœ… QR valido! Conferma check-in', 'success');
                     showUserInfo(data);
                 } else {
                     currentQRData = null;
-                    showAlert(`❌ ${data.message}`, 'error');
+                    showAlert(`âŒ ${data.message}`, 'error');
                     document.getElementById('user-info-box').style.display = 'none';
                 }
             } catch (err) {
@@ -142,14 +142,14 @@
             box.style.display = 'block';
             box.innerHTML = `
                 <div class="user-info">
-                    <h3>👤 ${data.utente.nome} ${data.utente.cognome}</h3>
+                    <h3>ðŸ‘¤ ${data.utente.nome} ${data.utente.cognome}</h3>
                     <p><strong>Telefono:</strong> ${data.utente.telefono || '-'}</p>
                     <p><strong>Pacchetto:</strong> ${data.acquisto.pacchetto_nome}</p>
                     <p><strong>Ingressi rimanenti:</strong> ${data.acquisto.ingressi_rimanenti}</p>
                     <p><strong>Scadenza:</strong> ${data.acquisto.data_scadenza || '-'}</p>
                     <br>
-                    <button class="btn btn-success" onclick="confermaCheckIn()">✅ Conferma Check-in</button>
-                    <button class="btn btn-danger" onclick="annullaCheckIn()">❌ Annulla</button>
+                    <button class="btn btn-success" onclick="confermaCheckIn()">âœ… Conferma Check-in</button>
+                    <button class="btn btn-danger" onclick="annullaCheckIn()">âŒ Annulla</button>
                 </div>
             `;
         }
@@ -171,7 +171,7 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    showAlert(`✅ Check-in registrato! Ingressi rimanenti: ${data.ingressi_rimanenti}`, 'success');
+                    showAlert(`âœ… Check-in registrato! Ingressi rimanenti: ${data.ingressi_rimanenti}`, 'success');
                     document.getElementById('qr-input').value = '';
                     document.getElementById('user-info-box').style.display = 'none';
                     currentQRData = null;
@@ -180,7 +180,7 @@
                     // Audio feedback (opzionale)
                     playSound('success');
                 } else {
-                    showAlert(`❌ ${data.message}`, 'error');
+                    showAlert(`âŒ ${data.message}`, 'error');
                 }
             } catch (err) {
                 showAlert('Errore registrazione check-in', 'error');
@@ -253,3 +253,4 @@
     </script>
 </body>
 </html>
+

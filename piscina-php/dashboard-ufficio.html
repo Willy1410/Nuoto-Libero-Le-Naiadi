@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +34,7 @@
 <body>
     <div class="header">
         <div>
-            <h1>📋 Dashboard Ufficio</h1>
+            <h1>ðŸ“‹ Dashboard Ufficio</h1>
             <small id="user-name"></small>
         </div>
         <button class="btn btn-danger" onclick="logout()">Esci</button>
@@ -56,7 +56,7 @@
                 <p>Check-in Oggi</p>
             </div>
             <div class="stat-box">
-                <h3 id="stat-incassi">€0</h3>
+                <h3 id="stat-incassi">â‚¬0</h3>
                 <p>Incassi Mese</p>
             </div>
         </div>
@@ -128,7 +128,7 @@
     </div>
 
     <script>
-        const API_URL = '/api';
+        const API_URL = '../api';
         let token = localStorage.getItem('token');
         let user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -157,7 +157,7 @@
                     document.getElementById('stat-acquisti').textContent = data.stats.acquisti_pending;
                     document.getElementById('stat-documenti').textContent = data.stats.documenti_pending;
                     document.getElementById('stat-checkin').textContent = data.stats.checkin_oggi;
-                    document.getElementById('stat-incassi').textContent = `€${parseFloat(data.stats.incassi_mese).toFixed(2)}`;
+                    document.getElementById('stat-incassi').textContent = `â‚¬${parseFloat(data.stats.incassi_mese).toFixed(2)}`;
                 }
             } catch (err) {
                 console.error(err);
@@ -204,12 +204,12 @@
                     tbody.innerHTML = data.documenti.map(d => `
                         <tr>
                             <td>${d.user_nome} ${d.user_cognome}</td>
-                            <td>${d.tipo_nome} ${d.obbligatorio ? '⭐' : ''}</td>
+                            <td>${d.tipo_nome} ${d.obbligatorio ? 'â­' : ''}</td>
                             <td>${new Date(d.data_caricamento).toLocaleDateString('it-IT')}</td>
                             <td><a href="${d.file_url}" target="_blank">Visualizza</a></td>
                             <td>
-                                <button class="btn btn-success" onclick="revisioneDoc('${d.id}', 'approved')">✓ Approva</button>
-                                <button class="btn btn-danger" onclick="revisioneDoc('${d.id}', 'rejected')">✗ Rifiuta</button>
+                                <button class="btn btn-success" onclick="revisioneDoc('${d.id}', 'approved')">âœ“ Approva</button>
+                                <button class="btn btn-danger" onclick="revisioneDoc('${d.id}', 'rejected')">âœ— Rifiuta</button>
                             </td>
                         </tr>
                     `).join('') || '<tr><td colspan="5">Nessun documento pending</td></tr>';
@@ -290,3 +290,4 @@
     </script>
 </body>
 </html>
+
