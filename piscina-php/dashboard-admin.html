@@ -35,7 +35,7 @@
 <body>
     <div class="header">
         <div>
-            <h1>âš¡ Dashboard Admin</h1>
+            <h1>&#9889; Dashboard Admin</h1>
             <small id="user-name"></small>
         </div>
         <button class="btn btn-danger" onclick="logout()">Esci</button>
@@ -57,7 +57,7 @@
                 <p>Check-in Mese</p>
             </div>
             <div class="stat-box">
-                <h3 id="stat-incassi">â‚¬0</h3>
+                <h3 id="stat-incassi">&euro;0</h3>
                 <p>Incassi Mese</p>
             </div>
             <div class="stat-box">
@@ -83,7 +83,7 @@
 
             <!-- Tab Overview -->
             <div id="tab-overview" class="tab-content active">
-                <h3>ðŸ“Š Ultimi Check-in</h3>
+                <h3>&#128202; Ultimi Check-in</h3>
                 <table class="table">
                     <thead>
                         <tr>
@@ -99,7 +99,7 @@
 
             <!-- Tab Utenti -->
             <div id="tab-users" class="tab-content">
-                <h3>ðŸ‘¥ Gestione Utenti</h3>
+                <h3>&#128101; Gestione Utenti</h3>
                 <button class="btn btn-primary" onclick="alert('Funzione in sviluppo')">+ Nuovo Utente</button>
                 <br><br>
                 <table class="table">
@@ -121,7 +121,7 @@
 
             <!-- Tab Acquisti -->
             <div id="tab-acquisti" class="tab-content">
-                <h3>ðŸ’³ Tutti gli Acquisti</h3>
+                <h3>&#128179; Tutti gli Acquisti</h3>
                 <table class="table">
                     <thead>
                         <tr>
@@ -142,7 +142,7 @@
 
             <!-- Tab Documenti -->
             <div id="tab-documenti" class="tab-content">
-                <h3>ðŸ“„ Gestione Documenti</h3>
+                <h3>&#128196; Gestione Documenti</h3>
                 <p>Documenti da revisionare: <strong id="doc-count">-</strong></p>
                 <table class="table">
                     <thead>
@@ -160,7 +160,7 @@
 
             <!-- Tab Report -->
             <div id="tab-report" class="tab-content">
-                <h3>ðŸ“ˆ Report e Statistiche</h3>
+                <h3>&#128200; Report e Statistiche</h3>
                 <div style="background:#f9fafb; padding:20px; border-radius:10px; margin:20px 0;">
                     <h4>Report Giornaliero</h4>
                     <input type="date" id="report-date" style="padding:10px; border:1px solid #ddd; border-radius:5px;">
@@ -182,13 +182,13 @@
 
             <!-- Tab Export -->
             <div id="tab-export" class="tab-content">
-                <h3>ðŸ“¥ Export Dati</h3>
+                <h3>&#128229; Export Dati</h3>
                 <div style="padding:30px; text-align:center;">
-                    <button class="btn btn-success" onclick="exportUsers()">ðŸ“Š Esporta Utenti (CSV)</button>
+                    <button class="btn btn-success" onclick="exportUsers()">&#128202; Esporta Utenti (CSV)</button>
                     <br><br>
-                    <button class="btn btn-warning" onclick="alert('Funzione in sviluppo')">ðŸ“Š Esporta Acquisti (Excel)</button>
+                    <button class="btn btn-warning" onclick="alert('Funzione in sviluppo')">&#128202; Esporta Acquisti (Excel)</button>
                     <br><br>
-                    <button class="btn btn-primary" onclick="alert('Funzione in sviluppo')">ðŸ“Š Esporta Check-in (Excel)</button>
+                    <button class="btn btn-primary" onclick="alert('Funzione in sviluppo')">&#128202; Esporta Check-in (Excel)</button>
                 </div>
             </div>
         </div>
@@ -227,7 +227,9 @@
                     document.getElementById('stat-utenti').textContent = data.stats.totale_utenti;
                     document.getElementById('stat-checkin-oggi').textContent = data.stats.checkin_oggi;
                     document.getElementById('stat-checkin-mese').textContent = data.stats.checkin_mese;
-                    document.getElementById('stat-incassi').textContent = `â‚¬${parseFloat(data.stats.incassi_mese).toFixed(2)}`;
+                    const incassoMese = Number.parseFloat(data.stats.incassi_mese || 0);
+                    document.getElementById('stat-incassi').textContent =
+                        new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(incassoMese);
                     document.getElementById('stat-pending').textContent = data.stats.acquisti_pending;
                     document.getElementById('stat-scadenza').textContent = data.stats.pacchetti_in_scadenza;
 
@@ -268,8 +270,8 @@
                             <td><span class="badge badge-warning">pending</span></td>
                             <td>
                                 <a href="${d.file_url}" target="_blank" class="btn btn-primary">Apri</a>
-                                <button class="btn btn-success" onclick="approvaDoc('${d.id}')">âœ“</button>
-                                <button class="btn btn-danger" onclick="rifiutaDoc('${d.id}')">âœ—</button>
+                                <button class="btn btn-success" onclick="approvaDoc('${d.id}')">&#10003;</button>
+                                <button class="btn btn-danger" onclick="rifiutaDoc('${d.id}')">&#10007;</button>
                             </td>
                         </tr>
                     `).join('') || '<tr><td colspan="5">Nessun documento pending</td></tr>';
