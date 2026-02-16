@@ -1,4 +1,4 @@
-﻿# CONFIG EMAIL (SMTP locale)
+# CONFIG_EMAIL.md
 
 ## File coinvolti
 - `config/mail.php`
@@ -7,42 +7,27 @@
 - `api/bonifico-notify.php`
 - `logs/mail.log`
 
-## 1) Configura `config/mail.php`
-Imposta almeno:
+## Configurazione SMTP Gmail (test locale)
+In `config/mail.php` è già impostato:
+- host: `smtp.gmail.com`
+- port: `587`
+- encryption: `tls`
+- app password test: `yyvb ckzs zvpi rwdb`
 
-```php
-return [
-    'enabled' => true,
-    'from_email' => 'noreply@nuotolibero.local',
-    'from_name' => 'Nuoto Libero (Test Locale)',
-    'admin_email' => 'admin@nuotolibero.local',
-    'admin_name' => 'Admin Nuoto Libero',
-    'smtp' => [
-        'host' => 'smtp.mailtrap.io',
-        'port' => 2525,
-        'username' => 'TUO_SMTP_USERNAME',
-        'password' => 'TUO_SMTP_PASSWORD',
-        'encryption' => 'tls',
-        'auth' => true,
-        'timeout' => 10,
-    ],
-];
+Parametro da impostare:
+- variabile ambiente `GMAIL_SMTP_USER` (la casella Gmail reale)
+
+Esempio PowerShell:
+```powershell
+$env:GMAIL_SMTP_USER='tuacasella@gmail.com'
 ```
 
-## 2) Endpoint che usano la mail
-- `POST /api/contact.php`
-- `POST /api/bonifico-notify.php`
+## Test invio
+1. Compila form in `contatti.html`.
+2. Invia notifica bonifico da `pacchetti.html` (sezione bonifico).
+3. Verifica `logs/mail.log`.
 
-## 3) Come testare
-1. Apri `contatti.html` e invia il form.
-2. Apri `pacchetti.html`, scegli bonifico, invia notifica.
-3. Controlla `logs/mail.log`.
-
-## 4) Comportamento se SMTP non configurato
-- Risposta API con messaggio esplicito (503 o 500 gestito)
-- Evento scritto in `logs/mail.log`
-
-## 5) Sicurezza minima locale
-- Non inserire credenziali reali produzione.
-- Non committare segreti reali.
-- Usa account SMTP sandbox/test.
+## Note sicurezza
+- solo ambiente locale
+- non usare credenziali live in repository pubblici
+- non condividere app password di produzione

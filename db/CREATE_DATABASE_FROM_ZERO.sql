@@ -1,8 +1,6 @@
 -- =====================================================
--- Nuoto Libero - Database completo da zero (XAMPP)
--- =====================================================
--- Compatibile con MySQL 8.x e MariaDB 10.x
--- Ambiente: locale/test
+-- Nuoto Libero - CREATE DATABASE FROM ZERO
+-- Compatibile con XAMPP (MySQL/MariaDB)
 -- =====================================================
 
 DROP DATABASE IF EXISTS nuoto_libero;
@@ -18,19 +16,20 @@ USE nuoto_libero;
 CREATE TABLE ruoli (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(50) NOT NULL UNIQUE,
-  descrizione TEXT,
-  livello INT NOT NULL UNIQUE,
+  descrizione TEXT NULL,
+  livello INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO ruoli (id, nome, descrizione, livello) VALUES
-  (1, 'utente', 'Utente base', 1),
-  (2, 'bagnino', 'Gestione check-in QR', 2),
-  (3, 'ufficio', 'Gestione documenti e pagamenti', 3),
-  (4, 'admin', 'Accesso completo', 4);
+  (1, 'utente', 'Utente cliente', 1),
+  (2, 'bagnino', 'Scanner QR e check-in', 2),
+  (3, 'ufficio', 'Segreteria pagamenti/documenti', 3),
+  (4, 'segreteria', 'Alias segreteria', 3),
+  (5, 'admin', 'Accesso completo', 5);
 
-ALTER TABLE ruoli AUTO_INCREMENT = 5;
+ALTER TABLE ruoli AUTO_INCREMENT = 6;
 
 -- =====================================================
 -- 2) PROFILI
@@ -42,7 +41,7 @@ CREATE TABLE profili (
   password_hash VARCHAR(255) NOT NULL,
   nome VARCHAR(100) NOT NULL,
   cognome VARCHAR(100) NOT NULL,
-  telefono VARCHAR(30),
+  telefono VARCHAR(30) NULL,
   data_nascita DATE NULL,
   indirizzo VARCHAR(255) NULL,
   citta VARCHAR(100) NULL,
@@ -123,14 +122,15 @@ CREATE TABLE pacchetti (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO pacchetti (id, nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, ordine) VALUES
-  (1, 'Ingresso Singolo', '1 ingresso, validita 30 giorni', 1, 12.00, 30, 1, 1),
-  (2, 'Pacchetto 10 Ingressi', '10 ingressi, validita 180 giorni', 10, 100.00, 180, 1, 2),
-  (3, 'Promo Iscrizione', 'Pacchetto promo, validita estesa', 3, 30.00, 240, 1, 3);
+  (1, 'Ingresso Singolo', '1 ingresso con validita 30 giorni', 1, 12.00, 30, 1, 1),
+  (2, 'Pacchetto 10 Ingressi', '10 ingressi validi 3 mesi', 10, 100.00, 90, 1, 2),
+  (3, 'Pacchetto 20 Ingressi', '20 ingressi validi 3 mesi', 20, 180.00, 90, 1, 3),
+  (4, 'Promo 3 Ingressi', 'Pacchetto promozionale valido 3 mesi', 3, 30.00, 90, 1, 4);
 
-ALTER TABLE pacchetti AUTO_INCREMENT = 4;
+ALTER TABLE pacchetti AUTO_INCREMENT = 5;
 
 -- =====================================================
--- 6) ACQUISTI
+-- 6) ACQUISTI / PAGAMENTI
 -- =====================================================
 CREATE TABLE acquisti (
   id CHAR(36) PRIMARY KEY,
@@ -157,6 +157,7 @@ CREATE TABLE acquisti (
 CREATE INDEX idx_acquisti_user ON acquisti(user_id);
 CREATE INDEX idx_acquisti_stato ON acquisti(stato_pagamento);
 CREATE INDEX idx_acquisti_scadenza ON acquisti(data_scadenza);
+CREATE INDEX idx_acquisti_conferma ON acquisti(data_conferma);
 
 -- =====================================================
 -- 7) CHECK-INS
@@ -177,7 +178,7 @@ CREATE TABLE check_ins (
 
 CREATE INDEX idx_checkins_user ON check_ins(user_id);
 CREATE INDEX idx_checkins_timestamp ON check_ins(timestamp);
-CREATE INDEX idx_checkins_fascia ON check_ins(fascia_oraria);
+CREATE INDEX idx_checkins_acquisto_data ON check_ins(acquisto_id, timestamp);
 
 -- =====================================================
 -- 8) LOG ATTIVITA
@@ -199,7 +200,37 @@ CREATE INDEX idx_activity_user ON activity_log(user_id);
 CREATE INDEX idx_activity_timestamp ON activity_log(timestamp);
 
 -- =====================================================
--- 9) CONTENUTI CMS (supporto)
+-- 9) TOKEN RESET PASSWORD
+-- =====================================================
+CREATE TABLE password_reset_tokens (
+  id CHAR(36) PRIMARY KEY,
+  user_id CHAR(36) NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  requested_ip VARCHAR(45) NULL,
+  requested_user_agent TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES profili(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_reset_user ON password_reset_tokens(user_id);
+CREATE INDEX idx_reset_expires ON password_reset_tokens(expires_at);
+
+-- =====================================================
+-- 10) LOG NOTIFICHE EMAIL
+-- =====================================================
+CREATE TABLE notifiche_email (
+  id CHAR(36) PRIMARY KEY,
+  acquisto_id CHAR(36) NOT NULL,
+  tipo ENUM('one_entry', 'expiry_7days') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_notifiche_acquisto FOREIGN KEY (acquisto_id) REFERENCES acquisti(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_notifica_tipo (acquisto_id, tipo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 11) CONTENUTI CMS (supporto)
 -- =====================================================
 CREATE TABLE contenuti_sito (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -216,7 +247,7 @@ CREATE TABLE contenuti_sito (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 10) GALLERY (supporto)
+-- 12) GALLERY (supporto)
 -- =====================================================
 CREATE TABLE gallery (
   id CHAR(36) PRIMARY KEY,
@@ -236,13 +267,12 @@ CREATE TABLE gallery (
 
 -- =====================================================
 -- SEED UTENTI TEST (password per tutti: password123)
--- hash bcrypt (compatibile con password_verify)
 -- =====================================================
-SET @pwd = '$2y$10$bqtEH.g7eB6WRTsQFPXL3.L9hHQezXFzTiVhTH7/id6Tn5E9B10Fq';
+SET @pwd = '$2y$10$qxUYrqnR/jLXoRjbhDGHpOg.v76nOqTvlr18fTrfC5cE1ZvMAmymC';
 
 INSERT INTO profili (id, ruolo_id, email, password_hash, nome, cognome, telefono, codice_fiscale, attivo, email_verificata)
 VALUES
-  (UUID(), 4, 'admin@piscina.it', @pwd, 'Andrea', 'Admin', '3331234567', 'ADMNDR85M01H501Z', 1, 1),
+  (UUID(), 5, 'admin@piscina.it', @pwd, 'Andrea', 'Admin', '3331234567', 'ADMNDR85M01H501Z', 1, 1),
   (UUID(), 3, 'ufficio@piscina.it', @pwd, 'Sofia', 'Rossi', '3339876543', 'RSSSFO90A41H501Y', 1, 1),
   (UUID(), 2, 'bagnino@piscina.it', @pwd, 'Marco', 'Bianchi', '3335551234', 'BNCMRC88H15H501X', 1, 1),
   (UUID(), 1, 'mario.rossi@email.it', @pwd, 'Mario', 'Rossi', '3331111111', 'RSSMRA85C15H501A', 1, 1),
@@ -263,14 +293,14 @@ INSERT INTO acquisti (
   id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento,
   qr_code, ingressi_rimanenti, data_scadenza, confermato_da, data_conferma, importo_pagato
 ) VALUES
-  (UUID(), @mario_id, 2, 'bonifico', 'confirmed', 'BON-MARIO-001', 'Pagamento test', 'PSC-MARIO-001', 8, DATE_ADD(CURDATE(), INTERVAL 150 DAY), @ufficio_id, NOW(), 100.00),
-  (UUID(), @laura_id, 2, 'contanti', 'confirmed', 'CASH-LAURA-002', 'Pagamento test', 'PSC-LAURA-002', 2, DATE_ADD(CURDATE(), INTERVAL 25 DAY), @ufficio_id, NOW(), 100.00),
-  (UUID(), @giuseppe_id, 2, 'bonifico', 'confirmed', 'BON-GIUSEPPE-003', 'Pacchetto esaurito', 'PSC-GIUSEPPE-003', 0, DATE_SUB(CURDATE(), INTERVAL 10 DAY), @ufficio_id, DATE_SUB(NOW(), INTERVAL 180 DAY), 100.00),
-  (UUID(), @anna_id, 3, 'contanti', 'confirmed', 'CASH-ANNA-004', 'Promo attiva', 'PSC-ANNA-004', 3, DATE_ADD(CURDATE(), INTERVAL 170 DAY), @ufficio_id, NOW(), 30.00),
-  (UUID(), @anna_id, 2, 'bonifico', 'pending', 'BONIFICO-TEST-20260216', 'In attesa verifica contabile', NULL, 10, NULL, NULL, NULL, 100.00);
+  (UUID(), @mario_id, 2, 'bonifico', 'confirmed', 'BON-MARIO-001', 'Pagamento test', 'NL-MARIO-001', 8, DATE_ADD(CURDATE(), INTERVAL 70 DAY), @ufficio_id, NOW(), 100.00),
+  (UUID(), @laura_id, 2, 'contanti', 'confirmed', 'CASH-LAURA-002', 'Pagamento test', 'NL-LAURA-002', 1, DATE_ADD(CURDATE(), INTERVAL 7 DAY), @ufficio_id, NOW(), 100.00),
+  (UUID(), @giuseppe_id, 2, 'bonifico', 'confirmed', 'BON-GIUSEPPE-003', 'Pacchetto esaurito', 'NL-GIUSEPPE-003', 0, DATE_SUB(CURDATE(), INTERVAL 5 DAY), @ufficio_id, DATE_SUB(NOW(), INTERVAL 120 DAY), 100.00),
+  (UUID(), @anna_id, 4, 'contanti', 'confirmed', 'CASH-ANNA-004', 'Promo attiva', 'NL-ANNA-004', 3, DATE_ADD(CURDATE(), INTERVAL 75 DAY), @ufficio_id, NOW(), 30.00),
+  (UUID(), @anna_id, 2, 'bonifico', 'pending', 'BONIFICO-TEST-20260216', 'In attesa verifica contabile', 'NL-ANNA-PENDING', 10, DATE_ADD(CURDATE(), INTERVAL 90 DAY), NULL, NULL, 100.00);
 
-SET @acq_mario = (SELECT id FROM acquisti WHERE user_id = @mario_id AND qr_code = 'PSC-MARIO-001' LIMIT 1);
-SET @acq_laura = (SELECT id FROM acquisti WHERE user_id = @laura_id AND qr_code = 'PSC-LAURA-002' LIMIT 1);
+SET @acq_mario = (SELECT id FROM acquisti WHERE user_id = @mario_id AND qr_code = 'NL-MARIO-001' LIMIT 1);
+SET @acq_laura = (SELECT id FROM acquisti WHERE user_id = @laura_id AND qr_code = 'NL-LAURA-002' LIMIT 1);
 
 -- Check-in seed
 INSERT INTO check_ins (id, acquisto_id, user_id, bagnino_id, fascia_oraria, note, timestamp)
@@ -290,7 +320,7 @@ VALUES
 INSERT INTO contenuti_sito (sezione, chiave, valore_testo, tipo_campo, ordine) VALUES
   ('homepage', 'titolo_hero', 'Nuoto Libero alla Piscina Naiadi', 'text', 1),
   ('contatti', 'email', 'info@glisqualetti.it', 'text', 2),
-  ('contatti', 'telefono', '123 456 789', 'text', 3);
+  ('contatti', 'telefono', '+39 320 300 9040', 'text', 3);
 
 -- Verifica finale
 SELECT 'Database nuoto_libero creato con successo' AS esito;

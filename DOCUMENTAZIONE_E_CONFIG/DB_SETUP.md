@@ -1,18 +1,16 @@
-﻿# DB SETUP (Riferimento rapido)
+# DB_SETUP.md
 
 Per setup database completo usa:
 - `db/CREATE_DATABASE_FROM_ZERO.sql`
 
-Istruzioni complete:
+Guida dettagliata:
 - `db/README_DB.md`
 
-## Passi minimi
-1. Apri `http://localhost/phpmyadmin`.
-2. Incolla/esegui `db/CREATE_DATABASE_FROM_ZERO.sql`.
-3. Verifica in `api/config.php`:
-   - host/user/pass/db coerenti con il tuo XAMPP
-4. Testa login da `login.html` con credenziali test.
+Passi rapidi:
+1. Apri `http://localhost/phpmyadmin`
+2. Esegui tutto `db/CREATE_DATABASE_FROM_ZERO.sql`
+3. Verifica connessione in `api/config.php`
+4. Testa login da `login.html`
 
-## Credenziali test
-Vedi file:
-- `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`
+Utenti test:
+- vedi `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`

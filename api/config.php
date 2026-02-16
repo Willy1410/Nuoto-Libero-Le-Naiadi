@@ -1,7 +1,8 @@
 <?php
+declare(strict_types=1);
+
 /**
- * Shared API configuration (DB, auth, mail, helpers)
- * File: api/config.php
+ * Shared API bootstrap: logging, DB, auth, mail, helpers.
  */
 
 use PHPMailer\PHPMailer\Exception as MailerException;
@@ -9,19 +10,59 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
 
 date_default_timezone_set('Europe/Rome');
+mb_internal_encoding('UTF-8');
 
-$allowedOrigins = [
-    'http://localhost',
-    'http://127.0.0.1',
-    'http://localhost:8080',
-];
-$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($requestOrigin && in_array($requestOrigin, $allowedOrigins, true)) {
+const PROJECT_ROOT = __DIR__ . '/..';
+const LOG_DIR = PROJECT_ROOT . '/logs';
+const ERROR_LOG_PATH = LOG_DIR . '/error.log';
+const MAIL_LOG_PATH = LOG_DIR . '/mail.log';
+
+if (!is_dir(LOG_DIR)) {
+    mkdir(LOG_DIR, 0755, true);
+}
+if (!file_exists(ERROR_LOG_PATH)) {
+    touch(ERROR_LOG_PATH);
+}
+if (!file_exists(MAIL_LOG_PATH)) {
+    touch(MAIL_LOG_PATH);
+}
+
+ini_set('error_log', ERROR_LOG_PATH);
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        ini_set('session.cookie_secure', '1');
+    }
+    session_start();
+}
+
+function getAppBaseUrl(): string
+{
+    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+
+    $basePath = preg_replace('#/api/[^/]+$#', '', $scriptName);
+    if (!is_string($basePath)) {
+        $basePath = '';
+    }
+
+    return rtrim($scheme . '://' . $host . $basePath, '/');
+}
+
+const APP_BASE_URL = '';
+
+$allowedOriginsPattern = '#^https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$#i';
+$requestOrigin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
+if ($requestOrigin !== '' && preg_match($allowedOriginsPattern, $requestOrigin)) {
     header('Access-Control-Allow-Origin: ' . $requestOrigin);
-} elseif (!$requestOrigin) {
+} else {
     header('Access-Control-Allow-Origin: http://localhost');
 }
 
@@ -46,15 +87,14 @@ define('JWT_EXPIRATION', 86400);
 
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);
 define('UPLOAD_ALLOWED_TYPES', ['pdf', 'jpg', 'jpeg', 'png']);
-define('UPLOAD_DIR', __DIR__ . '/../uploads/');
-define('MAIL_LOG_PATH', __DIR__ . '/../logs/mail.log');
+define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
 
-$autoloadPath = __DIR__ . '/../vendor/autoload.php';
+$autoloadPath = PROJECT_ROOT . '/vendor/autoload.php';
 if (file_exists($autoloadPath)) {
     require_once $autoloadPath;
 }
 
-$mailConfigPath = __DIR__ . '/../config/mail.php';
+$mailConfigPath = PROJECT_ROOT . '/config/mail.php';
 $MAIL_CONFIG = [
     'enabled' => false,
     'from_email' => 'noreply@nuotolibero.local',
@@ -81,20 +121,77 @@ if (file_exists($mailConfigPath)) {
 
 try {
     $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
-    $options = [
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-    ];
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-} catch (PDOException $e) {
+    ]);
+    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+} catch (Throwable $e) {
     error_log('DB connection error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'success' => false,
         'message' => 'Errore connessione database',
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
+}
+
+function sendJson(int $statusCode, array $payload): void
+{
+    http_response_code($statusCode);
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
+function getJsonInput(): array
+{
+    $raw = file_get_contents('php://input');
+    if (!is_string($raw) || trim($raw) === '') {
+        return [];
+    }
+
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+function sanitizeInput($input)
+{
+    if (is_array($input)) {
+        $clean = [];
+        foreach ($input as $key => $value) {
+            $clean[$key] = sanitizeInput($value);
+        }
+        return $clean;
+    }
+
+    $value = trim((string)$input);
+    $value = preg_replace('/[\x00-\x1F\x7F]/u', '', $value);
+    return is_string($value) ? $value : '';
+}
+
+function sanitizeText(string $value, int $maxLength = 1000): string
+{
+    $clean = sanitizeInput($value);
+    if (mb_strlen($clean) > $maxLength) {
+        return mb_substr($clean, 0, $maxLength);
+    }
+    return $clean;
+}
+
+function validateEmail(string $email): bool
+{
+    return (bool)filter_var($email, FILTER_VALIDATE_EMAIL);
+}
+
+function validateCodiceFiscale(string $cf): bool
+{
+    return (bool)preg_match('/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/', strtoupper($cf));
+}
+
+function validatePasswordStrength(string $password): bool
+{
+    return strlen($password) >= 8;
 }
 
 function base64UrlEncode(string $value): string
@@ -109,16 +206,18 @@ function base64UrlDecode(string $value): string
         $value .= str_repeat('=', 4 - $padding);
     }
 
-    return base64_decode(strtr($value, '-_', '+/')) ?: '';
+    $decoded = base64_decode(strtr($value, '-_', '+/'), true);
+    return is_string($decoded) ? $decoded : '';
 }
 
-function generateJWT(string $userId, string $email, string $role): string
+function generateJWT(string $userId, string $email, string $role, int $roleLevel): string
 {
     $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
     $payload = json_encode([
         'user_id' => $userId,
         'email' => $email,
         'role' => $role,
+        'role_level' => $roleLevel,
         'iat' => time(),
         'exp' => time() + JWT_EXPIRATION,
     ]);
@@ -143,13 +242,14 @@ function verifyJWT(?string $token): ?array
     }
 
     [$header, $payload, $signatureProvided] = $tokenParts;
-    if (!$header || !$payload || !$signatureProvided) {
+    if ($header === '' || $payload === '' || $signatureProvided === '') {
         return null;
     }
 
     $expectedSignature = base64UrlEncode(
         hash_hmac('sha256', $header . '.' . $payload, JWT_SECRET, true)
     );
+
     if (!hash_equals($expectedSignature, $signatureProvided)) {
         return null;
     }
@@ -169,15 +269,17 @@ function verifyJWT(?string $token): ?array
 function getAuthorizationHeader(): string
 {
     $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
-    if ($authHeader) {
+    if (is_string($authHeader) && $authHeader !== '') {
         return $authHeader;
     }
 
     if (function_exists('getallheaders')) {
         $headers = getallheaders();
-        foreach ($headers as $key => $value) {
-            if (strtolower($key) === 'authorization') {
-                return (string)$value;
+        if (is_array($headers)) {
+            foreach ($headers as $key => $value) {
+                if (strtolower((string)$key) === 'authorization') {
+                    return (string)$value;
+                }
             }
         }
     }
@@ -188,24 +290,18 @@ function getAuthorizationHeader(): string
 function getCurrentUser(): ?array
 {
     $authHeader = getAuthorizationHeader();
-    if (!$authHeader) {
-        return null;
-    }
-
     if (!preg_match('/Bearer\s+(.+)/i', $authHeader, $matches)) {
         return null;
     }
 
-    return verifyJWT(trim($matches[1]));
+    return verifyJWT(trim((string)$matches[1]));
 }
 
 function requireAuth(): array
 {
     $user = getCurrentUser();
     if (!$user) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Non autenticato']);
-        exit();
+        sendJson(401, ['success' => false, 'message' => 'Non autenticato']);
     }
 
     return $user;
@@ -214,36 +310,41 @@ function requireAuth(): array
 function requireRole(int $minLevel): array
 {
     global $pdo;
+
     $user = requireAuth();
 
     $stmt = $pdo->prepare(
-        'SELECT r.livello FROM profili p JOIN ruoli r ON p.ruolo_id = r.id WHERE p.id = ?'
+        'SELECT r.nome, r.livello
+         FROM profili p
+         JOIN ruoli r ON p.ruolo_id = r.id
+         WHERE p.id = ? AND p.attivo = 1'
     );
     $stmt->execute([$user['user_id']]);
     $profile = $stmt->fetch();
 
     if (!$profile || (int)$profile['livello'] < $minLevel) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Accesso negato']);
-        exit();
+        sendJson(403, ['success' => false, 'message' => 'Accesso negato']);
     }
+
+    $user['role'] = $profile['nome'];
+    $user['role_level'] = (int)$profile['livello'];
 
     return $user;
 }
 
-function logActivity(?string $userId, string $azione, string $descrizione = '', string $tabella = '', string $recordId = ''): void
+function logActivity(?string $userId, string $action, string $description = '', string $table = '', string $recordId = ''): void
 {
     global $pdo;
 
     try {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        $userAgent = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
 
         $stmt = $pdo->prepare(
             'INSERT INTO activity_log (user_id, azione, descrizione, tabella_riferimento, record_id, ip_address, user_agent)
              VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$userId, $azione, $descrizione, $tabella, $recordId, $ip, $userAgent]);
+        $stmt->execute([$userId, $action, $description, $table, $recordId, $ip, $userAgent]);
     } catch (Throwable $e) {
         error_log('Activity log write failed: ' . $e->getMessage());
     }
@@ -260,18 +361,30 @@ function generateUuid(): string
 
 function generateQRCode(string $acquistoId): string
 {
-    return 'PSC-' . substr(str_replace('-', '', $acquistoId), 0, 8) . '-' . time();
+    $raw = strtoupper(str_replace('-', '', $acquistoId));
+    return 'NL-' . substr($raw, 0, 12);
+}
+
+function getFasciaOraria(string $time): string
+{
+    $hour = (int)date('H', strtotime($time));
+    return $hour < 14 ? 'mattina' : 'pomeriggio';
 }
 
 function logMailEvent(string $level, string $message, array $context = []): void
 {
-    $sanitized = [];
+    $level = strtolower($level);
+    if (!in_array($level, ['warning', 'error'], true)) {
+        return;
+    }
+
+    $safeContext = [];
     foreach ($context as $key => $value) {
         if (preg_match('/pass|secret|token|api[_-]?key/i', (string)$key)) {
-            $sanitized[$key] = '***';
-            continue;
+            $safeContext[$key] = '***';
+        } else {
+            $safeContext[$key] = is_scalar($value) || $value === null ? $value : '[complex]';
         }
-        $sanitized[$key] = is_scalar($value) || $value === null ? $value : '[complex]';
     }
 
     $line = sprintf(
@@ -279,13 +392,8 @@ function logMailEvent(string $level, string $message, array $context = []): void
         date('Y-m-d H:i:s'),
         strtoupper($level),
         $message,
-        $sanitized ? ' | ' . json_encode($sanitized, JSON_UNESCAPED_UNICODE) : ''
+        $safeContext ? ' | ' . json_encode($safeContext, JSON_UNESCAPED_UNICODE) : ''
     );
-
-    $logDir = dirname(MAIL_LOG_PATH);
-    if (!is_dir($logDir)) {
-        mkdir($logDir, 0755, true);
-    }
 
     file_put_contents(MAIL_LOG_PATH, $line, FILE_APPEND);
 }
@@ -300,15 +408,10 @@ function isMailConfigured(): bool
 
     $smtp = $MAIL_CONFIG['smtp'] ?? [];
     $host = trim((string)($smtp['host'] ?? ''));
-    $auth = !empty($smtp['auth']);
     $username = trim((string)($smtp['username'] ?? ''));
     $password = trim((string)($smtp['password'] ?? ''));
 
-    if ($host === '') {
-        return false;
-    }
-
-    if ($auth && ($username === '' || $password === '' || str_contains($username, 'YOUR_') || str_contains($password, 'YOUR_'))) {
+    if ($host === '' || $username === '' || $password === '') {
         return false;
     }
 
@@ -320,7 +423,7 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
     global $MAIL_CONFIG;
 
     if (!isMailConfigured()) {
-        logMailEvent('warning', 'SMTP not configured, email not sent', [
+        logMailEvent('warning', 'SMTP non configurato, email non inviata', [
             'to' => $to,
             'subject' => $subject,
         ]);
@@ -328,7 +431,7 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
     }
 
     if (!class_exists(PHPMailer::class)) {
-        logMailEvent('error', 'PHPMailer not available. Run composer install.', [
+        logMailEvent('error', 'PHPMailer non disponibile. Esegui composer install.', [
             'to' => $to,
             'subject' => $subject,
         ]);
@@ -345,7 +448,7 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
         $mail->SMTPAuth = !empty($smtp['auth']);
         $mail->Username = (string)($smtp['username'] ?? '');
         $mail->Password = (string)($smtp['password'] ?? '');
-        $mail->Timeout = (int)($smtp['timeout'] ?? 10);
+        $mail->Timeout = (int)($smtp['timeout'] ?? 15);
 
         $encryption = strtolower((string)($smtp['encryption'] ?? ''));
         if ($encryption === 'tls') {
@@ -361,16 +464,11 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
         $mail->isHTML(true);
         $mail->Body = $htmlContent;
         $mail->AltBody = $textContent !== '' ? $textContent : strip_tags($htmlContent);
-
         $mail->send();
-        logMailEvent('info', 'Email sent', [
-            'to' => $to,
-            'subject' => $subject,
-        ]);
 
         return true;
     } catch (MailerException $e) {
-        logMailEvent('error', 'Email send failed', [
+        logMailEvent('error', 'Invio email fallito', [
             'to' => $to,
             'subject' => $subject,
             'error' => $e->getMessage(),
@@ -379,27 +477,107 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
     }
 }
 
-function validateEmail(string $email): bool
+function buildEmailTemplate(string $title, string $bodyHtml, string $previewText = ''): string
 {
-    return (bool)filter_var($email, FILTER_VALIDATE_EMAIL);
+    $preview = $previewText !== '' ? $previewText : strip_tags($title);
+
+    return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>'
+        . '<body style="margin:0;padding:0;background:#f8f9fa;font-family:Arial,sans-serif;color:#1f2937;">'
+        . '<div style="max-width:640px;margin:0 auto;padding:24px;">'
+        . '<div style="background:linear-gradient(135deg,#00a8e8,#0077b6);padding:22px;border-radius:12px 12px 0 0;color:#fff;">'
+        . '<h1 style="margin:0;font-size:24px;">Nuoto Libero</h1>'
+        . '<p style="margin:8px 0 0 0;opacity:.92;">' . htmlspecialchars($preview, ENT_QUOTES, 'UTF-8') . '</p>'
+        . '</div>'
+        . '<div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none;">'
+        . '<h2 style="margin-top:0;color:#0077b6;font-size:20px;">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2>'
+        . $bodyHtml
+        . '<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">'
+        . '<p style="margin:0;font-size:12px;color:#6b7280;">Messaggio automatico di test locale - Nuoto Libero</p>'
+        . '</div></div></body></html>';
 }
 
-function validateCodiceFiscale(string $cf): bool
+function sendTemplateEmail(string $to, string $name, string $subject, string $title, string $bodyHtml, string $previewText = ''): bool
 {
-    return (bool)preg_match('/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/', strtoupper($cf));
+    $html = buildEmailTemplate($title, $bodyHtml, $previewText);
+    return sendEmail($to, $name, $subject, $html);
 }
 
-function getFasciaOraria(string $ora): string
+function wasNotificationSent(string $acquistoId, string $tipo): bool
 {
-    $hour = (int)date('H', strtotime($ora));
-    return ($hour < 14) ? 'mattina' : 'pomeriggio';
+    global $pdo;
+
+    $stmt = $pdo->prepare('SELECT id FROM notifiche_email WHERE acquisto_id = ? AND tipo = ? LIMIT 1');
+    $stmt->execute([$acquistoId, $tipo]);
+    return (bool)$stmt->fetch();
 }
 
-function sanitizeInput($input)
+function markNotificationSent(string $acquistoId, string $tipo): void
 {
-    if (is_array($input)) {
-        return array_map('sanitizeInput', $input);
+    global $pdo;
+
+    $stmt = $pdo->prepare('INSERT IGNORE INTO notifiche_email (id, acquisto_id, tipo) VALUES (?, ?, ?)');
+    $stmt->execute([generateUuid(), $acquistoId, $tipo]);
+}
+
+function localAppBaseUrl(): string
+{
+    $fromEnv = getenv('APP_BASE_URL');
+    if (is_string($fromEnv) && trim($fromEnv) !== '') {
+        return rtrim($fromEnv, '/');
     }
 
-    return htmlspecialchars(strip_tags(trim((string)$input)), ENT_QUOTES, 'UTF-8');
+    return getAppBaseUrl();
+}
+
+function dispatchPendingExpiryReminders(?string $userId = null): void
+{
+    global $pdo;
+
+    try {
+        $sql = 'SELECT a.id, a.data_scadenza, DATEDIFF(a.data_scadenza, CURDATE()) AS giorni_alla_scadenza,
+                       p.nome AS pacchetto_nome,
+                       u.nome, u.cognome, u.email
+                FROM acquisti a
+                JOIN pacchetti p ON p.id = a.pacchetto_id
+                JOIN profili u ON u.id = a.user_id
+                WHERE a.stato_pagamento = "confirmed"
+                  AND a.data_scadenza IS NOT NULL
+                  AND DATEDIFF(a.data_scadenza, CURDATE()) BETWEEN 0 AND 7';
+
+        $params = [];
+        if ($userId !== null && $userId !== '') {
+            $sql .= ' AND a.user_id = ?';
+            $params[] = $userId;
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as $row) {
+            $purchaseId = (string)$row['id'];
+            if (wasNotificationSent($purchaseId, 'expiry_7days')) {
+                continue;
+            }
+
+            $days = (int)$row['giorni_alla_scadenza'];
+            $body = '<p>Ciao <strong>' . htmlspecialchars((string)$row['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+                . '<p>il tuo pacchetto <strong>' . htmlspecialchars((string)$row['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '</strong> scadra tra circa <strong>' . $days . ' giorni</strong>.</p>'
+                . '<p>Data scadenza: <strong>' . htmlspecialchars((string)$row['data_scadenza'], ENT_QUOTES, 'UTF-8') . '</strong></p>';
+
+            $sent = sendTemplateEmail(
+                (string)$row['email'],
+                trim((string)$row['nome'] . ' ' . (string)$row['cognome']),
+                'Promemoria scadenza pacchetto',
+                'Pacchetto in scadenza',
+                $body
+            );
+
+            if ($sent) {
+                markNotificationSent($purchaseId, 'expiry_7days');
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('dispatchPendingExpiryReminders error: ' . $e->getMessage());
+    }
 }

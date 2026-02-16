@@ -1,59 +1,39 @@
-﻿# Setup Database Locale (XAMPP)
+# README_DB.md
 
-## 1) Apri phpMyAdmin
-- URL: `http://localhost/phpmyadmin`
+## File SQL principale
+- `db/CREATE_DATABASE_FROM_ZERO.sql`
 
-## 2) Crea DB da zero
-1. Apri tab `SQL`
-2. Incolla tutto il file `db/CREATE_DATABASE_FROM_ZERO.sql`
-3. Esegui
+Script pronto per phpMyAdmin:
+- crea database `nuoto_libero`
+- crea tutte le tabelle necessarie
+- applica indici e vincoli
+- inserisce seed minimi e utenti test
 
-Attenzione:
-- Lo script contiene `DROP DATABASE IF EXISTS nuoto_libero;`
-- Rieseguirlo resetta completamente i dati del DB locale
+## Tabelle principali
+- `ruoli`
+- `profili`
+- `pacchetti`
+- `acquisti`
+- `check_ins`
+- `documenti_utente`
+- `activity_log`
+- `password_reset_tokens`
+- `notifiche_email`
 
-## 3) Cosa crea lo script
-- database `nuoto_libero`
-- tabelle, indici, vincoli
-- seed minimi
-- utenti test locali
+## Import rapido (XAMPP)
+1. Apri `http://localhost/phpmyadmin`
+2. Tab `SQL`
+3. Esegui tutto il contenuto di `db/CREATE_DATABASE_FROM_ZERO.sql`
 
-## 4) Configura connessione progetto
-File: `api/config.php`
+## Utenti test seed
+- admin@piscina.it / password123
+- ufficio@piscina.it / password123
+- bagnino@piscina.it / password123
+- mario.rossi@email.it / password123
+- laura.bianchi@email.it / password123
+- giuseppe.verdi@email.it / password123
+- anna.ferrari@email.it / password123
 
-Default locale:
-- `DB_HOST=localhost`
-- `DB_USER=root`
-- `DB_PASS=` (vuota, tipico XAMPP)
-- `DB_NAME=nuoto_libero`
-
-Se usi credenziali diverse, aggiorna i valori.
-
-## 5) Credenziali test seed
-- `admin@piscina.it` / `password123`
-- `ufficio@piscina.it` / `password123`
-- `bagnino@piscina.it` / `password123`
-- `mario.rossi@email.it` / `password123`
-- `laura.bianchi@email.it` / `password123`
-- `giuseppe.verdi@email.it` / `password123`
-- `anna.ferrari@email.it` / `password123`
-
-## 6) Verifica rapida SQL
-```sql
-USE nuoto_libero;
-SELECT email, ruolo_id, attivo FROM profili ORDER BY email;
-SELECT stato_pagamento, COUNT(*) AS tot FROM acquisti GROUP BY stato_pagamento;
-```
-
-## 7) Verifica applicativa
-- Apri `http://localhost/nuoto-libero/login.html`
-- Esegui login con utente test
-- Verifica redirect dashboard per ruolo
-
-## 8) Troubleshooting
-1. Login API restituisce errore 500
-- MySQL non avviato oppure DB non importato
-- credenziali DB non coerenti in `api/config.php`
-
-2. Tabelle mancanti
-- riesegui interamente `db/CREATE_DATABASE_FROM_ZERO.sql`
+## Note operative
+- Lo script include `DROP DATABASE IF EXISTS`: rieseguendolo resetti completamente i dati locali.
+- Dopo import, verifica connessione DB in `api/config.php`.

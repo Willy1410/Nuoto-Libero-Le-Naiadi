@@ -1,132 +1,124 @@
-﻿# CHANGELOG FIXES - Nuoto Libero
+# CHANGELOG_FIXES.md
 
 Data aggiornamento: 2026-02-16
-Branch lavoro: `audit-fix-cleanup`
+Branch: `audit-fix-cleanup`
 
-## FASE 2 - Cleanup e riordino
+## Blocco 1 - Correzioni critiche login/API
+- Fix path API login (`login.html` -> `api/auth.php?action=login`).
+- Eliminata login duplicata `piscina-php/login.html`.
+- Migliorata gestione errori JSON lato login.
 
-### Modifiche principali
-- Consolidata API attiva in `api/` (spostata dalla vecchia collocazione).
-- Rimossi stack non operativi/duplicati (Node legacy e Supabase legacy).
-- Rimossi file storici/obsoleti non necessari al sito finale.
-- Creata struttura ordinata di supporto:
-  - `config/`
-  - `db/`
-  - `logs/`
-  - `DOCUMENTAZIONE_E_CONFIG/`
+File:
+- `login.html`
+- `piscina-php/login.html` (rimosso)
 
-### File/cartelle coinvolte
-- `api/` (allineamento percorso API)
-- `piscina-php/*.html` (aggiornamento riferimenti a `/api`)
-- rimozione definitiva cartelle legacy non usate
+## Blocco 2 - Hardening backend e log errori
+- Configurato logging errori progetto su `logs/error.log`.
+- Harden CORS/session/auth helpers e output errori.
+- Ridotto leak di dettagli tecnici in risposta API.
 
-### Motivo
-Ridurre conflitti tra versioni e lasciare un solo stack coerente e manutenibile.
-
----
-
-## FASE 3 - Fix UI mobile/tablet (conservativo)
-
-### Modifiche principali
-- Fix menu hamburger scrollabile su mobile/tablet.
-- Fix bottone "Area Riservata" con sfondo pienamente esteso al testo.
-
-### File coinvolti
-- `css/style.css`
-- `js/main.js`
-
-### Motivo
-Correzione bug UX richiesti senza alterare palette e layout generale.
-
----
-
-## FASE 4 - Email reale in locale (PHPMailer)
-
-### Modifiche principali
-- Integrato PHPMailer via Composer.
-- Aggiunta configurazione locale email con placeholder di test.
-- Aggiunto endpoint contatti con validazioni e invio email reale.
-- Aggiunto logging mail locale.
-
-### File coinvolti
-- `composer.json`
-- `composer.lock`
-- `vendor/`
-- `config/mail.php`
+File:
 - `api/config.php`
-- `api/contact.php`
-- `js/main.js`
-- `logs/mail.log`
+- `logs/error.log`
 
-### Motivo
-Abilitare test reale invio email su XAMPP in modo robusto e tracciabile.
+## Blocco 3 - Autenticazione avanzata
+- Aggiunto reset password completo con token one-time e scadenza.
+- Aggiunto cooldown login contro tentativi ripetuti.
+- Mantenuto hashing password con `password_hash/password_verify`.
 
----
+File:
+- `api/auth.php`
+- `reset-password.html`
+- `db/CREATE_DATABASE_FROM_ZERO.sql` (tabella `password_reset_tokens`)
 
-## FASE 5 - Pagamenti test + Bonifico
+## Blocco 4 - CMS admin/segreteria + API gestionali
+- Nuovo endpoint `api/admin.php` per gestione utenti.
+- Rifatti endpoint pacchetti/check-in/documenti/stats.
+- Dashboard admin e ufficio rese operative (no placeholder).
 
-### Modifiche principali
-- Predisposizione configurazioni test Stripe/PayPal (senza chiavi reali).
-- Aggiunto flusso bonifico lato UI.
-- Aggiunto endpoint notifica bonifico con invio email admin.
-
-### File coinvolti
-- `config/payments.php`
-- `api/bonifico-notify.php`
-- `pacchetti.html`
-- `js/payment.js`
-
-### Motivo
-Completare il flusso pagamenti locale con opzione bonifico tracciata.
-
----
-
-## FASE 6 - Database da zero + allineamento codice
-
-### Modifiche principali
-- Creato SQL unico bootstrap DB completo.
-- Allineata configurazione DB di default a `nuoto_libero`.
-- Corrette incoerenze API su ID UUID e query statistiche.
-
-### File coinvolti
-- `db/CREATE_DATABASE_FROM_ZERO.sql`
-- `db/README_DB.md`
-- `api/config.php`
+File:
+- `api/admin.php` (nuovo)
 - `api/pacchetti.php`
+- `api/checkin.php`
 - `api/documenti.php`
 - `api/stats.php`
-- `api/auth.php`
+- `piscina-php/dashboard-admin.html`
+- `piscina-php/dashboard-ufficio.html`
 
-### Motivo
-Garantire setup ripetibile da zero e coerenza runtime API/DB.
+## Blocco 5 - QR camera + permessi
+- Dashboard bagnino con camera reale (`getUserMedia`).
+- Scan automatico con `BarcodeDetector` (quando disponibile) + fallback manuale.
+- Pagina pubblica `qr-view.html` per sola lettura se non loggato.
+- Check-in write solo ruoli autorizzati.
 
----
+File:
+- `piscina-php/dashboard-bagnino.html`
+- `qr-view.html` (nuovo)
+- `api/checkin.php`
 
-## FASE 7-9 - Documentazione finale + setup test locale
+## Blocco 6 - Dashboard utente
+- QR utente renderizzato a canvas.
+- Pulsanti apertura vista QR e stampa.
+- Storici acquisti/documenti/check-in allineati alle API aggiornate.
 
-### Modifiche principali
-- Centralizzata tutta la documentazione finale in `DOCUMENTAZIONE_E_CONFIG/`.
-- Creati file richiesti:
-  - `REPORT_AUDIT.md`
-  - `CHANGELOG_FIXES.md`
-  - `ISTRUZIONI_SETUP_E_TEST.md`
-  - `TEST_CREDENTIALS_LOCAL.txt`
-  - `CONFIG_EMAIL.md`
-  - `CONFIG_PAGAMENTI_STRIPE_PAYPAL.md`
-  - `DB_SETUP.md`
-- Allineato `README.md` alla struttura finale.
+File:
+- `piscina-php/dashboard-utente.html`
 
-### Motivo
-Fornire istruzioni operative univoche e pulite per setup/test locale.
+## Blocco 7 - Email SMTP e notifiche automatiche
+- SMTP Gmail predisposto in `config/mail.php`.
+- Notifiche automatiche:
+  - 1 ingresso residuo
+  - scadenza ~7 giorni.
+- Template HTML email uniformati.
 
----
+File:
+- `config/mail.php`
+- `api/config.php`
+- `api/checkin.php`
+- `api/contact.php`
+- `api/bonifico-notify.php`
+- `db/CREATE_DATABASE_FROM_ZERO.sql` (tabella `notifiche_email`)
 
-## Pulizia finale extra (strascichi mock)
+## Blocco 8 - Encoding e contenuti
+- Corretto mojibake su pagine principali/dashboard/documentazione.
+- Uniformata codifica UTF-8 nei file modificati.
 
-### Modifiche principali
-- `login.html` collegato all'API PHP reale (`/api/auth.php?action=login`) con redirect alle dashboard operative in `piscina-php/`.
-- Rimossi definitivamente file mock root non usati (`dashboard-*`, `qr-*`, `check-entry`, `user-detail`, `js/auth.js`, `js/api-client.js`).
-- Rimossa definitivamente la cartella `_archive_OLD_NOT_USED/` dopo verifica tecnica.
+File (principali):
+- `index.html`
+- `chi-siamo.html`
+- `orari-tariffe.html`
+- `galleria.html`
+- `moduli.html`
+- `pacchetti.html`
+- `contatti.html`
+- `privacy.html`
+- `termini.html`
+- `cookie.html`
+- `ringraziamento.html`
+- `assets/regolamento-piscina.html`
+- `assets/modulo-iscrizione.html`
 
-### Motivo
-Eliminare completamente copie vecchie/backup e lasciare solo il progetto finale operativo.
+## Blocco 9 - WhatsApp e coerenza commerciale
+- Aggiornato numero WhatsApp in contatti/footer:
+  - `+39 320 300 9040`
+  - `https://wa.me/393203009040`
+
+File:
+- pagine HTML principali (footer + contatti)
+
+## Blocco 10 - Database e documentazione
+- Aggiornato script DB unico da zero con seed coerente.
+- Aggiornate istruzioni setup/test e credenziali locali.
+- Aggiunta guida dedicata test telefono + QR.
+
+File:
+- `db/CREATE_DATABASE_FROM_ZERO.sql`
+- `db/README_DB.md`
+- `DOCUMENTAZIONE_E_CONFIG/REPORT_AUDIT.md`
+- `DOCUMENTAZIONE_E_CONFIG/CHANGELOG_FIXES.md`
+- `DOCUMENTAZIONE_E_CONFIG/ISTRUZIONI_SETUP_E_TEST.md`
+- `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`
+- `DOCUMENTAZIONE_E_CONFIG/CONFIG_EMAIL.md`
+- `DOCUMENTAZIONE_E_CONFIG/CONFIG_PAGAMENTI_STRIPE_PAYPAL.md`
+- `DOCUMENTAZIONE_E_CONFIG/DB_SETUP.md`
+- `DOCUMENTAZIONE_E_CONFIG/GUIDA_TEST_TELEFONO_E_QR.md` (nuovo)

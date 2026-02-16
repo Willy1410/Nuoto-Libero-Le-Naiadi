@@ -1,247 +1,390 @@
 <?php
+declare(strict_types=1);
+
 /**
- * API PACCHETTI
- * File: api/pacchetti.php
- * 
- * Endpoints:
- * GET    /api/pacchetti.php - Lista pacchetti disponibili
- * POST   /api/pacchetti.php - Acquista pacchetto (utente)
- * GET    /api/pacchetti.php?action=my-purchases - I miei acquisti
- * PATCH  /api/pacchetti.php?action=confirm&id=xxx - Conferma pagamento (ufficio/admin)
+ * API pacchetti e acquisti
  */
 
-require_once 'config.php';
+require_once __DIR__ . '/config.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? '';
+$method = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$action = (string)($_GET['action'] ?? '');
 
-if ($method === 'GET' && empty($action)) {
+if ($method === 'GET' && $action === '') {
     getPacchetti();
-} elseif ($method === 'POST' && empty($action)) {
+} elseif ($method === 'POST' && $action === '') {
     acquistaPacchetto();
 } elseif ($method === 'GET' && $action === 'my-purchases') {
     getMyPurchases();
+} elseif ($method === 'GET' && $action === 'pending') {
+    getPendingPurchases();
+} elseif ($method === 'GET' && $action === 'user-purchases') {
+    getUserPurchases();
 } elseif ($method === 'PATCH' && $action === 'confirm') {
     confirmPayment();
+} elseif ($method === 'PATCH' && $action === 'cancel') {
+    cancelPurchase();
+} elseif ($method === 'POST' && $action === 'renew') {
+    renewPackage();
 } else {
-    http_response_code(404);
-    echo json_encode(['success' => false, 'message' => 'Endpoint non trovato']);
+    sendJson(404, ['success' => false, 'message' => 'Endpoint non trovato']);
 }
 
-/**
- * GET PACCHETTI DISPONIBILI
- */
-function getPacchetti() {
+function getPacchetti(): void
+{
     global $pdo;
-    
-    $stmt = $pdo->prepare("SELECT * FROM pacchetti WHERE attivo = TRUE ORDER BY ordine ASC, prezzo ASC");
-    $stmt->execute();
-    $pacchetti = $stmt->fetchAll();
-    
-    echo json_encode(['success' => true, 'pacchetti' => $pacchetti]);
-}
 
-/**
- * ACQUISTA PACCHETTO
- */
-function acquistaPacchetto() {
-    global $pdo;
-    
-    $currentUser = requireAuth();
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    $pacchetto_id = (int)($data['pacchetto_id'] ?? 0);
-    $metodo_pagamento = $data['metodo_pagamento'] ?? 'bonifico';
-    $riferimento_pagamento = sanitizeInput($data['riferimento_pagamento'] ?? '');
-    $note_pagamento = sanitizeInput($data['note_pagamento'] ?? '');
-    
-    if (!$pacchetto_id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Pacchetto non specificato']);
-        return;
-    }
-    
-    // Verifica pacchetto
-    $stmt = $pdo->prepare("SELECT * FROM pacchetti WHERE id = ? AND attivo = TRUE");
-    $stmt->execute([$pacchetto_id]);
-    $pacchetto = $stmt->fetch();
-    
-    if (!$pacchetto) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Pacchetto non trovato']);
-        return;
-    }
-    
     try {
-        $acquistoId = generateUuid();
+        $stmt = $pdo->query('SELECT * FROM pacchetti WHERE attivo = 1 ORDER BY ordine ASC, prezzo ASC');
+        $packages = $stmt->fetchAll();
 
-        // Crea acquisto
-        $stmt = $pdo->prepare("
-            INSERT INTO acquisti 
-            (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, ingressi_rimanenti, importo_pagato)
-            VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)
-        ");
-        
+        sendJson(200, ['success' => true, 'pacchetti' => $packages]);
+    } catch (Throwable $e) {
+        error_log('getPacchetti error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento pacchetti']);
+    }
+}
+
+function getMyPurchases(): void
+{
+    global $pdo;
+
+    $currentUser = requireAuth();
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT a.*, p.nome AS pacchetto_nome, p.descrizione AS pacchetto_descrizione,
+                    p.validita_giorni, p.num_ingressi
+             FROM acquisti a
+             JOIN pacchetti p ON a.pacchetto_id = p.id
+             WHERE a.user_id = ?
+             ORDER BY a.data_acquisto DESC'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $purchases = $stmt->fetchAll();
+
+        sendJson(200, ['success' => true, 'acquisti' => $purchases]);
+    } catch (Throwable $e) {
+        error_log('getMyPurchases error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento acquisti']);
+    }
+}
+
+function getPendingPurchases(): void
+{
+    global $pdo;
+
+    requireRole(3);
+
+    try {
+        $stmt = $pdo->query(
+            'SELECT a.id, a.user_id, a.pacchetto_id, a.data_acquisto, a.metodo_pagamento, a.riferimento_pagamento,
+                    a.note_pagamento, a.importo_pagato, a.ingressi_rimanenti,
+                    p.nome AS pacchetto_nome, p.validita_giorni,
+                    u.nome AS user_nome, u.cognome AS user_cognome, u.email AS user_email
+             FROM acquisti a
+             JOIN pacchetti p ON p.id = a.pacchetto_id
+             JOIN profili u ON u.id = a.user_id
+             WHERE a.stato_pagamento = "pending"
+             ORDER BY a.data_acquisto ASC'
+        );
+
+        sendJson(200, ['success' => true, 'acquisti' => $stmt->fetchAll()]);
+    } catch (Throwable $e) {
+        error_log('getPendingPurchases error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento acquisti pending']);
+    }
+}
+
+function getUserPurchases(): void
+{
+    global $pdo;
+
+    requireRole(3);
+    $userId = sanitizeText((string)($_GET['user_id'] ?? ''), 36);
+
+    if ($userId === '') {
+        sendJson(400, ['success' => false, 'message' => 'user_id mancante']);
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT a.*, p.nome AS pacchetto_nome, p.num_ingressi, p.validita_giorni
+             FROM acquisti a
+             JOIN pacchetti p ON p.id = a.pacchetto_id
+             WHERE a.user_id = ?
+             ORDER BY a.data_acquisto DESC'
+        );
+        $stmt->execute([$userId]);
+
+        sendJson(200, ['success' => true, 'acquisti' => $stmt->fetchAll()]);
+    } catch (Throwable $e) {
+        error_log('getUserPurchases error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento storico acquisti']);
+    }
+}
+
+function acquistaPacchetto(): void
+{
+    global $pdo;
+
+    $currentUser = requireAuth();
+    $data = getJsonInput();
+
+    $pacchettoId = (int)($data['pacchetto_id'] ?? 0);
+    $metodoPagamento = sanitizeText((string)($data['metodo_pagamento'] ?? 'bonifico'), 20);
+    $riferimentoPagamento = sanitizeText((string)($data['riferimento_pagamento'] ?? ''), 255);
+    $notePagamento = sanitizeText((string)($data['note_pagamento'] ?? ''), 1000);
+
+    if ($pacchettoId <= 0) {
+        sendJson(400, ['success' => false, 'message' => 'Pacchetto non valido']);
+    }
+
+    $allowedMethods = ['bonifico', 'contanti', 'carta', 'paypal', 'stripe'];
+    if (!in_array($metodoPagamento, $allowedMethods, true)) {
+        $metodoPagamento = 'bonifico';
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? AND attivo = 1 LIMIT 1');
+        $stmt->execute([$pacchettoId]);
+        $package = $stmt->fetch();
+
+        if (!$package) {
+            sendJson(404, ['success' => false, 'message' => 'Pacchetto non trovato']);
+        }
+
+        $purchaseId = generateUuid();
+        $qrCode = generateQRCode($purchaseId);
+        $scadenza = date('Y-m-d', strtotime('+' . (int)$package['validita_giorni'] . ' days'));
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO acquisti
+            (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento,
+             qr_code, ingressi_rimanenti, data_scadenza, importo_pagato)
+            VALUES (?, ?, ?, ?, "pending", NULLIF(?, ""), NULLIF(?, ""), ?, ?, ?, ?)'
+        );
         $stmt->execute([
-            $acquistoId,
+            $purchaseId,
             $currentUser['user_id'],
-            $pacchetto_id,
-            $metodo_pagamento,
-            $riferimento_pagamento,
-            $note_pagamento,
-            $pacchetto['num_ingressi'],
-            $pacchetto['prezzo']
+            $pacchettoId,
+            $metodoPagamento,
+            $riferimentoPagamento,
+            $notePagamento,
+            $qrCode,
+            (int)$package['num_ingressi'],
+            $scadenza,
+            (float)$package['prezzo'],
         ]);
-        
-        // Recupera acquisto completo
-        $stmt = $pdo->prepare("
-            SELECT a.*, p.nome as pacchetto_nome, p.descrizione as pacchetto_descrizione
-            FROM acquisti a
-            JOIN pacchetti p ON a.pacchetto_id = p.id
-            WHERE a.id = ?
-        ");
-        $stmt->execute([$acquistoId]);
-        $acquisto = $stmt->fetch();
-        
-        // Log attività
-        logActivity($currentUser['user_id'], 'acquisto_pacchetto', "Acquisto pacchetto: {$pacchetto['nome']}", 'acquisti', $acquisto['id']);
-        
-        // Invia email istruzioni pagamento
-        $stmt = $pdo->prepare("SELECT nome, cognome, email FROM profili WHERE id = ?");
+
+        logActivity((string)$currentUser['user_id'], 'acquisto_pacchetto', 'Nuovo acquisto: ' . $package['nome'], 'acquisti', $purchaseId);
+
+        $stmt = $pdo->prepare('SELECT nome, cognome, email FROM profili WHERE id = ? LIMIT 1');
         $stmt->execute([$currentUser['user_id']]);
         $user = $stmt->fetch();
-        
-        $htmlContent = "
-            <h1>Grazie per il tuo acquisto!</h1>
-            <p>Hai richiesto l'acquisto di: <strong>{$pacchetto['nome']}</strong></p>
-            <p>Importo: <strong>€ " . number_format($pacchetto['prezzo'], 2, ',', '.') . "</strong></p>
-            <p>Ingressi inclusi: <strong>{$pacchetto['num_ingressi']}</strong></p>
-            <hr>
-            <h2>Istruzioni per il pagamento:</h2>
-            <p><strong>Metodo:</strong> $metodo_pagamento</p>
-            <p>Riferimento ordine: <code>{$acquisto['id']}</code></p>
-            <p>Una volta effettuato il pagamento, il personale confermerà l'acquisto e riceverai il tuo codice QR.</p>
-        ";
-        sendEmail($user['email'], "{$user['nome']} {$user['cognome']}", 'Conferma acquisto - Piscina Naiadi', $htmlContent);
-        
-        http_response_code(201);
-        echo json_encode([
+
+        if ($user) {
+            $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+                . '<p>abbiamo registrato il tuo acquisto: <strong>' . htmlspecialchars((string)$package['nome'], ENT_QUOTES, 'UTF-8') . '</strong>.</p>'
+                . '<p>Importo: <strong>EUR ' . number_format((float)$package['prezzo'], 2, ',', '.') . '</strong></p>'
+                . '<p>Codice univoco: <strong>' . htmlspecialchars($qrCode, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                . '<p>Una volta confermato il pagamento, il pacchetto sara attivo.</p>';
+
+            sendTemplateEmail(
+                (string)$user['email'],
+                trim((string)$user['nome'] . ' ' . (string)$user['cognome']),
+                'Acquisto registrato - Nuoto Libero',
+                'Acquisto registrato',
+                $body
+            );
+        }
+
+        sendJson(201, [
             'success' => true,
-            'message' => 'Acquisto registrato, in attesa di conferma pagamento',
-            'acquisto' => $acquisto
+            'message' => 'Acquisto registrato con successo. In attesa di conferma pagamento.',
+            'acquisto' => [
+                'id' => $purchaseId,
+                'qr_code' => $qrCode,
+                'stato_pagamento' => 'pending',
+                'data_scadenza' => $scadenza,
+                'ingressi_rimanenti' => (int)$package['num_ingressi'],
+                'importo_pagato' => (float)$package['prezzo'],
+            ],
         ]);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore durante l\'acquisto', 'error' => $e->getMessage()]);
+    } catch (Throwable $e) {
+        error_log('acquistaPacchetto error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore durante la creazione acquisto']);
     }
 }
 
-/**
- * GET MY PURCHASES
- */
-function getMyPurchases() {
+function confirmPayment(): void
+{
     global $pdo;
-    
-    $currentUser = requireAuth();
-    
-    $stmt = $pdo->prepare("
-        SELECT a.*, p.nome as pacchetto_nome, p.descrizione as pacchetto_descrizione, p.validita_giorni
-        FROM acquisti a
-        JOIN pacchetti p ON a.pacchetto_id = p.id
-        WHERE a.user_id = ?
-        ORDER BY a.data_acquisto DESC
-    ");
-    $stmt->execute([$currentUser['user_id']]);
-    $acquisti = $stmt->fetchAll();
-    
-    echo json_encode(['success' => true, 'acquisti' => $acquisti]);
-}
 
-/**
- * CONFERMA PAGAMENTO (solo ufficio/admin)
- */
-function confirmPayment() {
-    global $pdo;
-    
-    $currentUser = requireRole(3); // Ufficio o Admin
-    
-    $acquisto_id = $_GET['id'] ?? '';
-    
-    if (!$acquisto_id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'ID acquisto non specificato']);
-        return;
+    $staff = requireRole(3);
+    $acquistoId = sanitizeText((string)($_GET['id'] ?? ''), 36);
+
+    if ($acquistoId === '') {
+        sendJson(400, ['success' => false, 'message' => 'ID acquisto mancante']);
     }
-    
+
     try {
-        // Verifica acquisto
-        $stmt = $pdo->prepare("
-            SELECT a.*, p.validita_giorni 
-            FROM acquisti a 
-            JOIN pacchetti p ON a.pacchetto_id = p.id 
-            WHERE a.id = ?
-        ");
-        $stmt->execute([$acquisto_id]);
-        $acquisto = $stmt->fetch();
-        
-        if (!$acquisto) {
-            http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Acquisto non trovato']);
-            return;
+        $stmt = $pdo->prepare(
+            'SELECT a.*, p.validita_giorni, p.nome AS pacchetto_nome,
+                    u.email AS user_email, u.nome AS user_nome, u.cognome AS user_cognome
+             FROM acquisti a
+             JOIN pacchetti p ON p.id = a.pacchetto_id
+             JOIN profili u ON u.id = a.user_id
+             WHERE a.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$acquistoId]);
+        $purchase = $stmt->fetch();
+
+        if (!$purchase) {
+            sendJson(404, ['success' => false, 'message' => 'Acquisto non trovato']);
         }
-        
-        if ($acquisto['stato_pagamento'] === 'confirmed') {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Acquisto già confermato']);
-            return;
+
+        if ($purchase['stato_pagamento'] === 'confirmed') {
+            sendJson(400, ['success' => false, 'message' => 'Acquisto gia confermato']);
         }
-        
-        // Genera QR code
-        $qr_code = generateQRCode($acquisto_id);
-        
-        // Calcola data scadenza
-        $data_scadenza = date('Y-m-d', strtotime("+{$acquisto['validita_giorni']} days"));
-        
-        // Conferma acquisto
-        $stmt = $pdo->prepare("
-            UPDATE acquisti 
-            SET stato_pagamento = 'confirmed', 
-                qr_code = ?,
-                data_scadenza = ?,
-                confermato_da = ?,
-                data_conferma = NOW()
-            WHERE id = ?
-        ");
-        $stmt->execute([$qr_code, $data_scadenza, $currentUser['user_id'], $acquisto_id]);
-        
-        // Log attività
-        logActivity($currentUser['user_id'], 'conferma_pagamento', "Pagamento confermato per acquisto $acquisto_id", 'acquisti', $acquisto_id);
-        
-        // Invia email con QR code
-        $stmt = $pdo->prepare("SELECT nome, cognome, email FROM profili WHERE id = ?");
-        $stmt->execute([$acquisto['user_id']]);
-        $user = $stmt->fetch();
-        
-        $htmlContent = "
-            <h1>Pagamento confermato!</h1>
-            <p>Il tuo acquisto è stato confermato e il tuo codice QR è pronto.</p>
-            <p><strong>Codice QR:</strong> <code>$qr_code</code></p>
-            <p><strong>Ingressi rimanenti:</strong> {$acquisto['ingressi_rimanenti']}</p>
-            <p><strong>Valido fino al:</strong> $data_scadenza</p>
-            <p>Scarica il tuo QR code dalla dashboard e presentalo all'ingresso.</p>
-        ";
-        sendEmail($user['email'], "{$user['nome']} {$user['cognome']}", 'Codice QR pronto - Piscina Naiadi', $htmlContent);
-        
-        http_response_code(200);
-        echo json_encode([
+
+        $qrCode = $purchase['qr_code'] ?: generateQRCode($acquistoId);
+        $scadenza = $purchase['data_scadenza'] ?: date('Y-m-d', strtotime('+' . (int)$purchase['validita_giorni'] . ' days'));
+
+        $stmt = $pdo->prepare(
+            'UPDATE acquisti
+             SET stato_pagamento = "confirmed", qr_code = ?, data_scadenza = ?, confermato_da = ?, data_conferma = NOW()
+             WHERE id = ?'
+        );
+        $stmt->execute([$qrCode, $scadenza, $staff['user_id'], $acquistoId]);
+
+        logActivity((string)$staff['user_id'], 'conferma_pagamento', 'Pagamento confermato', 'acquisti', $acquistoId);
+
+        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$purchase['user_nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+            . '<p>il pagamento del pacchetto <strong>' . htmlspecialchars((string)$purchase['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '</strong> e stato confermato.</p>'
+            . '<p>Codice QR: <strong>' . htmlspecialchars($qrCode, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+            . '<p>Ingressi disponibili: <strong>' . (int)$purchase['ingressi_rimanenti'] . '</strong></p>'
+            . '<p>Scadenza: <strong>' . htmlspecialchars($scadenza, ENT_QUOTES, 'UTF-8') . '</strong></p>';
+
+        sendTemplateEmail(
+            (string)$purchase['user_email'],
+            trim((string)$purchase['user_nome'] . ' ' . (string)$purchase['user_cognome']),
+            'Pagamento confermato - Nuoto Libero',
+            'Pacchetto attivo',
+            $body
+        );
+
+        sendJson(200, [
             'success' => true,
             'message' => 'Pagamento confermato',
-            'qr_code' => $qr_code
+            'qr_code' => $qrCode,
+            'data_scadenza' => $scadenza,
         ]);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore conferma pagamento', 'error' => $e->getMessage()]);
+    } catch (Throwable $e) {
+        error_log('confirmPayment error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore conferma pagamento']);
+    }
+}
+
+function cancelPurchase(): void
+{
+    global $pdo;
+
+    $staff = requireRole(3);
+    $acquistoId = sanitizeText((string)($_GET['id'] ?? ''), 36);
+
+    if ($acquistoId === '') {
+        sendJson(400, ['success' => false, 'message' => 'ID acquisto mancante']);
+    }
+
+    try {
+        $stmt = $pdo->prepare('UPDATE acquisti SET stato_pagamento = "cancelled" WHERE id = ? AND stato_pagamento = "pending"');
+        $stmt->execute([$acquistoId]);
+
+        if ($stmt->rowCount() === 0) {
+            sendJson(400, ['success' => false, 'message' => 'Nessun acquisto pending da annullare']);
+        }
+
+        logActivity((string)$staff['user_id'], 'annulla_acquisto', 'Acquisto annullato', 'acquisti', $acquistoId);
+
+        sendJson(200, ['success' => true, 'message' => 'Acquisto annullato']);
+    } catch (Throwable $e) {
+        error_log('cancelPurchase error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore annullamento acquisto']);
+    }
+}
+
+function renewPackage(): void
+{
+    global $pdo;
+
+    $staff = requireRole(3);
+    $data = getJsonInput();
+
+    $userId = sanitizeText((string)($data['user_id'] ?? ''), 36);
+    $pacchettoId = (int)($data['pacchetto_id'] ?? 0);
+    $metodoPagamento = sanitizeText((string)($data['metodo_pagamento'] ?? 'contanti'), 20);
+    $confermaImmediata = filter_var($data['conferma_immediata'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+    if ($userId === '' || $pacchettoId <= 0) {
+        sendJson(400, ['success' => false, 'message' => 'user_id e pacchetto_id sono obbligatori']);
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, nome, cognome, email FROM profili WHERE id = ? AND attivo = 1 LIMIT 1');
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        if (!$user) {
+            sendJson(404, ['success' => false, 'message' => 'Utente non trovato']);
+        }
+
+        $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? AND attivo = 1 LIMIT 1');
+        $stmt->execute([$pacchettoId]);
+        $package = $stmt->fetch();
+        if (!$package) {
+            sendJson(404, ['success' => false, 'message' => 'Pacchetto non trovato']);
+        }
+
+        $purchaseId = generateUuid();
+        $qrCode = generateQRCode($purchaseId);
+        $scadenza = date('Y-m-d', strtotime('+' . (int)$package['validita_giorni'] . ' days'));
+        $status = $confermaImmediata ? 'confirmed' : 'pending';
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO acquisti
+            (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, qr_code, ingressi_rimanenti, data_scadenza, confermato_da, data_conferma, importo_pagato)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, IF(? = "confirmed", NOW(), NULL), ?)'
+        );
+        $stmt->execute([
+            $purchaseId,
+            $userId,
+            $pacchettoId,
+            $metodoPagamento,
+            $status,
+            $qrCode,
+            (int)$package['num_ingressi'],
+            $scadenza,
+            $confermaImmediata ? $staff['user_id'] : null,
+            $status,
+            (float)$package['prezzo'],
+        ]);
+
+        logActivity((string)$staff['user_id'], 'rinnovo_pacchetto', 'Rinnovo pacchetto utente', 'acquisti', $purchaseId);
+
+        sendJson(201, [
+            'success' => true,
+            'message' => 'Pacchetto assegnato correttamente',
+            'acquisto' => [
+                'id' => $purchaseId,
+                'stato_pagamento' => $status,
+                'qr_code' => $qrCode,
+                'data_scadenza' => $scadenza,
+                'ingressi_rimanenti' => (int)$package['num_ingressi'],
+            ],
+        ]);
+    } catch (Throwable $e) {
+        error_log('renewPackage error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore rinnovo pacchetto']);
     }
 }

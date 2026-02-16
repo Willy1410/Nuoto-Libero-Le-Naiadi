@@ -1,24 +1,18 @@
 <?php
+declare(strict_types=1);
+
 /**
- * API DOCUMENTI
- * File: api/documenti.php
- * 
- * Endpoints:
- * GET    /api/documenti.php - Lista documenti dell'utente corrente
- * POST   /api/documenti.php - Upload documento
- * GET    /api/documenti.php?action=pending - Documenti da revisionare (ufficio)
- * PATCH  /api/documenti.php?action=review&id=xxx - Revisiona documento (ufficio)
- * GET    /api/documenti.php?action=types - Tipi documento obbligatori
+ * API documenti utente
  */
 
-require_once 'config.php';
+require_once __DIR__ . '/config.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? '';
+$method = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$action = (string)($_GET['action'] ?? '');
 
-if ($method === 'GET' && empty($action)) {
+if ($method === 'GET' && $action === '') {
     getMyDocuments();
-} elseif ($method === 'POST' && empty($action)) {
+} elseif ($method === 'POST' && $action === '') {
     uploadDocument();
 } elseif ($method === 'GET' && $action === 'pending') {
     getPendingDocuments();
@@ -27,256 +21,224 @@ if ($method === 'GET' && empty($action)) {
 } elseif ($method === 'GET' && $action === 'types') {
     getDocumentTypes();
 } else {
-    http_response_code(404);
-    echo json_encode(['success' => false, 'message' => 'Endpoint non trovato']);
+    sendJson(404, ['success' => false, 'message' => 'Endpoint non trovato']);
 }
 
-/**
- * GET TIPI DOCUMENTO
- */
-function getDocumentTypes() {
+function getDocumentTypes(): void
+{
     global $pdo;
-    
-    $stmt = $pdo->prepare("SELECT * FROM tipi_documento ORDER BY ordine ASC");
-    $stmt->execute();
-    $types = $stmt->fetchAll();
-    
-    echo json_encode(['success' => true, 'types' => $types]);
-}
 
-/**
- * GET MY DOCUMENTS
- */
-function getMyDocuments() {
-    global $pdo;
-    
-    $currentUser = requireAuth();
-    
-    $stmt = $pdo->prepare("
-        SELECT d.*, t.nome as tipo_nome, t.obbligatorio, t.template_url
-        FROM documenti_utente d
-        JOIN tipi_documento t ON d.tipo_documento_id = t.id
-        WHERE d.user_id = ?
-        ORDER BY d.data_caricamento DESC
-    ");
-    $stmt->execute([$currentUser['user_id']]);
-    $documenti = $stmt->fetchAll();
-    
-    // Conta documenti obbligatori mancanti
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as count
-        FROM tipi_documento t
-        LEFT JOIN documenti_utente d ON t.id = d.tipo_documento_id AND d.user_id = ? AND d.stato = 'approved'
-        WHERE t.obbligatorio = TRUE AND d.id IS NULL
-    ");
-    $stmt->execute([$currentUser['user_id']]);
-    $mancanti = $stmt->fetch();
-    
-    echo json_encode([
-        'success' => true,
-        'documenti' => $documenti,
-        'documenti_obbligatori_mancanti' => (int)$mancanti['count']
-    ]);
-}
-
-/**
- * UPLOAD DOCUMENTO
- */
-function uploadDocument() {
-    global $pdo;
-    
-    $currentUser = requireAuth();
-    
-    // Verifica se è un upload file
-    if (!isset($_FILES['file']) || !isset($_POST['tipo_documento_id'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'File o tipo documento mancante']);
-        return;
-    }
-    
-    $tipo_documento_id = (int)$_POST['tipo_documento_id'];
-    $file = $_FILES['file'];
-    
-    // Validazione file
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Errore upload file']);
-        return;
-    }
-    
-    if ($file['size'] > UPLOAD_MAX_SIZE) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'File troppo grande (max 5MB)']);
-        return;
-    }
-    
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, UPLOAD_ALLOWED_TYPES)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Tipo file non consentito (solo PDF, JPG, PNG)']);
-        return;
-    }
-    
-    // Verifica tipo documento
-    $stmt = $pdo->prepare("SELECT * FROM tipi_documento WHERE id = ?");
-    $stmt->execute([$tipo_documento_id]);
-    $tipo = $stmt->fetch();
-    
-    if (!$tipo) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Tipo documento non trovato']);
-        return;
-    }
-    
     try {
-        $documentoId = generateUuid();
+        $stmt = $pdo->query('SELECT * FROM tipi_documento ORDER BY ordine ASC');
+        sendJson(200, ['success' => true, 'types' => $stmt->fetchAll()]);
+    } catch (Throwable $e) {
+        error_log('getDocumentTypes error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento tipi documento']);
+    }
+}
 
-        // Crea directory upload se non esiste
-        $upload_dir = UPLOAD_DIR . 'documenti/' . $currentUser['user_id'] . '/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
+function getMyDocuments(): void
+{
+    global $pdo;
+
+    $currentUser = requireAuth();
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT d.id, d.tipo_documento_id, d.file_url, d.file_name, d.stato, d.note_revisione,
+                    d.data_caricamento, d.data_revisione, d.scadenza,
+                    t.nome AS tipo_nome, t.obbligatorio, t.template_url
+             FROM documenti_utente d
+             JOIN tipi_documento t ON t.id = d.tipo_documento_id
+             WHERE d.user_id = ?
+             ORDER BY d.data_caricamento DESC'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $documents = $stmt->fetchAll();
+
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) AS total
+             FROM tipi_documento t
+             LEFT JOIN documenti_utente d
+               ON d.tipo_documento_id = t.id
+              AND d.user_id = ?
+              AND d.stato = "approved"
+             WHERE t.obbligatorio = 1
+               AND d.id IS NULL'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $missing = (int)$stmt->fetch()['total'];
+
+        sendJson(200, [
+            'success' => true,
+            'documenti' => $documents,
+            'documenti_obbligatori_mancanti' => $missing,
+        ]);
+    } catch (Throwable $e) {
+        error_log('getMyDocuments error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento documenti']);
+    }
+}
+
+function uploadDocument(): void
+{
+    global $pdo;
+
+    $currentUser = requireAuth();
+
+    if (!isset($_FILES['file']) || !isset($_POST['tipo_documento_id'])) {
+        sendJson(400, ['success' => false, 'message' => 'File o tipo documento mancante']);
+    }
+
+    $tipoDocumentoId = (int)$_POST['tipo_documento_id'];
+    $file = $_FILES['file'];
+
+    if (!isset($file['error']) || (int)$file['error'] !== UPLOAD_ERR_OK) {
+        sendJson(400, ['success' => false, 'message' => 'Errore upload file']);
+    }
+
+    if (!isset($file['size']) || (int)$file['size'] > UPLOAD_MAX_SIZE) {
+        sendJson(400, ['success' => false, 'message' => 'File troppo grande (max 5MB)']);
+    }
+
+    $originalName = isset($file['name']) ? sanitizeText((string)$file['name'], 255) : 'file';
+    $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+    if (!in_array($ext, UPLOAD_ALLOWED_TYPES, true)) {
+        sendJson(400, ['success' => false, 'message' => 'Tipo file non consentito (solo PDF/JPG/PNG)']);
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, nome FROM tipi_documento WHERE id = ? LIMIT 1');
+        $stmt->execute([$tipoDocumentoId]);
+        $tipo = $stmt->fetch();
+        if (!$tipo) {
+            sendJson(404, ['success' => false, 'message' => 'Tipo documento non trovato']);
         }
-        
-        // Genera nome file univoco
-        $file_name = uniqid() . '_' . $file['name'];
-        $file_path = $upload_dir . $file_name;
-        
-        // Sposta file
-        if (!move_uploaded_file($file['tmp_name'], $file_path)) {
-            throw new Exception('Errore spostamento file');
+
+        $uploadDir = UPLOAD_DIR . 'documenti/' . $currentUser['user_id'] . '/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
         }
-        
-        // URL relativo
-        $file_url = '/uploads/documenti/' . $currentUser['user_id'] . '/' . $file_name;
-        
-        // Inserisci documento
-        $stmt = $pdo->prepare("
-            INSERT INTO documenti_utente (id, user_id, tipo_documento_id, file_url, file_name, stato)
-            VALUES (?, ?, ?, ?, ?, 'pending')
-        ");
-        $stmt->execute([$documentoId, $currentUser['user_id'], $tipo_documento_id, $file_url, $file['name']]);
-        
-        // Log attività
-        logActivity($currentUser['user_id'], 'upload_documento', "Caricato documento: {$tipo['nome']}", 'documenti_utente', $documentoId);
-        
-        http_response_code(201);
-        echo json_encode([
+
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        if (!is_string($safeName) || $safeName === '') {
+            $safeName = 'documento.' . $ext;
+        }
+
+        $storedName = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '_' . $safeName;
+        $destination = $uploadDir . $storedName;
+
+        if (!move_uploaded_file((string)$file['tmp_name'], $destination)) {
+            sendJson(500, ['success' => false, 'message' => 'Errore salvataggio file']);
+        }
+
+        $documentId = generateUuid();
+        $fileUrl = '/nuoto-libero/uploads/documenti/' . $currentUser['user_id'] . '/' . $storedName;
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO documenti_utente (id, user_id, tipo_documento_id, file_url, file_name, stato)
+             VALUES (?, ?, ?, ?, ?, "pending")'
+        );
+        $stmt->execute([$documentId, $currentUser['user_id'], $tipoDocumentoId, $fileUrl, $originalName]);
+
+        logActivity((string)$currentUser['user_id'], 'upload_documento', 'Upload documento: ' . $tipo['nome'], 'documenti_utente', $documentId);
+
+        sendJson(201, [
             'success' => true,
             'message' => 'Documento caricato con successo',
-            'file_url' => $file_url
+            'file_url' => $fileUrl,
         ]);
-        
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore upload documento', 'error' => $e->getMessage()]);
+    } catch (Throwable $e) {
+        error_log('uploadDocument error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento documento']);
     }
 }
 
-/**
- * GET PENDING DOCUMENTS (ufficio)
- */
-function getPendingDocuments() {
+function getPendingDocuments(): void
+{
     global $pdo;
-    
-    $currentUser = requireRole(3); // Ufficio minimo
-    
-    $stmt = $pdo->prepare("
-        SELECT d.*, 
-               t.nome as tipo_nome,
-               t.obbligatorio,
-               prof.nome as user_nome,
-               prof.cognome as user_cognome,
-               prof.email as user_email
-        FROM documenti_utente d
-        JOIN tipi_documento t ON d.tipo_documento_id = t.id
-        JOIN profili prof ON d.user_id = prof.id
-        WHERE d.stato = 'pending'
-        ORDER BY d.data_caricamento ASC
-    ");
-    $stmt->execute();
-    $documenti = $stmt->fetchAll();
-    
-    echo json_encode(['success' => true, 'documenti' => $documenti]);
-}
 
-/**
- * REVIEW DOCUMENT (ufficio)
- */
-function reviewDocument() {
-    global $pdo;
-    
-    $currentUser = requireRole(3); // Ufficio minimo
-    
-    $documento_id = $_GET['id'] ?? '';
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    $stato = $data['stato'] ?? ''; // 'approved' o 'rejected'
-    $note_revisione = sanitizeInput($data['note_revisione'] ?? '');
-    
-    if (!$documento_id || !in_array($stato, ['approved', 'rejected'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Dati non validi']);
-        return;
-    }
-    
+    requireRole(3);
+
     try {
-        // Verifica documento
-        $stmt = $pdo->prepare("
-            SELECT d.*, 
-                   prof.nome as user_nome,
-                   prof.cognome as user_cognome,
-                   prof.email as user_email,
-                   t.nome as tipo_nome
-            FROM documenti_utente d
-            JOIN profili prof ON d.user_id = prof.id
-            JOIN tipi_documento t ON d.tipo_documento_id = t.id
-            WHERE d.id = ?
-        ");
-        $stmt->execute([$documento_id]);
-        $documento = $stmt->fetch();
-        
-        if (!$documento) {
-            http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Documento non trovato']);
-            return;
+        $stmt = $pdo->query(
+            'SELECT d.id, d.user_id, d.tipo_documento_id, d.file_url, d.file_name, d.stato, d.note_revisione,
+                    d.data_caricamento, d.scadenza,
+                    t.nome AS tipo_nome, t.obbligatorio,
+                    u.nome AS user_nome, u.cognome AS user_cognome, u.email AS user_email
+             FROM documenti_utente d
+             JOIN tipi_documento t ON t.id = d.tipo_documento_id
+             JOIN profili u ON u.id = d.user_id
+             WHERE d.stato = "pending"
+             ORDER BY d.data_caricamento ASC'
+        );
+
+        sendJson(200, ['success' => true, 'documenti' => $stmt->fetchAll()]);
+    } catch (Throwable $e) {
+        error_log('getPendingDocuments error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento documenti pending']);
+    }
+}
+
+function reviewDocument(): void
+{
+    global $pdo;
+
+    $staff = requireRole(3);
+
+    $documentId = sanitizeText((string)($_GET['id'] ?? ''), 36);
+    $data = getJsonInput();
+
+    $state = sanitizeText((string)($data['stato'] ?? ''), 20);
+    $note = sanitizeText((string)($data['note_revisione'] ?? ''), 1000);
+
+    if ($documentId === '' || !in_array($state, ['approved', 'rejected'], true)) {
+        sendJson(400, ['success' => false, 'message' => 'Dati revisione non validi']);
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT d.id, d.user_id, t.nome AS tipo_nome, u.nome AS user_nome, u.cognome AS user_cognome, u.email AS user_email
+             FROM documenti_utente d
+             JOIN tipi_documento t ON t.id = d.tipo_documento_id
+             JOIN profili u ON u.id = d.user_id
+             WHERE d.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$documentId]);
+        $doc = $stmt->fetch();
+
+        if (!$doc) {
+            sendJson(404, ['success' => false, 'message' => 'Documento non trovato']);
         }
-        
-        // Aggiorna stato
-        $stmt = $pdo->prepare("
-            UPDATE documenti_utente 
-            SET stato = ?, note_revisione = ?, revisionato_da = ?, data_revisione = NOW()
-            WHERE id = ?
-        ");
-        $stmt->execute([$stato, $note_revisione, $currentUser['user_id'], $documento_id]);
-        
-        // Log attività
-        logActivity($currentUser['user_id'], 'revisione_documento', "Documento $stato: {$documento['tipo_nome']}", 'documenti_utente', $documento_id);
-        
-        // Invia email notifica
-        $stato_it = $stato === 'approved' ? 'approvato' : 'rifiutato';
-        $htmlContent = "
-            <h1>Revisione documento</h1>
-            <p>Ciao {$documento['user_nome']},</p>
-            <p>Il tuo documento <strong>{$documento['tipo_nome']}</strong> è stato <strong>$stato_it</strong>.</p>
-        ";
-        
-        if ($stato === 'rejected' && $note_revisione) {
-            $htmlContent .= "<p><strong>Motivazione:</strong> $note_revisione</p>";
-            $htmlContent .= "<p>Ti preghiamo di caricare nuovamente il documento corretto.</p>";
-        } else {
-            $htmlContent .= "<p>Grazie per la collaborazione!</p>";
+
+        $stmt = $pdo->prepare(
+            'UPDATE documenti_utente
+             SET stato = ?, note_revisione = NULLIF(?, ""), revisionato_da = ?, data_revisione = NOW()
+             WHERE id = ?'
+        );
+        $stmt->execute([$state, $note, $staff['user_id'], $documentId]);
+
+        logActivity((string)$staff['user_id'], 'revisione_documento', 'Documento ' . $state, 'documenti_utente', $documentId);
+
+        $stateText = $state === 'approved' ? 'approvato' : 'rifiutato';
+        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$doc['user_nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+            . '<p>il documento <strong>' . htmlspecialchars((string)$doc['tipo_nome'], ENT_QUOTES, 'UTF-8') . '</strong> e stato <strong>' . $stateText . '</strong>.</p>';
+        if ($state === 'rejected' && $note !== '') {
+            $body .= '<p>Motivazione: ' . htmlspecialchars($note, ENT_QUOTES, 'UTF-8') . '</p>';
         }
-        
-        sendEmail($documento['user_email'], "{$documento['user_nome']} {$documento['user_cognome']}", "Revisione documento - {$documento['tipo_nome']}", $htmlContent);
-        
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'message' => 'Documento revisionato con successo'
-        ]);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore revisione documento', 'error' => $e->getMessage()]);
+
+        sendTemplateEmail(
+            (string)$doc['user_email'],
+            trim((string)$doc['user_nome'] . ' ' . (string)$doc['user_cognome']),
+            'Revisione documento',
+            'Esito revisione documento',
+            $body
+        );
+
+        sendJson(200, ['success' => true, 'message' => 'Documento aggiornato']);
+    } catch (Throwable $e) {
+        error_log('reviewDocument error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore revisione documento']);
     }
 }

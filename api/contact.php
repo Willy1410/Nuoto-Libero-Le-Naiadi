@@ -1,110 +1,86 @@
 <?php
+declare(strict_types=1);
+
 /**
- * Contact form endpoint
- * POST /api/contact.php
+ * Endpoint contatti
  */
 
 require_once __DIR__ . '/config.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metodo non consentito']);
-    exit();
+    sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
 }
 
-$raw = file_get_contents('php://input');
-$data = json_decode($raw, true);
-if (!is_array($data)) {
+$data = getJsonInput();
+if (!$data) {
     $data = $_POST;
 }
 
-$honeypot = trim((string)($data['website'] ?? ''));
+$honeypot = sanitizeText((string)($data['website'] ?? ''), 255);
 if ($honeypot !== '') {
-    logMailEvent('warning', 'Contact form blocked by honeypot');
-    echo json_encode(['success' => true, 'message' => 'Messaggio ricevuto']);
-    exit();
+    logMailEvent('warning', 'Contact form bloccato da honeypot');
+    sendJson(200, ['success' => true, 'message' => 'Messaggio ricevuto']);
 }
 
-$name = sanitizeInput($data['name'] ?? '');
-$email = sanitizeInput($data['email'] ?? '');
-$phone = sanitizeInput($data['phone'] ?? '');
-$subject = sanitizeInput($data['subject'] ?? '');
-$message = sanitizeInput($data['message'] ?? '');
-$privacyAccepted = filter_var($data['privacy'] ?? false, FILTER_VALIDATE_BOOLEAN);
+$name = sanitizeText((string)($data['name'] ?? ''), 120);
+$email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
+$phone = sanitizeText((string)($data['phone'] ?? ''), 40);
+$subject = sanitizeText((string)($data['subject'] ?? ''), 200);
+$message = sanitizeText((string)($data['message'] ?? ''), 4000);
+$privacy = filter_var($data['privacy'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
 if ($name === '' || $email === '' || $subject === '' || $message === '') {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Compila tutti i campi obbligatori']);
-    exit();
+    sendJson(400, ['success' => false, 'message' => 'Compila tutti i campi obbligatori']);
 }
 
 if (!validateEmail($email)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Email non valida']);
-    exit();
+    sendJson(400, ['success' => false, 'message' => 'Email non valida']);
 }
 
-if (!$privacyAccepted) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Consenso privacy obbligatorio']);
-    exit();
+if (!$privacy) {
+    sendJson(400, ['success' => false, 'message' => 'Consenso privacy obbligatorio']);
 }
 
 if (!isMailConfigured()) {
-    logMailEvent('warning', 'Contact form rejected: SMTP not configured', [
-        'email' => $email,
-        'subject' => $subject,
-    ]);
-    http_response_code(503);
-    echo json_encode([
+    sendJson(503, [
         'success' => false,
-        'message' => 'Servizio email non configurato in locale. Controlla config/mail.php e logs/mail.log',
+        'message' => 'SMTP non configurato. Controlla config/mail.php e logs/mail.log',
     ]);
-    exit();
 }
 
-$adminEmail = (string)($MAIL_CONFIG['admin_email'] ?? '');
-$adminName = (string)($MAIL_CONFIG['admin_name'] ?? 'Admin');
-if ($adminEmail === '') {
-    logMailEvent('error', 'Contact form rejected: admin email missing');
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Configurazione email incompleta']);
-    exit();
+$adminEmail = sanitizeText((string)($MAIL_CONFIG['admin_email'] ?? ''), 255);
+$adminName = sanitizeText((string)($MAIL_CONFIG['admin_name'] ?? 'Admin'), 120);
+
+if ($adminEmail === '' || !validateEmail($adminEmail)) {
+    sendJson(500, ['success' => false, 'message' => 'Configurazione email admin non valida']);
 }
 
-$mailSubject = '[Contatti] ' . $subject;
-$htmlContent = '<h2>Nuovo messaggio dal sito</h2>'
-    . '<p><strong>Nome:</strong> ' . $name . '</p>'
-    . '<p><strong>Email:</strong> ' . $email . '</p>'
-    . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? $phone : '-') . '</p>'
-    . '<p><strong>Oggetto:</strong> ' . $subject . '</p>'
-    . '<p><strong>Messaggio:</strong><br>' . nl2br($message) . '</p>';
-$textContent = "Nuovo messaggio dal sito\n"
-    . "Nome: {$name}\n"
-    . "Email: {$email}\n"
-    . 'Telefono: ' . ($phone !== '' ? $phone : '-') . "\n"
-    . "Oggetto: {$subject}\n"
-    . "Messaggio:\n{$message}\n";
+$body = '<p><strong>Nuovo messaggio dal sito</strong></p>'
+    . '<p><strong>Nome:</strong> ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Email:</strong> ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? htmlspecialchars($phone, ENT_QUOTES, 'UTF-8') : '-') . '</p>'
+    . '<p><strong>Oggetto:</strong> ' . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Messaggio:</strong><br>' . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . '</p>';
 
-$sent = sendEmail($adminEmail, $adminName, $mailSubject, $htmlContent, $textContent);
+$sent = sendTemplateEmail(
+    $adminEmail,
+    $adminName,
+    '[Contatti] ' . $subject,
+    'Nuovo messaggio dal form contatti',
+    $body,
+    'Nuovo messaggio da ' . $name
+);
+
 if (!$sent) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Invio email non riuscito. Verifica logs/mail.log',
-    ]);
-    exit();
+    sendJson(500, ['success' => false, 'message' => 'Invio email non riuscito. Verifica logs/mail.log']);
 }
 
 if (!empty($MAIL_CONFIG['send_copy_to_sender'])) {
-    $copyHtml = '<p>Ciao ' . $name . ',</p>'
-        . '<p>abbiamo ricevuto il tuo messaggio e ti risponderemo il prima possibile.</p>'
-        . '<hr>'
-        . '<p><strong>Riepilogo:</strong> ' . $subject . '</p>';
-    sendEmail($email, $name, 'Conferma ricezione messaggio', $copyHtml);
+    $copyBody = '<p>Ciao <strong>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+        . '<p>abbiamo ricevuto il tuo messaggio. Ti risponderemo al piu presto.</p>'
+        . '<p><strong>Oggetto:</strong> ' . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</p>';
+
+    sendTemplateEmail($email, $name, 'Conferma ricezione messaggio', 'Messaggio ricevuto', $copyBody);
 }
 
-echo json_encode([
-    'success' => true,
-    'message' => 'Grazie! Il tuo messaggio e stato inviato correttamente.',
-]);
+sendJson(200, ['success' => true, 'message' => 'Grazie! Il tuo messaggio e stato inviato correttamente.']);

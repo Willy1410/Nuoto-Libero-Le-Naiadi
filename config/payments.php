@@ -1,6 +1,8 @@
 <?php
+declare(strict_types=1);
+
 /**
- * Payment configuration (local test placeholders only)
+ * Configurazione pagamenti (solo test locale)
  */
 
 return [
@@ -11,16 +13,16 @@ return [
         'mode' => 'test',
     ],
     'paypal' => [
-        'client_id' => 'YOUR_PAYPAL_CLIENT_ID',
-        'client_secret' => 'YOUR_PAYPAL_CLIENT_SECRET',
+        'client_id' => 'YOUR_PAYPAL_SANDBOX_CLIENT_ID',
+        'client_secret' => 'YOUR_PAYPAL_SANDBOX_CLIENT_SECRET',
         'mode' => 'sandbox',
-        'webhook_id' => 'YOUR_PAYPAL_WEBHOOK_ID',
+        'webhook_id' => 'YOUR_PAYPAL_SANDBOX_WEBHOOK_ID',
     ],
     'bonifico' => [
         'intestatario' => 'Nuoto Libero SSD',
         'iban' => 'IT00X0000000000000000000000',
         'banca' => 'Banca di Test Locale',
         'causale_template' => 'Nome Cognome - Pacchetto - Email',
-        'email_conferma' => 'amministrazione@nuotolibero.local',
+        'email_conferma' => 'inserisci-la-tua-gmail@gmail.com',
     ],
 ];

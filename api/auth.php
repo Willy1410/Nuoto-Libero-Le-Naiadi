@@ -1,19 +1,13 @@
 <?php
+declare(strict_types=1);
+
 /**
- * API AUTENTICAZIONE
- * File: api/auth.php
- * 
- * Endpoints:
- * POST /api/auth.php?action=register - Registrazione nuovo utente
- * POST /api/auth.php?action=login - Login
- * POST /api/auth.php?action=logout - Logout (opzionale, client-side)
- * GET  /api/auth.php?action=me - Dati utente corrente
- * POST /api/auth.php?action=change-password - Cambio password
+ * API autenticazione
  */
 
-require_once 'config.php';
+require_once __DIR__ . '/config.php';
 
-$action = $_GET['action'] ?? '';
+$action = (string)($_GET['action'] ?? '');
 
 switch ($action) {
     case 'register':
@@ -22,207 +16,211 @@ switch ($action) {
     case 'login':
         handleLogin();
         break;
+    case 'logout':
+        handleLogout();
+        break;
     case 'me':
-        handleGetMe();
+        handleMe();
         break;
     case 'change-password':
         handleChangePassword();
         break;
+    case 'forgot-password':
+        handleForgotPassword();
+        break;
+    case 'validate-reset-token':
+        handleValidateResetToken();
+        break;
+    case 'reset-password':
+        handleResetPassword();
+        break;
     default:
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Azione non valida']);
+        sendJson(400, ['success' => false, 'message' => 'Azione non valida']);
 }
 
-/**
- * REGISTRAZIONE NUOVO UTENTE
- */
-function handleRegister() {
+function handleRegister(): void
+{
     global $pdo;
-    
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    // Validazione
-    $required = ['email', 'password', 'nome', 'cognome'];
-    foreach ($required as $field) {
-        if (empty($data[$field])) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => "Campo $field obbligatorio"]);
-            return;
-        }
+
+    $data = getJsonInput();
+
+    $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
+    $password = (string)($data['password'] ?? '');
+    $nome = sanitizeText((string)($data['nome'] ?? ''), 100);
+    $cognome = sanitizeText((string)($data['cognome'] ?? ''), 100);
+    $telefono = sanitizeText((string)($data['telefono'] ?? ''), 30);
+    $dataNascita = sanitizeText((string)($data['data_nascita'] ?? ''), 10);
+    $indirizzo = sanitizeText((string)($data['indirizzo'] ?? ''), 255);
+    $citta = sanitizeText((string)($data['citta'] ?? ''), 100);
+    $cap = sanitizeText((string)($data['cap'] ?? ''), 10);
+    $codiceFiscale = strtoupper(sanitizeText((string)($data['codice_fiscale'] ?? ''), 16));
+
+    if ($email === '' || $password === '' || $nome === '' || $cognome === '') {
+        sendJson(400, ['success' => false, 'message' => 'Compila tutti i campi obbligatori']);
     }
-    
-    $email = sanitizeInput($data['email']);
-    $password = $data['password'];
-    $nome = sanitizeInput($data['nome']);
-    $cognome = sanitizeInput($data['cognome']);
-    $telefono = sanitizeInput($data['telefono'] ?? '');
-    $data_nascita = $data['data_nascita'] ?? null;
-    $indirizzo = sanitizeInput($data['indirizzo'] ?? '');
-    $citta = sanitizeInput($data['citta'] ?? '');
-    $cap = sanitizeInput($data['cap'] ?? '');
-    $codice_fiscale = strtoupper(sanitizeInput($data['codice_fiscale'] ?? ''));
-    
-    // Validazione email
+
     if (!validateEmail($email)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Email non valida']);
-        return;
+        sendJson(400, ['success' => false, 'message' => 'Email non valida']);
     }
-    
-    // Validazione codice fiscale
-    if ($codice_fiscale && !validateCodiceFiscale($codice_fiscale)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Codice fiscale non valido']);
-        return;
+
+    if (!validatePasswordStrength($password)) {
+        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (minimo 8 caratteri)']);
     }
-    
-    // Verifica email esistente
-    $stmt = $pdo->prepare("SELECT id FROM profili WHERE email = ?");
-    $stmt->execute([$email]);
-    if ($stmt->fetch()) {
-        http_response_code(409);
-        echo json_encode(['success' => false, 'message' => 'Email già registrata']);
-        return;
+
+    if ($codiceFiscale !== '' && !validateCodiceFiscale($codiceFiscale)) {
+        sendJson(400, ['success' => false, 'message' => 'Codice fiscale non valido']);
     }
-    
-    // Verifica codice fiscale esistente
-    if ($codice_fiscale) {
-        $stmt = $pdo->prepare("SELECT id FROM profili WHERE codice_fiscale = ?");
-        $stmt->execute([$codice_fiscale]);
-        if ($stmt->fetch()) {
-            http_response_code(409);
-            echo json_encode(['success' => false, 'message' => 'Codice fiscale già registrato']);
-            return;
-        }
-    }
-    
-    // Hash password
-    $passwordHash = password_hash($password, PASSWORD_BCRYPT);
-    
-    // Ottieni ID ruolo utente
-    $stmt = $pdo->prepare("SELECT id FROM ruoli WHERE nome = 'utente'");
-    $stmt->execute();
-    $ruolo = $stmt->fetch();
-    
-    if (!$ruolo) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore configurazione ruoli']);
-        return;
-    }
-    
+
     try {
-        // Inserisci profilo
-        $stmt = $pdo->prepare("
-            INSERT INTO profili 
+        $stmt = $pdo->prepare('SELECT id FROM profili WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            sendJson(409, ['success' => false, 'message' => 'Email gia registrata']);
+        }
+
+        if ($codiceFiscale !== '') {
+            $stmt = $pdo->prepare('SELECT id FROM profili WHERE codice_fiscale = ? LIMIT 1');
+            $stmt->execute([$codiceFiscale]);
+            if ($stmt->fetch()) {
+                sendJson(409, ['success' => false, 'message' => 'Codice fiscale gia registrato']);
+            }
+        }
+
+        $ruoloStmt = $pdo->query("SELECT id, nome, livello FROM ruoli WHERE nome = 'utente' LIMIT 1");
+        $ruolo = $ruoloStmt->fetch();
+        if (!$ruolo) {
+            sendJson(500, ['success' => false, 'message' => 'Ruolo utente non configurato']);
+        }
+
+        $userId = generateUuid();
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO profili
             (id, ruolo_id, email, password_hash, nome, cognome, telefono, data_nascita, indirizzo, citta, cap, codice_fiscale, attivo, email_verificata)
-            VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, FALSE)
-        ");
-        
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULLIF(?, ""), ?, ?, ?, NULLIF(?, ""), 1, 0)'
+        );
         $stmt->execute([
+            $userId,
             $ruolo['id'],
             $email,
-            $passwordHash,
+            $hash,
             $nome,
             $cognome,
             $telefono,
-            $data_nascita,
+            $dataNascita,
             $indirizzo,
             $citta,
             $cap,
-            $codice_fiscale
+            $codiceFiscale,
         ]);
-        
-        // Recupera profilo completo
-        $stmt = $pdo->prepare("
-            SELECT p.*, r.nome as ruolo_nome, r.livello as ruolo_livello
-            FROM profili p
-            JOIN ruoli r ON p.ruolo_id = r.id
-            WHERE p.email = ?
-        ");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-        
-        // Genera JWT
-        $token = generateJWT($user['id'], $user['email'], $user['ruolo_nome']);
-        
-        // Log attività
-        logActivity($user['id'], 'registrazione', "Nuovo utente registrato: $email", 'profili', $user['id']);
-        
-        // Invia email di benvenuto (opzionale)
-        $htmlContent = "
-            <h1>Benvenuto {$nome}!</h1>
-            <p>La tua registrazione è stata completata con successo.</p>
-            <p>Ora puoi accedere al sistema e completare il caricamento dei documenti obbligatori.</p>
-        ";
-        sendEmail($email, "$nome $cognome", 'Benvenuto alla Piscina Naiadi', $htmlContent);
-        
-        http_response_code(201);
-        echo json_encode([
+
+        $token = generateJWT($userId, $email, (string)$ruolo['nome'], (int)$ruolo['livello']);
+
+        logActivity($userId, 'registrazione', 'Registrazione utente', 'profili', $userId);
+
+        $body = '<p>Ciao <strong>' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+            . '<p>la registrazione e stata completata correttamente.</p>'
+            . '<p>Ora puoi accedere alla tua area riservata.</p>';
+        sendTemplateEmail($email, $nome . ' ' . $cognome, 'Benvenuto in Nuoto Libero', 'Registrazione completata', $body, 'Benvenuto in Nuoto Libero');
+
+        sendJson(201, [
             'success' => true,
             'message' => 'Registrazione completata',
             'token' => $token,
             'user' => [
-                'id' => $user['id'],
-                'email' => $user['email'],
-                'nome' => $user['nome'],
-                'cognome' => $user['cognome'],
-                'ruolo' => $user['ruolo_nome'],
-                'livello' => $user['ruolo_livello']
-            ]
+                'id' => $userId,
+                'email' => $email,
+                'nome' => $nome,
+                'cognome' => $cognome,
+                'ruolo' => $ruolo['nome'],
+                'livello' => (int)$ruolo['livello'],
+            ],
         ]);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore durante la registrazione', 'error' => $e->getMessage()]);
+    } catch (Throwable $e) {
+        error_log('register error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore durante la registrazione']);
     }
 }
 
-/**
- * LOGIN
- */
-function handleLogin() {
+function handleLogin(): void
+{
     global $pdo;
-    
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    $email = sanitizeInput($data['email'] ?? '');
-    $password = $data['password'] ?? '';
-    
-    if (!$email || !$password) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Email e password obbligatori']);
-        return;
+
+    $data = getJsonInput();
+
+    $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
+    $password = (string)($data['password'] ?? '');
+
+    if ($email === '' || $password === '') {
+        sendJson(400, ['success' => false, 'message' => 'Email e password obbligatorie']);
     }
-    
+
+    if (!validateEmail($email)) {
+        sendJson(400, ['success' => false, 'message' => 'Email non valida']);
+    }
+
+    $cooldown = &$_SESSION['login_cooldown'];
+    if (!is_array($cooldown)) {
+        $cooldown = [];
+    }
+
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $cooldownKey = hash('sha256', $ip . '|' . $email);
+    $entry = $cooldown[$cooldownKey] ?? ['attempts' => 0, 'blocked_until' => 0, 'first_attempt_at' => time()];
+
+    if (($entry['blocked_until'] ?? 0) > time()) {
+        $remaining = (int)$entry['blocked_until'] - time();
+        sendJson(429, [
+            'success' => false,
+            'message' => 'Troppi tentativi. Riprova tra ' . max(1, $remaining) . ' secondi.',
+        ]);
+    }
+
     try {
-        // Recupera utente
-        $stmt = $pdo->prepare("
-            SELECT p.*, r.nome as ruolo_nome, r.livello as ruolo_livello
-            FROM profili p
-            JOIN ruoli r ON p.ruolo_id = r.id
-            WHERE p.email = ? AND p.attivo = TRUE
-        ");
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.email, p.password_hash, p.nome, p.cognome, p.attivo, p.email_verificata,
+                    r.nome AS ruolo_nome, r.livello AS ruolo_livello
+             FROM profili p
+             JOIN ruoli r ON p.ruolo_id = r.id
+             WHERE p.email = ?
+             LIMIT 1'
+        );
         $stmt->execute([$email]);
         $user = $stmt->fetch();
-        
-        if (!$user || !password_verify($password, $user['password_hash'])) {
-            http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'Credenziali non valide']);
-            return;
+
+        if (!$user || (int)$user['attivo'] !== 1 || !password_verify($password, (string)$user['password_hash'])) {
+            $attempts = (int)($entry['attempts'] ?? 0) + 1;
+            $blockedUntil = 0;
+            if ($attempts >= 5) {
+                $blockedUntil = time() + 600;
+            }
+            $cooldown[$cooldownKey] = [
+                'attempts' => $attempts,
+                'blocked_until' => $blockedUntil,
+                'first_attempt_at' => (int)($entry['first_attempt_at'] ?? time()),
+            ];
+
+            sendJson(401, ['success' => false, 'message' => 'Credenziali non valide']);
         }
-        
-        // Aggiorna ultimo accesso
-        $stmt = $pdo->prepare("UPDATE profili SET ultimo_accesso = NOW() WHERE id = ?");
+
+        unset($cooldown[$cooldownKey]);
+
+        $stmt = $pdo->prepare('UPDATE profili SET ultimo_accesso = NOW() WHERE id = ?');
         $stmt->execute([$user['id']]);
-        
-        // Genera JWT
-        $token = generateJWT($user['id'], $user['email'], $user['ruolo_nome']);
-        
-        // Log attività
-        logActivity($user['id'], 'login', "Login effettuato", 'profili', $user['id']);
-        
-        http_response_code(200);
-        echo json_encode([
+
+        $token = generateJWT(
+            (string)$user['id'],
+            (string)$user['email'],
+            (string)$user['ruolo_nome'],
+            (int)$user['ruolo_livello']
+        );
+
+        logActivity((string)$user['id'], 'login', 'Login eseguito', 'profili', (string)$user['id']);
+
+        dispatchPendingExpiryReminders((string)$user['id']);
+
+        sendJson(200, [
             'success' => true,
             'message' => 'Login effettuato',
             'token' => $token,
@@ -232,99 +230,277 @@ function handleLogin() {
                 'nome' => $user['nome'],
                 'cognome' => $user['cognome'],
                 'ruolo' => $user['ruolo_nome'],
-                'livello' => $user['ruolo_livello'],
-                'email_verificata' => (bool)$user['email_verificata']
-            ]
+                'livello' => (int)$user['ruolo_livello'],
+                'email_verificata' => (bool)$user['email_verificata'],
+            ],
         ]);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore durante il login', 'error' => $e->getMessage()]);
+    } catch (Throwable $e) {
+        error_log('login error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore durante il login']);
     }
 }
 
-/**
- * GET CURRENT USER
- */
-function handleGetMe() {
+function handleLogout(): void
+{
+    session_regenerate_id(true);
+    sendJson(200, ['success' => true, 'message' => 'Logout effettuato']);
+}
+
+function handleMe(): void
+{
     global $pdo;
-    
+
     $currentUser = requireAuth();
-    
+
     try {
-        $stmt = $pdo->prepare("
-            SELECT p.*, r.nome as ruolo_nome, r.livello as ruolo_livello
-            FROM profili p
-            JOIN ruoli r ON p.ruolo_id = r.id
-            WHERE p.id = ?
-        ");
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
+                    p.codice_fiscale, p.attivo, p.email_verificata, p.ultimo_accesso,
+                    r.nome AS ruolo_nome, r.livello AS ruolo_livello
+             FROM profili p
+             JOIN ruoli r ON p.ruolo_id = r.id
+             WHERE p.id = ?
+             LIMIT 1'
+        );
         $stmt->execute([$currentUser['user_id']]);
         $user = $stmt->fetch();
-        
+
         if (!$user) {
-            http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Utente non trovato']);
-            return;
+            sendJson(404, ['success' => false, 'message' => 'Utente non trovato']);
         }
-        
-        // Rimuovi password hash
-        unset($user['password_hash']);
-        
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'user' => $user
-        ]);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore recupero dati utente', 'error' => $e->getMessage()]);
+
+        sendJson(200, ['success' => true, 'user' => $user]);
+    } catch (Throwable $e) {
+        error_log('me error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore recupero profilo']);
     }
 }
 
-/**
- * CAMBIO PASSWORD
- */
-function handleChangePassword() {
+function handleChangePassword(): void
+{
     global $pdo;
-    
+
     $currentUser = requireAuth();
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    $oldPassword = $data['old_password'] ?? '';
-    $newPassword = $data['new_password'] ?? '';
-    
-    if (!$oldPassword || !$newPassword) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Vecchia e nuova password obbligatorie']);
-        return;
+    $data = getJsonInput();
+
+    $oldPassword = (string)($data['old_password'] ?? '');
+    $newPassword = (string)($data['new_password'] ?? '');
+
+    if ($oldPassword === '' || $newPassword === '') {
+        sendJson(400, ['success' => false, 'message' => 'Vecchia e nuova password obbligatorie']);
     }
-    
+
+    if (!validatePasswordStrength($newPassword)) {
+        sendJson(400, ['success' => false, 'message' => 'Nuova password troppo debole (minimo 8 caratteri)']);
+    }
+
     try {
-        // Verifica vecchia password
-        $stmt = $pdo->prepare("SELECT password_hash FROM profili WHERE id = ?");
+        $stmt = $pdo->prepare('SELECT password_hash FROM profili WHERE id = ? LIMIT 1');
         $stmt->execute([$currentUser['user_id']]);
         $user = $stmt->fetch();
-        
-        if (!password_verify($oldPassword, $user['password_hash'])) {
-            http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'Vecchia password non corretta']);
-            return;
+
+        if (!$user || !password_verify($oldPassword, (string)$user['password_hash'])) {
+            sendJson(401, ['success' => false, 'message' => 'Vecchia password non corretta']);
         }
-        
-        // Aggiorna password
-        $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("UPDATE profili SET password_hash = ? WHERE id = ?");
+
+        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare('UPDATE profili SET password_hash = ? WHERE id = ?');
         $stmt->execute([$newHash, $currentUser['user_id']]);
-        
-        // Log attività
-        logActivity($currentUser['user_id'], 'cambio_password', 'Password modificata', 'profili', $currentUser['user_id']);
-        
-        http_response_code(200);
-        echo json_encode(['success' => true, 'message' => 'Password aggiornata']);
-        
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Errore aggiornamento password', 'error' => $e->getMessage()]);
+
+        logActivity((string)$currentUser['user_id'], 'cambio_password', 'Password aggiornata', 'profili', (string)$currentUser['user_id']);
+
+        sendJson(200, ['success' => true, 'message' => 'Password aggiornata']);
+    } catch (Throwable $e) {
+        error_log('change-password error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore aggiornamento password']);
+    }
+}
+
+function handleForgotPassword(): void
+{
+    global $pdo;
+
+    $data = getJsonInput();
+    $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
+
+    $generic = ['success' => true, 'message' => 'Se l\'email esiste, riceverai un link di reset password.'];
+
+    if ($email === '' || !validateEmail($email)) {
+        sendJson(200, $generic);
+    }
+
+    $cooldown = &$_SESSION['password_reset_cooldown'];
+    if (!is_array($cooldown)) {
+        $cooldown = [];
+    }
+
+    $cooldownKey = hash('sha256', ((string)($_SERVER['REMOTE_ADDR'] ?? 'unknown')) . '|' . $email);
+    $lastRequestAt = (int)($cooldown[$cooldownKey] ?? 0);
+    if ($lastRequestAt > 0 && (time() - $lastRequestAt) < 120) {
+        sendJson(200, $generic);
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.nome, p.cognome, p.email
+             FROM profili p
+             WHERE p.email = ? AND p.attivo = 1
+             LIMIT 1'
+        );
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        $cooldown[$cooldownKey] = time();
+
+        if (!$user) {
+            sendJson(200, $generic);
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+        $tokenId = generateUuid();
+
+        $pdo->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL')
+            ->execute([$user['id']]);
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO password_reset_tokens
+            (id, user_id, token_hash, expires_at, requested_ip, requested_user_agent)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 MINUTE), ?, ?)'
+        );
+        $stmt->execute([
+            $tokenId,
+            $user['id'],
+            $tokenHash,
+            (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+            (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
+        ]);
+
+        $resetLink = localAppBaseUrl() . '/reset-password.html?token=' . urlencode($token);
+
+        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+            . '<p>abbiamo ricevuto una richiesta di reset password.</p>'
+            . '<p><a href="' . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:10px 16px;background:#00a8e8;color:#fff;text-decoration:none;border-radius:6px;">Imposta nuova password</a></p>'
+            . '<p>Il link scade tra 60 minuti ed e utilizzabile una sola volta.</p>'
+            . '<p>Se non hai richiesto il reset, ignora questa email.</p>';
+
+        sendTemplateEmail(
+            (string)$user['email'],
+            trim((string)$user['nome'] . ' ' . (string)$user['cognome']),
+            'Reset password Nuoto Libero',
+            'Reset password richiesto',
+            $body,
+            'Link per reset password'
+        );
+
+        logActivity((string)$user['id'], 'richiesta_reset_password', 'Richiesta reset password', 'password_reset_tokens', $tokenId);
+
+        sendJson(200, $generic);
+    } catch (Throwable $e) {
+        error_log('forgot-password error: ' . $e->getMessage());
+        sendJson(200, $generic);
+    }
+}
+
+function handleValidateResetToken(): void
+{
+    global $pdo;
+
+    $token = sanitizeText((string)($_GET['token'] ?? ''), 128);
+    if ($token === '') {
+        sendJson(400, ['success' => false, 'valid' => false, 'message' => 'Token mancante']);
+    }
+
+    $tokenHash = hash('sha256', $token);
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT id
+             FROM password_reset_tokens
+             WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()
+             LIMIT 1'
+        );
+        $stmt->execute([$tokenHash]);
+
+        if (!$stmt->fetch()) {
+            sendJson(200, ['success' => true, 'valid' => false, 'message' => 'Token non valido o scaduto']);
+        }
+
+        sendJson(200, ['success' => true, 'valid' => true]);
+    } catch (Throwable $e) {
+        error_log('validate-reset-token error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'valid' => false, 'message' => 'Errore validazione token']);
+    }
+}
+
+function handleResetPassword(): void
+{
+    global $pdo;
+
+    $data = getJsonInput();
+
+    $token = sanitizeText((string)($data['token'] ?? ''), 128);
+    $newPassword = (string)($data['new_password'] ?? '');
+
+    if ($token === '' || $newPassword === '') {
+        sendJson(400, ['success' => false, 'message' => 'Token e nuova password obbligatori']);
+    }
+
+    if (!validatePasswordStrength($newPassword)) {
+        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (minimo 8 caratteri)']);
+    }
+
+    $tokenHash = hash('sha256', $token);
+
+    try {
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare(
+            'SELECT prt.id, prt.user_id, p.email, p.nome, p.cognome
+             FROM password_reset_tokens prt
+             JOIN profili p ON p.id = prt.user_id
+             WHERE prt.token_hash = ?
+               AND prt.used_at IS NULL
+               AND prt.expires_at > NOW()
+             LIMIT 1
+             FOR UPDATE'
+        );
+        $stmt->execute([$tokenHash]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            $pdo->rollBack();
+            sendJson(400, ['success' => false, 'message' => 'Token non valido o scaduto']);
+        }
+
+        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $pdo->prepare('UPDATE profili SET password_hash = ? WHERE id = ?')->execute([$newHash, $row['user_id']]);
+
+        $pdo->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?')->execute([$row['id']]);
+
+        $pdo->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL')->execute([$row['user_id']]);
+
+        $pdo->commit();
+
+        logActivity((string)$row['user_id'], 'reset_password', 'Password resettata via token', 'password_reset_tokens', (string)$row['id']);
+
+        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$row['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+            . '<p>la tua password e stata aggiornata correttamente.</p>'
+            . '<p>Se non sei stato tu, contatta subito la segreteria.</p>';
+        sendTemplateEmail(
+            (string)$row['email'],
+            trim((string)$row['nome'] . ' ' . (string)$row['cognome']),
+            'Password aggiornata',
+            'Password aggiornata con successo',
+            $body
+        );
+
+        sendJson(200, ['success' => true, 'message' => 'Password aggiornata. Ora puoi accedere.']);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('reset-password error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore durante il reset password']);
     }
 }

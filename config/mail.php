@@ -1,26 +1,32 @@
 <?php
+declare(strict_types=1);
+
 /**
- * Local mail configuration (XAMPP/test only)
+ * Configurazione SMTP locale (XAMPP)
  *
- * NOTE:
- * - Keep `enabled` false until SMTP data is configured.
- * - Use only test/local credentials.
+ * IMPORTANTE:
+ * - Solo ambiente locale/test.
+ * - Password app Gmail fornita dall'utente.
+ * - Inserire la casella Gmail reale in GMAIL_SMTP_USER.
  */
 
+$gmailUser = getenv('GMAIL_SMTP_USER') ?: 'inserisci-la-tua-gmail@gmail.com';
+$gmailAppPassword = getenv('GMAIL_SMTP_APP_PASSWORD') ?: 'yyvb ckzs zvpi rwdb';
+
 return [
-    'enabled' => false,
-    'from_email' => 'noreply@nuotolibero.local',
-    'from_name' => 'Nuoto Libero (Test Locale)',
-    'admin_email' => 'admin@nuotolibero.local',
-    'admin_name' => 'Admin Nuoto Libero',
+    'enabled' => true,
+    'from_email' => $gmailUser,
+    'from_name' => 'Nuoto Libero',
+    'admin_email' => $gmailUser,
+    'admin_name' => 'Segreteria Nuoto Libero',
     'send_copy_to_sender' => false,
     'smtp' => [
-        'host' => 'smtp.mailtrap.io',
-        'port' => 2525,
-        'username' => 'YOUR_SMTP_USERNAME',
-        'password' => 'YOUR_SMTP_PASSWORD',
-        'encryption' => 'tls', // tls | ssl | ''
+        'host' => 'smtp.gmail.com',
+        'port' => 587,
+        'username' => $gmailUser,
+        'password' => $gmailAppPassword,
+        'encryption' => 'tls',
         'auth' => true,
-        'timeout' => 10,
+        'timeout' => 15,
     ],
 ];

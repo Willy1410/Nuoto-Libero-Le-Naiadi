@@ -1,119 +1,89 @@
-﻿# REPORT AUDIT - Nuoto Libero
+# REPORT_AUDIT.md
 
-Data audit: 2026-02-16
+Data audit completo: 2026-02-16
+Percorso analizzato: `C:\xampp\htdocs\nuoto-libero`
 Branch: `audit-fix-cleanup`
-Ambiente target: XAMPP locale (Apache + PHP + MySQL/MariaDB)
 
-## 1) Ambito revisione
-Audit completo eseguito su frontend, backend PHP/API, configurazioni, SQL e documentazione.
+## 1) Esito sintetico
+Audit completo eseguito su frontend, backend PHP/API, configurazioni, dashboard, SQL e documentazione.
 
-## 2) Snapshot iniziale (prima della pulizia)
-Struttura ad alto livello trovata all'avvio:
+Problemi principali trovati prima dei fix:
+1. Login rotto per path API errato e risposta HTML al posto di JSON.
+2. Doppia pagina login (`login.html` + `piscina-php/login.html`) con flussi incoerenti.
+3. Mojibake diffuso (testi con caratteri corrotti) in dashboard e pagine statiche.
+4. Dashboard admin/segreteria con funzioni placeholder e API incomplete.
+5. Mancanza di reset password con token one-time.
+6. Scan QR non pienamente conforme (niente camera reale, permessi non separati read-only/write).
+7. Log errori progetto non formalizzato su file dedicato.
+8. Schema DB incompleto rispetto alle funzioni richieste (reset password, log notifiche email).
 
-- `backend/` (stack Node/Express legacy)
-- `piscina-supabase/` (stack alternativo Supabase)
-- `piscina-php/` (stack PHP con API e dashboard)
-- root con frontend marketing + file mock login/dashboard
-- documentazione storica multipla e ridondante
+## 2) Fix critici applicati
 
-## 3) Risultati audit per priorita
+### Sicurezza / autenticazione
+- Harden configurazione API in `api/config.php`:
+  - `error_reporting(E_ALL)`
+  - `display_errors=Off`
+  - `log_errors=On`
+  - `error_log=/logs/error.log`
+  - session cookie hardening
+  - risposte errore senza leak SQL al client.
+- Implementato reset password completo in `api/auth.php`:
+  - `forgot-password`
+  - `validate-reset-token`
+  - `reset-password`
+  - token univoco hashato, scadenza, uso singolo.
+- Login con cooldown base anti brute force (tentativi ripetuti).
+- Rimossa login duplicata `piscina-php/login.html`.
 
-### Critici (sicurezza/affidabilita)
+### Backend funzionale
+- Nuovo endpoint admin completo `api/admin.php`:
+  - lista utenti con filtri/ricerca
+  - dettaglio utente (pacchetti, check-in, pagamenti)
+  - crea/modifica utente
+  - attiva/disattiva
+  - elimina con conferma.
+- Rifatti endpoint:
+  - `api/pacchetti.php` (pending, conferma, annullo, rinnovo)
+  - `api/checkin.php` (verifica QR read-only pubblica, check-in protetto)
+  - `api/documenti.php` (upload/review robusti)
+  - `api/stats.php` (dashboard, report daily, serie temporale, breakdown pagamenti, export).
 
-1. Stack multipli in conflitto
-- Dove: root progetto (`backend/`, `piscina-supabase/`, `piscina-php/`, file root mock)
-- Problema: presenza di piu implementazioni concorrenti, con endpoint e flussi incoerenti
-- Impatto: alto rischio operativo, deploy errato, debug complesso
-- Soluzione applicata: rimozione definitiva degli stack non usati e consolidamento su stack PHP attivo
-- Stato: RISOLTO
+### QR e permessi
+- QR disponibile con verifica pubblica read-only via `qr-view.html`.
+- Check-in consentito solo a ruoli autorizzati (bagnino/staff) tramite API.
+- Antidoppio scan/check-in lato backend (finestra temporale + controllo fascia giornaliera).
+- Dashboard bagnino aggiornata con camera reale (`getUserMedia`) e scanner automatico (BarcodeDetector se disponibile) + fallback manuale.
 
-2. Endpoint legacy rotti
-- Dove: vecchi file API PHP (`users.php`, `checkins.php`) nella versione storica
-- Problema: riferimenti a funzioni/classi non esistenti (`Database::getInstance`, helper mancanti)
-- Impatto: errori runtime, percorsi API non affidabili
-- Soluzione applicata: eliminazione endpoint legacy e mantenimento solo API coerente in `api/`
-- Stato: RISOLTO
+### Email
+- SMTP Gmail locale configurabile in `config/mail.php` (con app password test fornita).
+- Template HTML email coerenti con palette sito.
+- Notifiche automatiche backend:
+  - quando resta 1 ingresso
+  - quando mancano circa 7 giorni alla scadenza.
 
-3. Configurazione API non hardenizzata
-- Dove: `api/config.php` (versione precedente)
-- Problema: gestione errori e auth non robusta
-- Impatto: leak informazioni, validazione token fragile
-- Soluzione applicata: hardening config (error handling, `hash_equals`, parsing header auth robusto, logging)
-- Stato: RISOLTO
+### UI / encoding
+- Fix completo JSON.parse/login path.
+- Dashboard admin/segreteria/bagnino/utente riscritte con testo pulito.
+- Corretto mojibake nei file del progetto (UTF-8 coerente).
+- Aggiornato contatto WhatsApp su sito/footer:
+  - numero: `+39 320 300 9040`
+  - link: `https://wa.me/393203009040`.
 
-### Funzionali (flussi principali)
+### Database
+- Script unico aggiornato `db/CREATE_DATABASE_FROM_ZERO.sql` con:
+  - tabelle core
+  - `password_reset_tokens`
+  - `notifiche_email`
+  - indici/vincoli
+  - seed utenti/ruoli/acquisti/check-in/documenti.
 
-4. Menu hamburger mobile/tablet non scrollabile
-- Dove: `css/style.css`, `js/main.js`
-- Problema: menu off-canvas non consentiva scroll interno completo
-- Impatto: voci basse non raggiungibili (es. Area Riservata)
-- Soluzione applicata: `height/max-height`, `overflow-y:auto`, `-webkit-overflow-scrolling:touch`, body lock controllato via classe CSS
-- Stato: RISOLTO
-
-5. Bottone Area Riservata con sfondo non allineato al testo
-- Dove: `css/style.css` (`.btn-login`)
-- Problema: copertura sfondo non uniforme su mobile
-- Impatto: difetto UI
-- Soluzione applicata: fix conservativo su `display`, `line-height`, `padding`, `width`
-- Stato: RISOLTO
-
-6. Form contatti senza invio reale email
-- Dove: `js/main.js` (versione precedente)
-- Problema: submit simulato lato client
-- Impatto: nessuna email reale inviata
-- Soluzione applicata: endpoint reale `api/contact.php` + integrazione PHPMailer
-- Stato: RISOLTO
-
-7. Flusso bonifico incompleto
-- Dove: `pacchetti.html`, `js/payment.js`
-- Problema: mancava notifica amministrazione post-bonifico
-- Impatto: processo pagamento non tracciabile
-- Soluzione applicata: sezione bonifico + endpoint `api/bonifico-notify.php` + invio email admin
-- Stato: RISOLTO
-
-8. Login root puntava a backend non piu presente
-- Dove: `login.html`, `js/api-client.js` (legacy)
-- Problema: login non coerente con API PHP finale
-- Impatto: accesso area riservata non affidabile
-- Soluzione applicata: `login.html` collegato a `api/auth.php?action=login` e redirect alle dashboard reali in `piscina-php/`; rimozione file mock
-- Stato: RISOLTO
-
-### Qualita/manutenibilita
-
-9. Documentazione storica ridondante
-- Dove: root e cartelle legacy
-- Problema: molti file storici e istruzioni obsolete
-- Impatto: confusione setup
-- Soluzione applicata: pulizia definitiva e centralizzazione documentazione in `DOCUMENTAZIONE_E_CONFIG/`
-- Stato: RISOLTO
-
-10. Incoerenze schema DB/API
-- Dove: `api/pacchetti.php`, `api/documenti.php`, `api/stats.php`, `api/auth.php`
-- Problema: uso `lastInsertId` con UUID e assunzioni rigide sui ruoli
-- Impatto: possibili bug su acquisti/documenti/statistiche
-- Soluzione applicata: UUID generati applicativamente, query ruoli robuste, allineamento con schema SQL finale
-- Stato: RISOLTO
-
-### Performance base
-
-11. Asset e codice legacy superflui
-- Dove: stack storici e pagine mock
-- Problema: peso progetto e rumore operativo
-- Impatto: bassa maintainability
-- Soluzione applicata: rimozione definitiva file non necessari
-- Stato: RISOLTO
+## 3) Rischi residui (non bloccanti)
+1. `BarcodeDetector` non è supportato da tutti i browser mobile: resta fallback input manuale.
+2. Per invio Gmail reale serve impostare una casella Gmail valida in `GMAIL_SMTP_USER` (la sola app password non basta).
+3. I grafici report sono implementati in SVG custom (no librerie premium), adeguati per test/gestione ma non BI avanzata.
 
 ## 4) Verifiche tecniche eseguite
-
-- Lint PHP (`php -l`) su file API/config principali: OK
-- Check sintassi JS (`node --check`) su `js/main.js` e `js/payment.js`: OK
-- Smoke test HTTP locale con `php -S`:
-  - `index.html`, `login.html`, `contatti.html`, `pacchetti.html`: 200
-  - dashboard area riservata (`piscina-php/*.html`): 200
-- Test API login locale: risposta 500 in assenza DB importato/servizio MySQL non pronto
-
-## 5) Rischi residui e note operative
-
-1. Email: fino a configurazione SMTP reale di test in `config/mail.php`, gli endpoint mail rispondono con errore gestito (comportamento voluto).
-2. DB: prima del test login API e obbligatorio importare `db/CREATE_DATABASE_FROM_ZERO.sql` su MySQL/MariaDB locale.
-3. Asset logo/immagini: parte delle risorse punta a URL esterni; non blocca il funzionamento ma dipende da rete esterna.
+- Lint PHP: OK su tutti i file in `api/` e `config/`.
+- Verifica presenza log errori: `logs/error.log` creato.
+- Verifica login duplicato rimosso: `piscina-php/login.html` eliminato.
+- Verifica endpoint principali: rotte allineate a `../api` nelle dashboard e `api` nel login principale.
