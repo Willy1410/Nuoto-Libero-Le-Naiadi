@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modulo Iscrizione - Gli Squaletti</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #0077b6;
+            border-bottom: 3px solid #00a8e8;
+            padding-bottom: 1rem;
+        }
+        .field {
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 1rem;
+        }
+        .field label {
+            font-weight: bold;
+            width: 200px;
+        }
+        .field-line {
+            flex: 1;
+            border-bottom: 1px solid #333;
+        }
+        .checkbox {
+            margin: 1rem 0;
+        }
+        .signature {
+            margin-top: 3rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            text-align: center;
+        }
+        .signature-line {
+            width: 250px;
+            border-bottom: 1px solid #333;
+            margin: 1rem auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>MODULO DI ISCRIZIONE</h1>
+    <p style="text-align: center; color: #666;">Piscina Gli Squaletti - CLADAM GROUP<br>Via Federico Fellini, 2 - Spoltore (PE)</p>
+
+    <h2>Dati Anagrafici</h2>
+    
+    <div class="field">
+        <label>Nome:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Cognome:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Data di Nascita:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Luogo di Nascita:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Codice Fiscale:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Indirizzo:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>CAP e Città:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Telefono:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <div class="field">
+        <label>Email:</label>
+        <div class="field-line"></div>
+    </div>
+
+    <h2>Pacchetto Selezionato</h2>
+
+    <div class="checkbox">
+        <input type="checkbox" id="single"> <label for="single">Ingresso Singolo (€12)</label>
+    </div>
+    <div class="checkbox">
+        <input type="checkbox" id="ten"> <label for="ten">10 Ingressi (€100) - validità 6 mesi</label>
+    </div>
+    <div class="checkbox">
+        <input type="checkbox" id="promo"> <label for="promo">Iscrizione Società + 3 Lezioni Omaggio (€30)</label>
+    </div>
+
+    <h2>Dichiarazioni</h2>
+
+    <div class="checkbox">
+        <input type="checkbox" id="rules"> <label for="rules">Dichiaro di aver preso visione e di accettare il regolamento della piscina</label>
+    </div>
+
+    <div class="checkbox">
+        <input type="checkbox" id="privacy"> <label for="privacy">Dichiaro di aver preso visione dell'informativa sulla privacy e acconsento al trattamento dei dati personali</label>
+    </div>
+
+    <div class="checkbox">
+        <input type="checkbox" id="medical"> <label for="medical">Dichiaro di possedere un certificato medico di idoneità sportiva in corso di validità</label>
+    </div>
+
+    <div class="signature">
+        <div class="signature-box">
+            <p>Data</p>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <p>Firma del richiedente</p>
+            <div class="signature-line"></div>
+        </div>
+    </div>
+
+    <hr style="margin: 3rem 0;">
+
+    <p style="font-size: 0.9rem; color: #666; text-align: center;">
+        <strong>Per uso ufficio:</strong><br>
+        Registrato da: ______________ Data: ______________ Pagamento: ☐ Contanti ☐ Carta ☐ Bonifico
+    </p>
+</body>
+</html>

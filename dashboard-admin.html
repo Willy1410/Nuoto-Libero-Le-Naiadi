@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Gli Squaletti</title>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard">
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="dashboard-nav">
+                <div class="dashboard-logo">
+                    <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti">
+                    <span>Admin Panel</span>
+                </div>
+                <div class="dashboard-user">
+                    <div class="dashboard-user-info">
+                        <strong>Admin</strong>
+                        <small>Amministratore</small>
+                    </div>
+                    <button class="btn-logout" onclick="window.location.href='login.html'">
+                        <i class="fas fa-sign-out-alt"></i> Esci
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="container">
+            <h2><i class="fas fa-shield-alt"></i> Pannello Amministrazione</h2>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-users"></i> Utenti Totali</h3>
+                    <div class="dashboard-stat">127</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-check-circle"></i> Attivi Oggi</h3>
+                    <div class="dashboard-stat">23</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-euro-sign"></i> Incassi Mese</h3>
+                    <div class="dashboard-stat" style="font-size: 2rem;">€2.340</div>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <div class="admin-tabs">
+                    <button class="admin-tab active" onclick="showTab('users')">
+                        <i class="fas fa-users"></i> Gestione Utenti
+                    </button>
+                    <button class="admin-tab" onclick="showTab('content')">
+                        <i class="fas fa-edit"></i> Contenuti
+                    </button>
+                    <button class="admin-tab" onclick="showTab('images')">
+                        <i class="fas fa-images"></i> Immagini
+                    </button>
+                    <button class="admin-tab" onclick="window.location.href='qr-generator.html'">
+                        <i class="fas fa-qrcode"></i> Genera QR Codes
+                    </button>
+                </div>
+
+                <!-- Tab Utenti -->
+                <div id="tabUsers" class="tab-content">
+                    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Elenco Utenti</h3>
+                        <button class="btn btn-primary" onclick="alert('Funzionalità crea utente da implementare')">
+                            <i class="fas fa-user-plus"></i> Nuovo Utente
+                        </button>
+                    </div>
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Ingressi</th>
+                                <th>Stato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mario Rossi</td>
+                                <td>mario.rossi@email.it</td>
+                                <td>8/10</td>
+                                <td><span class="badge badge-success">Attivo</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="alert('Modifica utente')"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-secondary btn-sm" onclick="alert('Genera QR')"><i class="fas fa-qrcode"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Laura Bianchi</td>
+                                <td>laura.b@email.it</td>
+                                <td>2/10</td>
+                                <td><span class="badge badge-warning">Scade tra 30gg</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-secondary btn-sm"><i class="fas fa-qrcode"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Giuseppe Verdi</td>
+                                <td>g.verdi@email.it</td>
+                                <td>0/10</td>
+                                <td><span class="badge badge-danger">Scaduto</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-secondary btn-sm"><i class="fas fa-qrcode"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tab Contenuti -->
+                <div id="tabContent" class="tab-content" style="display: none;">
+                    <h3>Modifica Contenuti Sito</h3>
+                    <p style="color: var(--gray-600); margin-bottom: 2rem;">Gestisci testi, orari e informazioni del sito</p>
+                    <div class="form-group">
+                        <label>Titolo Hero Homepage</label>
+                        <input type="text" value="Nuoto Libero alla Piscina Naiadi di Pescara">
+                    </div>
+                    <div class="form-group">
+                        <label>Orari Lunedì</label>
+                        <input type="text" value="07:00-09:00, 13:00-14:00">
+                    </div>
+                    <button class="btn btn-primary" onclick="alert('Salvataggio da implementare con backend')">
+                        <i class="fas fa-save"></i> Salva Modifiche
+                    </button>
+                </div>
+
+                <!-- Tab Immagini -->
+                <div id="tabImages" class="tab-content" style="display: none;">
+                    <h3>Gestione Immagini</h3>
+                    <p style="color: var(--gray-600); margin-bottom: 2rem;">Carica e gestisci le immagini del sito</p>
+                    <div style="border: 2px dashed var(--gray-300); padding: 2rem; text-align: center; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--gray-400);"></i>
+                        <p>Trascina file qui o clicca per caricare</p>
+                        <button class="btn btn-secondary" onclick="alert('Upload da implementare')">
+                            <i class="fas fa-upload"></i> Seleziona File
+                        </button>
+                    </div>
+                    <div class="gallery-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div style="position: relative;">
+                            <img src="https://www.genspark.ai/api/files/s/qroJIpG9" style="width: 100%; border-radius: var(--radius-md);">
+                            <button class="btn btn-secondary btn-sm" style="position: absolute; top: 0.5rem; right: 0.5rem;" onclick="alert('Elimina')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-note">
+                <p><i class="fas fa-info-circle"></i> <strong>MOCKUP VISIVO</strong> - Pannello admin dimostrativo. Tutte le funzionalità richiedono implementazione backend (API REST, database, autenticazione, upload file).</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Verifica autenticazione
+        const session = Auth.requireAuth(['admin']);
+        if (!session) return;
+
+        // Carica statistiche
+        const stats = Auth.getStats();
+        document.querySelector('.dashboard-grid .dashboard-card:nth-child(1) .dashboard-stat').textContent = stats.totalUsers;
+        document.querySelector('.dashboard-grid .dashboard-card:nth-child(2) .dashboard-stat').textContent = stats.todayEntries;
+        document.querySelector('.dashboard-grid .dashboard-card:nth-child(3) .dashboard-stat').textContent = '€' + stats.totalRevenue.toFixed(2);
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            
+            if (tab === 'users') {
+                document.getElementById('tabUsers').style.display = 'block';
+                event.target.classList.add('active');
+                loadUsers();
+            } else if (tab === 'content') {
+                document.getElementById('tabContent').style.display = 'block';
+                event.target.classList.add('active');
+            } else if (tab === 'images') {
+                document.getElementById('tabImages').style.display = 'block';
+                event.target.classList.add('active');
+            }
+        }
+
+        function loadUsers() {
+            const users = Auth.getAllUsers();
+            const tbody = document.querySelector('#tabUsers tbody');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>${user.remainingEntries}/${user.totalEntries}</td>
+                        <td><span class="badge ${user.remainingEntries > 0 ? 'badge-success' : 'badge-danger'}">${user.remainingEntries > 0 ? 'Attivo' : 'Esaurito'}</span></td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm" onclick="window.location.href='user-detail.html?id=${user.id}'"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-secondary btn-sm" onclick="alert('QR: ${user.qrCode}')"><i class="fas fa-qrcode"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

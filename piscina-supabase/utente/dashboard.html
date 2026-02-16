@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Utente - Piscina</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+  <!-- Header Dashboard -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <img src="/assets/logo.png" alt="Logo" class="logo-small">
+      <h1>Dashboard Utente</h1>
+    </div>
+    <div class="header-right">
+      <span id="userName">Caricamento...</span>
+      <button onclick="handleLogout()" class="btn btn-secondary">Esci</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="dashboard-nav">
+    <button class="nav-tab active" data-tab="overview">📊 Panoramica</button>
+    <button class="nav-tab" data-tab="documenti">📄 Documenti</button>
+    <button class="nav-tab" data-tab="pacchetti">🎫 Pacchetti</button>
+    <button class="nav-tab" data-tab="prenotazioni">📅 Prenotazioni</button>
+    <button class="nav-tab" data-tab="qrcode">📱 QR Code</button>
+    <button class="nav-tab" data-tab="storico">📋 Storico</button>
+    <button class="nav-tab" data-tab="profilo">⚙️ Profilo</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="dashboard-content">
+
+    <!-- ===== TAB: PANORAMICA ===== -->
+    <section id="tab-overview" class="tab-pane active">
+      <h2>Benvenuto/a, <span id="nomeUtente"></span>!</h2>
+
+      <!-- Alert Documenti -->
+      <div id="alertDocumenti" class="alert alert-warning" style="display: none;">
+        ⚠️ <strong>Documenti mancanti!</strong> Carica i documenti obbligatori per completare l'iscrizione.
+        <button onclick="switchTab('documenti')" class="btn btn-sm btn-primary">Carica ora</button>
+      </div>
+
+      <!-- Cards Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🎫</div>
+          <div class="stat-info">
+            <h3 id="ingressiRimanenti">-</h3>
+            <p>Ingressi Rimanenti</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-info">
+            <h3 id="dataScadenza">-</h3>
+            <p>Scadenza Pacchetto</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-info">
+            <h3 id="documentiStatus">-</h3>
+            <p>Stato Documenti</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">🏊</div>
+          <div class="stat-info">
+            <h3 id="totaleIngressi">-</h3>
+            <p>Ingressi Totali</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prossime Prenotazioni -->
+      <div class="card">
+        <h3>📅 Prossime Prenotazioni</h3>
+        <div id="prossimiTurni">
+          <p class="text-muted">Nessuna prenotazione in programma</p>
+        </div>
+        <button onclick="switchTab('prenotazioni')" class="btn btn-primary">Prenota Turno</button>
+      </div>
+
+      <!-- Comunicazioni Recenti -->
+      <div class="card">
+        <h3>📢 Comunicazioni</h3>
+        <div id="comunicazioniRecenti">
+          <p class="text-muted">Nessuna comunicazione</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: DOCUMENTI ===== -->
+    <section id="tab-documenti" class="tab-pane">
+      <h2>📄 Documenti Obbligatori</h2>
+      <p>Carica i 5 documenti obbligatori per completare l'iscrizione.</p>
+
+      <div id="listaDocumenti">
+        <!-- Popolato dinamicamente -->
+      </div>
+    </section>
+
+    <!-- ===== TAB: PACCHETTI ===== -->
+    <section id="tab-pacchetti" class="tab-pane">
+      <h2>🎫 Acquista Pacchetto</h2>
+      
+      <div id="pacchetti-container" class="pacchetti-grid">
+        <!-- Popolato dinamicamente -->
+      </div>
+
+      <!-- Modal Acquisto -->
+      <div id="modalAcquisto" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="modal-close" onclick="closeModalAcquisto()">&times;</span>
+          <h3>Acquista Pacchetto</h3>
+          <form id="formAcquisto">
+            <input type="hidden" id="pacchettoIdSelected">
+            
+            <div class="form-group">
+              <label>Pacchetto Selezionato</label>
+              <input type="text" id="pacchettoNome" readonly>
+            </div>
+
+            <div class="form-group">
+              <label>Prezzo</label>
+              <input type="text" id="pacchettoPrezzo" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="metodoPagamento">Metodo di Pagamento *</label>
+              <select id="metodoPagamento" required>
+                <option value="">Seleziona...</option>
+                <option value="bonifico">Bonifico Bancario</option>
+                <option value="contanti">Contanti in sede</option>
+                <option value="carta">Carta di credito</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="bonifico-info" style="display: none;">
+              <div class="alert alert-info">
+                <strong>Coordinate Bancarie:</strong><br>
+                IBAN: IT12 A123 4567 8901 2345 6789 012<br>
+                Causale: <strong>PISCINA-<span id="causale"></span></strong>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="riferimentoPagamento">Riferimento / Note</label>
+              <textarea id="riferimentoPagamento" rows="3" placeholder="Es: CRO bonifico, data pagamento, ecc."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Conferma Acquisto</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: PRENOTAZIONI ===== -->
+    <section id="tab-prenotazioni" class="tab-pane">
+      <h2>📅 Prenota Turno</h2>
+      
+      <div class="alert alert-info">
+        <strong>ℹ️ Orari disponibili:</strong><br>
+        Lunedì, Mercoledì, Venerdì<br>
+        • Mattina: 07:00 - 09:00<br>
+        • Pomeriggio: 13:00 - 14:00
+      </div>
+
+      <form id="formPrenotazione" class="card">
+        <div class="form-group">
+          <label for="dataPrenotazione">Data *</label>
+          <input type="date" id="dataPrenotazione" required>
+        </div>
+
+        <div class="form-group">
+          <label for="fasciaOraria">Fascia Oraria *</label>
+          <select id="fasciaOraria" required>
+            <option value="">Seleziona...</option>
+            <option value="mattina">Mattina (07:00 - 09:00)</option>
+            <option value="pomeriggio">Pomeriggio (13:00 - 14:00)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Prenota</button>
+      </form>
+
+      <h3>Le Tue Prenotazioni</h3>
+      <div id="listaPrenotazioni">
+        <p class="text-muted">Nessuna prenotazione</p>
+      </div>
+    </section>
+
+    <!-- ===== TAB: QR CODE ===== -->
+    <section id="tab-qrcode" class="tab-pane">
+      <h2>📱 Il Tuo QR Code</h2>
+
+      <div id="qr-container" class="card text-center">
+        <div id="qrcode-image">
+          <!-- QR Code generato dinamicamente -->
+        </div>
+        <p class="text-muted">Mostra questo QR code all'ingresso della piscina</p>
+        <button onclick="downloadQR()" class="btn btn-primary">📥 Scarica QR</button>
+      </div>
+
+      <div class="alert alert-info">
+        <strong>ℹ️ Come funziona:</strong><br>
+        1. Mostra il QR code al bagnino all'ingresso<br>
+        2. Il bagnino lo scansionerà per registrare il tuo ingresso<br>
+        3. Gli ingressi rimanenti si aggiorneranno automaticamente
+      </div>
+    </section>
+
+    <!-- ===== TAB: STORICO ===== -->
+    <section id="tab-storico" class="tab-pane">
+      <h2>📋 Storico Ingressi</h2>
+      
+      <div class="filters">
+        <input type="date" id="filterDataDa" placeholder="Da data">
+        <input type="date" id="filterDataA" placeholder="A data">
+        <button onclick="filtraStorico()" class="btn btn-secondary">Filtra</button>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Ora</th>
+            <th>Fascia</th>
+            <th>Registrato da</th>
+          </tr>
+        </thead>
+        <tbody id="storicoIngressi">
+          <tr>
+            <td colspan="4" class="text-center text-muted">Nessun ingresso registrato</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ===== TAB: PROFILO ===== -->
+    <section id="tab-profilo" class="tab-pane">
+      <h2>⚙️ Il Mio Profilo</h2>
+
+      <form id="formProfilo" class="card">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="profiloNome">Nome *</label>
+            <input type="text" id="profiloNome" required>
+          </div>
+          <div class="form-group">
+            <label for="profiloCognome">Cognome *</label>
+            <input type="text" id="profiloCognome" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="profiloEmail">Email</label>
+            <input type="email" id="profiloEmail" readonly>
+          </div>
+          <div class="form-group">
+            <label for="profiloTelefono">Telefono *</label>
+            <input type="tel" id="profiloTelefono" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="profiloDataNascita">Data di Nascita</label>
+            <input type="date" id="profiloDataNascita">
+          </div>
+          <div class="form-group">
+            <label for="profiloCodiceFiscale">Codice Fiscale</label>
+            <input type="text" id="profiloCodiceFiscale" maxlength="16">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profiloIndirizzo">Indirizzo</label>
+          <input type="text" id="profiloIndirizzo">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="profiloCitta">Città</label>
+            <input type="text" id="profiloCitta">
+          </div>
+          <div class="form-group">
+            <label for="profiloCap">CAP</label>
+            <input type="text" id="profiloCap" maxlength="5">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+      </form>
+
+      <div class="card">
+        <h3>🔐 Cambia Password</h3>
+        <form id="formPassword">
+          <div class="form-group">
+            <label for="passwordAttuale">Password Attuale *</label>
+            <input type="password" id="passwordAttuale" required>
+          </div>
+          <div class="form-group">
+            <label for="passwordNuova">Nuova Password *</label>
+            <input type="password" id="passwordNuova" minlength="8" required>
+          </div>
+          <div class="form-group">
+            <label for="passwordConferma">Conferma Password *</label>
+            <input type="password" id="passwordConferma" minlength="8" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Cambia Password</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Loading Spinner -->
+  <div id="loadingSpinner" class="spinner-overlay" style="display: none;">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { supabase, getCurrentUser, requireAuth, logout, formatDate, formatDateTime, getBadgeDocumento, checkDocumentiCompleti, ROLES } from '/js/supabase-client.js'
+    import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm'
+
+    let currentUser = null
+
+    // ===== INIT =====
+    window.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth(ROLES.UTENTE)
+      if (!currentUser) return
+
+      loadDashboard()
+    })
+
+    // ===== LOAD DASHBOARD =====
+    async function loadDashboard() {
+      document.getElementById('userName').textContent = currentUser.profilo.nome + ' ' + currentUser.profilo.cognome
+      document.getElementById('nomeUtente').textContent = currentUser.profilo.nome
+
+      await Promise.all([
+        loadPanoramica(),
+        loadDocumenti(),
+        loadPacchetti(),
+        loadPrenotazioni(),
+        loadQRCode(),
+        loadStorico(),
+        loadProfilo()
+      ])
+    }
+
+    // ===== PANORAMICA =====
+    async function loadPanoramica() {
+      try {
+        // Fetch acquisto attivo
+        const { data: acquisto } = await supabase
+          .from('acquisti')
+          .select('*, pacchetto:pacchetti(nome)')
+          .eq('user_id', currentUser.id)
+          .eq('stato_pagamento', 'confermato')
+          .gt('ingressi_rimanenti', 0)
+          .order('data_scadenza', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (acquisto) {
+          document.getElementById('ingressiRimanenti').textContent = acquisto.ingressi_rimanenti
+          document.getElementById('dataScadenza').textContent = formatDate(acquisto.data_scadenza)
+        } else {
+          document.getElementById('ingressiRimanenti').textContent = '0'
+          document.getElementById('dataScadenza').textContent = '-'
+        }
+
+        // Check documenti
+        const docStatus = await checkDocumentiCompleti(currentUser.id)
+        const statusHTML = docStatus.completi 
+          ? '<span class="badge bg-success">✅ Completi</span>'
+          : '<span class="badge bg-warning">⚠️ Incompleti</span>'
+        document.getElementById('documentiStatus').innerHTML = statusHTML
+
+        if (!docStatus.completi) {
+          document.getElementById('alertDocumenti').style.display = 'block'
+        }
+
+        // Totale ingressi
+        const { count } = await supabase
+          .from('check_ins')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id)
+
+        document.getElementById('totaleIngressi').textContent = count || 0
+
+        // Prossime prenotazioni
+        const { data: prenotazioni } = await supabase
+          .from('prenotazioni')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .gte('data_turno', new Date().toISOString().split('T')[0])
+          .eq('stato', 'confermata')
+          .order('data_turno', { ascending: true })
+          .limit(3)
+
+        if (prenotazioni && prenotazioni.length > 0) {
+          const html = prenotazioni.map(p => `
+            <div class="prenotazione-item">
+              📅 ${formatDate(p.data_turno)} - ${p.fascia_oraria} (${p.orario_inizio} - ${p.orario_fine})
+            </div>
+          `).join('')
+          document.getElementById('prossimiTurni').innerHTML = html
+        }
+
+        // Comunicazioni
+        const { data: comunicazioni } = await supabase
+          .from('comunicazioni')
+          .select('*')
+          .eq('pubblicata', true)
+          .in('destinatari', ['tutti', 'utenti'])
+          .order('created_at', { ascending: false })
+          .limit(5)
+
+        if (comunicazioni && comunicazioni.length > 0) {
+          const html = comunicazioni.map(c => {
+            const tipoIcon = {
+              'info': 'ℹ️',
+              'avviso': '⚠️',
+              'urgente': '🚨',
+              'manutenzione': '🔧'
+            }
+            return `
+              <div class="comunicazione-item ${c.tipo}">
+                ${tipoIcon[c.tipo] || 'ℹ️'} <strong>${c.titolo}</strong><br>
+                <small>${c.messaggio}</small>
+              </div>
+            `
+          }).join('')
+          document.getElementById('comunicazioniRecenti').innerHTML = html
+        }
+
+      } catch (error) {
+        console.error('Errore caricamento panoramica:', error)
+      }
+    }
+
+    // ===== DOCUMENTI =====
+    async function loadDocumenti() {
+      try {
+        const { data: tipiDocumenti } = await supabase
+          .from('tipi_documento')
+          .select('*')
+          .eq('obbligatorio', true)
+          .order('ordine')
+
+        const { data: documentiUtente } = await supabase
+          .from('documenti_utente')
+          .select('*')
+          .eq('user_id', currentUser.id)
+
+        const documentiMap = {}
+        documentiUtente?.forEach(d => {
+          documentiMap[d.tipo_documento_id] = d
+        })
+
+        const html = tipiDocumenti.map(tipo => {
+          const doc = documentiMap[tipo.id]
+          const stato = doc ? doc.stato : 'da_inviare'
+          const badge = getBadgeDocumento(stato)
+
+          return `
+            <div class="documento-card">
+              <h4>${tipo.nome} ${badge}</h4>
+              <p>${tipo.descrizione}</p>
+              ${doc && doc.note_revisione ? `<p class="text-danger"><small>${doc.note_revisione}</small></p>` : ''}
+              ${stato === 'da_inviare' || stato === 'rifiutato' ? `
+                <input type="file" id="file-${tipo.id}" accept=".pdf,.jpg,.jpeg,.png">
+                <button onclick="uploadDocumento('${tipo.id}')" class="btn btn-primary btn-sm">Carica</button>
+              ` : ''}
+              ${doc && doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="btn btn-secondary btn-sm">Visualizza</a>` : ''}
+            </div>
+          `
+        }).join('')
+
+        document.getElementById('listaDocumenti').innerHTML = html
+      } catch (error) {
+        console.error('Errore caricamento documenti:', error)
+      }
+    }
+
+    window.uploadDocumento = async function(tipoDocumentoId) {
+      const fileInput = document.getElementById(`file-${tipoDocumentoId}`)
+      const file = fileInput.files[0]
+
+      if (!file) {
+        alert('Seleziona un file')
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File troppo grande (max 5MB)')
+        return
+      }
+
+      try {
+        document.getElementById('loadingSpinner').style.display = 'flex'
+
+        // Upload a Supabase Storage
+        const fileName = `${currentUser.id}/${tipoDocumentoId}_${Date.now()}.${file.name.split('.').pop()}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documenti-utenti')
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('documenti-utenti')
+          .getPublicUrl(fileName)
+
+        // Insert record
+        const { error: insertError } = await supabase
+          .from('documenti_utente')
+          .upsert({
+            user_id: currentUser.id,
+            tipo_documento_id: tipoDocumentoId,
+            file_url: publicUrl,
+            file_name: file.name,
+            stato: 'in_attesa'
+          })
+
+        if (insertError) throw insertError
+
+        alert('✅ Documento caricato! Sarà revisionato dall\'ufficio.')
+        loadDocumenti()
+
+      } catch (error) {
+        console.error('Errore upload:', error)
+        alert('❌ Errore caricamento: ' + error.message)
+      } finally {
+        document.getElementById('loadingSpinner').style.display = 'none'
+      }
+    }
+
+    // ===== PACCHETTI =====
+    async function loadPacchetti() {
+      try {
+        const { data: pacchetti } = await supabase
+          .from('pacchetti')
+          .select('*')
+          .eq('attivo', true)
+          .order('ordine')
+
+        const html = pacchetti.map(p => `
+          <div class="pacchetto-card">
+            <h3>${p.nome}</h3>
+            <p>${p.descrizione}</p>
+            <div class="pacchetto-details">
+              <span>🎫 ${p.num_ingressi} ingressi</span>
+              <span>⏱️ ${p.validita_giorni} giorni</span>
+            </div>
+            <div class="pacchetto-price">€ ${p.prezzo.toFixed(2)}</div>
+            <button onclick="openModalAcquisto('${p.id}', '${p.nome}', ${p.prezzo})" class="btn btn-primary">Acquista</button>
+          </div>
+        `).join('')
+
+        document.getElementById('pacchetti-container').innerHTML = html
+      } catch (error) {
+        console.error('Errore caricamento pacchetti:', error)
+      }
+    }
+
+    window.openModalAcquisto = function(id, nome, prezzo) {
+      document.getElementById('pacchettoIdSelected').value = id
+      document.getElementById('pacchettoNome').value = nome
+      document.getElementById('pacchettoPrezzo').value = `€ ${prezzo.toFixed(2)}`
+      document.getElementById('causale').textContent = currentUser.id.substring(0, 8).toUpperCase()
+      document.getElementById('modalAcquisto').style.display = 'flex'
+    }
+
+    window.closeModalAcquisto = function() {
+      document.getElementById('modalAcquisto').style.display = 'none'
+    }
+
+    document.getElementById('metodoPagamento')?.addEventListener('change', (e) => {
+      document.getElementById('bonifico-info').style.display = e.target.value === 'bonifico' ? 'block' : 'none'
+    })
+
+    document.getElementById('formAcquisto')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const pacchettoId = document.getElementById('pacchettoIdSelected').value
+      const metodo = document.getElementById('metodoPagamento').value
+      const riferimento = document.getElementById('riferimentoPagamento').value
+
+      try {
+        document.getElementById('loadingSpinner').style.display = 'flex'
+
+        const { error } = await supabase
+          .from('acquisti')
+          .insert({
+            user_id: currentUser.id,
+            pacchetto_id: pacchettoId,
+            metodo_pagamento: metodo,
+            stato_pagamento: 'in_attesa',
+            riferimento_pagamento: riferimento
+          })
+
+        if (error) throw error
+
+        alert('✅ Richiesta di acquisto inviata! Riceverai una email con le istruzioni.')
+        closeModalAcquisto()
+        loadPanoramica()
+
+      } catch (error) {
+        console.error('Errore acquisto:', error)
+        alert('❌ Errore: ' + error.message)
+      } finally {
+        document.getElementById('loadingSpinner').style.display = 'none'
+      }
+    })
+
+    // ===== PRENOTAZIONI =====
+    async function loadPrenotazioni() {
+      try {
+        const { data: prenotazioni } = await supabase
+          .from('prenotazioni')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .gte('data_turno', new Date().toISOString().split('T')[0])
+          .order('data_turno', { ascending: true })
+
+        if (prenotazioni && prenotazioni.length > 0) {
+          const html = prenotazioni.map(p => `
+            <div class="prenotazione-item">
+              📅 ${formatDate(p.data_turno)} - ${p.fascia_oraria.toUpperCase()}<br>
+              ⏰ ${p.orario_inizio} - ${p.orario_fine}<br>
+              <span class="badge ${p.stato === 'confermata' ? 'bg-success' : 'bg-secondary'}">${p.stato}</span>
+              ${p.stato === 'confermata' ? `<button onclick="cancellaPrenotazione('${p.id}')" class="btn btn-sm btn-danger">Cancella</button>` : ''}
+            </div>
+          `).join('')
+          document.getElementById('listaPrenotazioni').innerHTML = html
+        }
+      } catch (error) {
+        console.error('Errore caricamento prenotazioni:', error)
+      }
+    }
+
+    document.getElementById('formPrenotazione')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const data = document.getElementById('dataPrenotazione').value
+      const fascia = document.getElementById('fasciaOraria').value
+
+      // Validazione giorno settimana
+      const giorno = new Date(data).getDay() // 0=Dom, 1=Lun, ...
+      if (![1, 3, 5].includes(giorno)) {
+        alert('⚠️ Puoi prenotare solo Lunedì, Mercoledì o Venerdì')
+        return
+      }
+
+      const orari = {
+        'mattina': ['07:00', '09:00'],
+        'pomeriggio': ['13:00', '14:00']
+      }
+
+      try {
+        document.getElementById('loadingSpinner').style.display = 'flex'
+
+        // Trova acquisto attivo
+        const { data: acquisto } = await supabase
+          .from('acquisti')
+          .select('id')
+          .eq('user_id', currentUser.id)
+          .eq('stato_pagamento', 'confermato')
+          .gt('ingressi_rimanenti', 0)
+          .single()
+
+        if (!acquisto) {
+          alert('⚠️ Non hai ingressi disponibili. Acquista un pacchetto prima.')
+          return
+        }
+
+        const { error } = await supabase
+          .from('prenotazioni')
+          .insert({
+            user_id: currentUser.id,
+            acquisto_id: acquisto.id,
+            data_turno: data,
+            fascia_oraria: fascia,
+            orario_inizio: orari[fascia][0],
+            orario_fine: orari[fascia][1],
+            stato: 'confermata'
+          })
+
+        if (error) throw error
+
+        alert('✅ Prenotazione confermata!')
+        e.target.reset()
+        loadPrenotazioni()
+        loadPanoramica()
+
+      } catch (error) {
+        console.error('Errore prenotazione:', error)
+        alert('❌ Errore: ' + error.message)
+      } finally {
+        document.getElementById('loadingSpinner').style.display = 'none'
+      }
+    })
+
+    // ===== QR CODE =====
+    async function loadQRCode() {
+      try {
+        const { data: acquisto } = await supabase
+          .from('acquisti')
+          .select('qr_code')
+          .eq('user_id', currentUser.id)
+          .eq('stato_pagamento', 'confermato')
+          .not('qr_code', 'is', null)
+          .limit(1)
+          .single()
+
+        if (acquisto && acquisto.qr_code) {
+          const qrContainer = document.getElementById('qrcode-image')
+          qrContainer.innerHTML = ''
+          const canvas = document.createElement('canvas')
+          qrContainer.appendChild(canvas)
+          await QRCode.toCanvas(canvas, acquisto.qr_code, { width: 300 })
+        } else {
+          document.getElementById('qrcode-image').innerHTML = '<p class="text-muted">QR Code non disponibile. Acquista e conferma un pacchetto.</p>'
+        }
+      } catch (error) {
+        console.error('Errore QR:', error)
+      }
+    }
+
+    window.downloadQR = function() {
+      const canvas = document.querySelector('#qrcode-image canvas')
+      if (!canvas) return
+      const url = canvas.toDataURL('image/png')
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'qr-code-piscina.png'
+      a.click()
+    }
+
+    // ===== STORICO =====
+    async function loadStorico() {
+      try {
+        const { data: ingressi } = await supabase
+          .from('check_ins')
+          .select(`
+            *,
+            bagnino:profili!check_ins_bagnino_id_fkey(nome, cognome)
+          `)
+          .eq('user_id', currentUser.id)
+          .order('timestamp', { ascending: false })
+
+        if (ingressi && ingressi.length > 0) {
+          const html = ingressi.map(i => `
+            <tr>
+              <td>${formatDate(i.timestamp)}</td>
+              <td>${new Date(i.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</td>
+              <td><span class="badge">${i.fascia_oraria}</span></td>
+              <td>${i.bagnino.nome} ${i.bagnino.cognome}</td>
+            </tr>
+          `).join('')
+          document.getElementById('storicoIngressi').innerHTML = html
+        }
+      } catch (error) {
+        console.error('Errore storico:', error)
+      }
+    }
+
+    // ===== PROFILO =====
+    async function loadProfilo() {
+      const profilo = currentUser.profilo
+      document.getElementById('profiloNome').value = profilo.nome || ''
+      document.getElementById('profiloCognome').value = profilo.cognome || ''
+      document.getElementById('profiloEmail').value = currentUser.email
+      document.getElementById('profiloTelefono').value = profilo.telefono || ''
+      document.getElementById('profiloDataNascita').value = profilo.data_nascita || ''
+      document.getElementById('profiloCodiceFiscale').value = profilo.codice_fiscale || ''
+      document.getElementById('profiloIndirizzo').value = profilo.indirizzo || ''
+      document.getElementById('profiloCitta').value = profilo.citta || ''
+      document.getElementById('profiloCap').value = profilo.cap || ''
+    }
+
+    document.getElementById('formProfilo')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      try {
+        document.getElementById('loadingSpinner').style.display = 'flex'
+
+        const { error } = await supabase
+          .from('profili')
+          .update({
+            nome: document.getElementById('profiloNome').value,
+            cognome: document.getElementById('profiloCognome').value,
+            telefono: document.getElementById('profiloTelefono').value,
+            data_nascita: document.getElementById('profiloDataNascita').value || null,
+            codice_fiscale: document.getElementById('profiloCodiceFiscale').value || null,
+            indirizzo: document.getElementById('profiloIndirizzo').value || null,
+            citta: document.getElementById('profiloCitta').value || null,
+            cap: document.getElementById('profiloCap').value || null
+          })
+          .eq('id', currentUser.id)
+
+        if (error) throw error
+
+        alert('✅ Profilo aggiornato!')
+
+      } catch (error) {
+        console.error('Errore aggiornamento:', error)
+        alert('❌ Errore: ' + error.message)
+      } finally {
+        document.getElementById('loadingSpinner').style.display = 'none'
+      }
+    })
+
+    // ===== TABS =====
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'))
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'))
+        tab.classList.add('active')
+        document.getElementById(`tab-${targetTab}`).classList.add('active')
+      })
+    })
+
+    window.switchTab = function(tabName) {
+      document.querySelector(`[data-tab="${tabName}"]`).click()
+    }
+
+    // ===== LOGOUT =====
+    window.handleLogout = logout
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area Riservata - Gli Squaletti</title>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo" style="height: 80px; margin-bottom: 1rem;">
+                <h1>Area Riservata</h1>
+                <p>Accedi al tuo account Gli Squaletti</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Il tuo username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" name="password" required placeholder="La tua password">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="remember">
+                        <span>Ricordami</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> Accedi
+                </button>
+
+                <div class="login-links">
+                    <a href="#" id="forgotPassword">Hai dimenticato la password?</a>
+                </div>
+            </form>
+
+            <div class="login-divider"><span>oppure</span></div>
+
+            <div class="login-signup">
+                <p>Non hai ancora un account?</p>
+                <a href="dashboard-user.html" class="btn btn-secondary btn-block">
+                    <i class="fas fa-user-plus"></i> Richiedi Iscrizione
+                </a>
+            </div>
+
+            <div class="login-footer">
+                <a href="index.html"><i class="fas fa-arrow-left"></i> Torna alla Home</a>
+            </div>
+
+            <div class="login-note">
+                <p><i class="fas fa-info-circle"></i> <strong>MOCKUP VISIVO</strong> - Questa è una versione dimostrativa dell'interfaccia di login. Il sistema di autenticazione richiede un backend da implementare.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Controlla se già loggato
+        if (API.isAuthenticated()) {
+            const role = API.getUserRole();
+            switch(role) {
+                case 'admin':
+                    window.location.href = 'dashboard-admin.html';
+                    break;
+                case 'segreteria':
+                    window.location.href = 'dashboard-segreteria.html';
+                    break;
+                case 'user':
+                    window.location.href = 'dashboard-user.html';
+                    break;
+            }
+        }
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Accesso in corso...';
+
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                const response = await API.login(username, password);
+                
+                if (response.success) {
+                    // Login OK - redirect basato su ruolo
+                    const role = response.data.user.role;
+                    
+                    switch(role) {
+                        case 'admin':
+                            window.location.href = 'dashboard-admin.html';
+                            break;
+                        case 'segreteria':
+                            window.location.href = 'dashboard-segreteria.html';
+                            break;
+                        case 'user':
+                            window.location.href = 'dashboard-user.html';
+                            break;
+                    }
+                }
+            } catch (error) {
+                alert('Errore: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        document.getElementById('forgotPassword').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Funzionalità recupero password da implementare.');
+        });
+    </script>
+</body>
+</html>

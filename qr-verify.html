@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifica Accesso - Gli Squaletti</title>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="login-page" style="background: linear-gradient(135deg, #00a8e8, #0077b6);">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo" style="height: 80px; margin-bottom: 1rem;">
+                <h1 style="color: #0077b6;">Verifica Accesso</h1>
+                <p id="userName" style="font-size: 1.25rem; font-weight: 600; color: #00a8e8;"></p>
+            </div>
+
+            <div id="loadingMessage" style="text-align: center; padding: 2rem;">
+                <div style="width: 60px; height: 60px; border: 4px solid #e0e0e0; border-top: 4px solid #00a8e8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                <p>Caricamento dati utente...</p>
+            </div>
+
+            <div id="loginRequired" style="display: none;">
+                <p style="text-align: center; margin-bottom: 2rem; color: #495057;">
+                    <i class="fas fa-shield-alt" style="color: #00a8e8;"></i><br>
+                    Accedi con le tue credenziali per visualizzare i dettagli
+                </p>
+                
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="username"><i class="fas fa-user"></i> Username</label>
+                        <input type="text" id="username" name="username" required placeholder="Username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Accedi e Visualizza
+                    </button>
+                </form>
+
+                <div class="login-note" style="margin-top: 2rem;">
+                    <p><strong>Credenziali di test:</strong></p>
+                    <ul style="text-align: left; font-size: 0.9rem;">
+                        <li><strong>Admin:</strong> admin / admin123</li>
+                        <li><strong>Segreteria:</strong> segreteria / segreteria123</li>
+                        <li><strong>Utente:</strong> mario.rossi / password123</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="errorMessage" style="display: none; text-align: center; padding: 2rem;">
+                <div style="width: 80px; height: 80px; background: #e74c3c; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: white; font-size: 3rem;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 style="color: #e74c3c; margin-bottom: 1rem;">Errore</h3>
+                <p id="errorText"></p>
+                <a href="index.html" class="btn btn-secondary" style="margin-top: 1rem;">
+                    <i class="fas fa-home"></i> Torna alla Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Leggi parametro QR code dall'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const qrCode = urlParams.get('qr');
+        
+        const loadingDiv = document.getElementById('loadingMessage');
+        const loginDiv = document.getElementById('loginRequired');
+        const errorDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const userNameEl = document.getElementById('userName');
+
+        function init() {
+            if (!qrCode) {
+                showError('QR Code non valido. Riprova la scansione.');
+                return;
+            }
+
+            // Cerca utente dal QR
+            const targetUser = Auth.getUserByQR(qrCode);
+            
+            if (!targetUser) {
+                showError('QR Code non riconosciuto. Contatta la segreteria.');
+                return;
+            }
+
+            // Mostra nome utente
+            userNameEl.textContent = targetUser.name;
+
+            // Controlla se già loggato
+            const session = Auth.getSession();
+            
+            if (session) {
+                // Già loggato - redirect basato su ruolo
+                redirectBasedOnRole(session.role, targetUser.id);
+            } else {
+                // Non loggato - mostra form login
+                loadingDiv.style.display = 'none';
+                loginDiv.style.display = 'block';
+            }
+        }
+
+        function redirectBasedOnRole(role, targetUserId) {
+            switch(role) {
+                case 'admin':
+                    // Admin vede dashboard completa utente
+                    window.location.href = `user-detail.html?id=${targetUserId}`;
+                    break;
+                    
+                case 'segreteria':
+                    // Segreteria va a pagina gestione ingresso
+                    window.location.href = `check-entry.html?id=${targetUserId}`;
+                    break;
+                    
+                case 'user':
+                    // User vede solo il proprio profilo
+                    const session = Auth.getSession();
+                    if (session.userId === targetUserId) {
+                        window.location.href = 'dashboard-user.html';
+                    } else {
+                        showError('Non puoi visualizzare i dati di altri utenti.');
+                    }
+                    break;
+                    
+                default:
+                    showError('Ruolo non riconosciuto.');
+            }
+        }
+
+        function showError(message) {
+            loadingDiv.style.display = 'none';
+            loginDiv.style.display = 'none';
+            errorDiv.style.display = 'block';
+            errorText.textContent = message;
+        }
+
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const targetUser = Auth.getUserByQR(qrCode);
+            const result = Auth.login(username, password, targetUser.id);
+            
+            if (result.success) {
+                // Login OK - redirect
+                redirectBasedOnRole(result.user.role, targetUser.id);
+            } else {
+                alert(result.message);
+            }
+        });
+
+        // Init
+        init();
+    </script>
+</body>
+</html>

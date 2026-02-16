@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettaglio Utente - Gli Squaletti</title>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard">
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="dashboard-nav">
+                <div class="dashboard-logo">
+                    <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti">
+                    <span>Dettaglio Utente</span>
+                </div>
+                <div class="dashboard-user">
+                    <button class="btn-logout" onclick="goBack()">
+                        <i class="fas fa-arrow-left"></i> Indietro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="container">
+            <div class="dashboard-grid" style="grid-template-columns: 2fr 1fr; gap: 2rem;">
+                <!-- Colonna sinistra -->
+                <div>
+                    <!-- Dati Anagrafici -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-user-circle"></i> Dati Anagrafici</h3>
+                        <div class="user-detail-grid">
+                            <div>
+                                <label>Nome Completo</label>
+                                <p id="fullName"></p>
+                            </div>
+                            <div>
+                                <label>Email</label>
+                                <p id="email"></p>
+                            </div>
+                            <div>
+                                <label>Telefono</label>
+                                <p id="phone"></p>
+                            </div>
+                            <div>
+                                <label>Codice Fiscale</label>
+                                <p id="fiscalCode"></p>
+                            </div>
+                            <div>
+                                <label>Data di Nascita</label>
+                                <p id="birthDate"></p>
+                            </div>
+                            <div>
+                                <label>Indirizzo</label>
+                                <p id="address"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pacchetto Attivo -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-ticket-alt"></i> Pacchetto Attivo</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <div style="text-align: center; padding: 1.5rem; background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-radius: 12px;">
+                                <div style="font-size: 3rem; font-weight: 700; color: #00a8e8;" id="remainingBig">-</div>
+                                <p style="margin: 0; color: #495057;">Ingressi Rimanenti</p>
+                            </div>
+                            <div style="text-align: center; padding: 1.5rem; background: #f8f9fa; border-radius: 12px;">
+                                <div style="font-size: 3rem; font-weight: 700; color: var(--gray-700);" id="totalBig">-</div>
+                                <p style="margin: 0; color: #495057;">Totali</p>
+                            </div>
+                        </div>
+
+                        <div class="user-detail-grid">
+                            <div>
+                                <label>Tipo Pacchetto</label>
+                                <p id="packageTypeDetail"></p>
+                            </div>
+                            <div>
+                                <label>Prezzo Pagato</label>
+                                <p id="priceDetail"></p>
+                            </div>
+                            <div>
+                                <label>Data Acquisto</label>
+                                <p id="purchaseDateDetail"></p>
+                            </div>
+                            <div>
+                                <label>Data Scadenza</label>
+                                <p id="expiryDateDetail"></p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="registerEntry()">
+                                <i class="fas fa-sign-in-alt"></i> Registra Ingresso
+                            </button>
+                            <button class="btn btn-secondary" onclick="addPackage()">
+                                <i class="fas fa-shopping-cart"></i> Aggiungi Pacchetto
+                            </button>
+                            <button class="btn btn-secondary" onclick="editUser()">
+                                <i class="fas fa-edit"></i> Modifica Dati
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Storico Ingressi -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-history"></i> Storico Ingressi</h3>
+                        <div id="entriesHistory" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Popolato da JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonna destra -->
+                <div>
+                    <!-- QR Code -->
+                    <div class="dashboard-card" style="text-align: center;">
+                        <h3><i class="fas fa-qrcode"></i> QR Code</h3>
+                        <div id="qrCodeDisplay" style="padding: 2rem; background: #f8f9fa; border-radius: 12px; margin: 1.5rem 0;">
+                            <div style="width: 200px; height: 200px; margin: 0 auto; background: white; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gray-300); border-radius: 8px;">
+                                <div style="font-size: 8rem; color: var(--gray-300);">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 1rem;">
+                            Codice: <strong id="qrCodeText"></strong>
+                        </p>
+                        <button class="btn btn-secondary btn-block" onclick="downloadQR()">
+                            <i class="fas fa-download"></i> Scarica QR Code
+                        </button>
+                        <button class="btn btn-secondary btn-block" onclick="printQR()">
+                            <i class="fas fa-print"></i> Stampa QR Code
+                        </button>
+                    </div>
+
+                    <!-- Stato Account -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-shield-check"></i> Stato Account</h3>
+                        <div id="accountStatus">
+                            <!-- Popolato da JS -->
+                        </div>
+                    </div>
+
+                    <!-- Documenti -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-file-alt"></i> Documenti</h3>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fas fa-file-pdf" style="color: #e74c3c;"></i> Certificato Medico</span>
+                                <span class="badge badge-success">Valido</span>
+                            </li>
+                            <li style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fas fa-file-pdf" style="color: #e74c3c;"></i> Modulo Iscrizione</span>
+                                <span class="badge badge-success">Firmato</span>
+                            </li>
+                            <li style="padding: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fas fa-file-pdf" style="color: #e74c3c;"></i> Privacy</span>
+                                <span class="badge badge-success">Accettata</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .user-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        .user-detail-grid label {
+            display: block;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        .user-detail-grid p {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--gray-900);
+        }
+    </style>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Verifica autenticazione
+        const session = Auth.requireAuth(['admin', 'segreteria']);
+        if (!session) return;
+
+        // Leggi ID utente
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+
+        let currentUser = null;
+
+        function init() {
+            if (!userId) {
+                alert('ID utente non valido');
+                goBack();
+                return;
+            }
+
+            currentUser = Auth.getUserById(userId);
+            
+            if (!currentUser) {
+                alert('Utente non trovato');
+                goBack();
+                return;
+            }
+
+            displayUser(currentUser);
+        }
+
+        function displayUser(user) {
+            // Dati anagrafici
+            document.getElementById('fullName').textContent = user.name;
+            document.getElementById('email').textContent = user.email;
+            document.getElementById('phone').textContent = user.phone;
+            document.getElementById('fiscalCode').textContent = user.fiscalCode;
+            document.getElementById('birthDate').textContent = user.birthDate;
+            document.getElementById('address').textContent = user.address;
+
+            // Pacchetto
+            document.getElementById('remainingBig').textContent = user.remainingEntries;
+            document.getElementById('totalBig').textContent = user.totalEntries;
+            
+            let packageName = '';
+            switch(user.packageType) {
+                case '10_entries': packageName = '10 Ingressi'; break;
+                case 'promo': packageName = 'Promo Iscrizione'; break;
+                case 'single': packageName = 'Singolo Ingresso'; break;
+                default: packageName = user.packageType;
+            }
+            document.getElementById('packageTypeDetail').textContent = packageName;
+            document.getElementById('priceDetail').textContent = '€' + user.price;
+            document.getElementById('purchaseDateDetail').textContent = user.purchaseDate;
+            document.getElementById('expiryDateDetail').textContent = user.expiryDate;
+
+            // QR Code
+            document.getElementById('qrCodeText').textContent = user.qrCode;
+
+            // Stato account
+            const statusDiv = document.getElementById('accountStatus');
+            const today = new Date();
+            const expiry = new Date(user.expiryDate);
+            const daysToExpiry = Math.ceil((expiry - today) / (1000*60*60*24));
+
+            let statusHTML = '';
+            
+            if (user.remainingEntries === 0) {
+                statusHTML += '<div style="background: #ffebee; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;"><i class="fas fa-times-circle" style="color: #e74c3c;"></i> <strong>Ingressi esauriti</strong></div>';
+            } else {
+                statusHTML += '<div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;"><i class="fas fa-check-circle" style="color: #27ae60;"></i> <strong>Ingressi disponibili</strong></div>';
+            }
+
+            if (daysToExpiry < 0) {
+                statusHTML += '<div style="background: #ffebee; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;"><i class="fas fa-calendar-times" style="color: #e74c3c;"></i> <strong>Pacchetto scaduto</strong></div>';
+            } else if (daysToExpiry <= 30) {
+                statusHTML += '<div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;"><i class="fas fa-exclamation-triangle" style="color: #f39c12;"></i> <strong>Scade tra ' + daysToExpiry + ' giorni</strong></div>';
+            } else {
+                statusHTML += '<div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;"><i class="fas fa-calendar-check" style="color: #27ae60;"></i> <strong>Valido</strong></div>';
+            }
+
+            statusDiv.innerHTML = statusHTML;
+
+            // Storico ingressi
+            loadEntriesHistory(user.id);
+        }
+
+        function loadEntriesHistory(userId) {
+            const allEntries = JSON.parse(localStorage.getItem('dailyEntries')) || [];
+            const userEntries = allEntries.filter(e => e.userId === userId).slice(-10).reverse(); // Ultimi 10
+
+            const historyDiv = document.getElementById('entriesHistory');
+            
+            if (userEntries.length === 0) {
+                historyDiv.innerHTML = '<p style="text-align: center; color: var(--gray-500); padding: 2rem;">Nessun ingresso registrato</p>';
+            } else {
+                historyDiv.innerHTML = '';
+                userEntries.forEach(entry => {
+                    const entryDate = new Date(entry.date);
+                    const div = document.createElement('div');
+                    div.style.cssText = 'padding: 0.75rem; border-bottom: 1px solid var(--gray-200);';
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${entryDate.toLocaleDateString('it-IT')}</strong> ore ${entry.time}<br>
+                                <small style="color: var(--gray-600);">Registrato da ${entry.staffName}</small>
+                            </div>
+                            <span class="badge badge-success">${entry.remainingAfter} rimasti</span>
+                        </div>
+                    `;
+                    historyDiv.appendChild(div);
+                });
+            }
+        }
+
+        function goBack() {
+            if (session.role === 'admin') {
+                window.location.href = 'dashboard-admin.html';
+            } else {
+                window.location.href = 'dashboard-segreteria.html';
+            }
+        }
+
+        function registerEntry() {
+            if (currentUser.remainingEntries <= 0) {
+                alert('Nessun ingresso disponibile. Aggiungi un nuovo pacchetto.');
+                return;
+            }
+
+            const expiry = new Date(currentUser.expiryDate);
+            if (new Date() > expiry) {
+                alert('Pacchetto scaduto. Rinnova il pacchetto.');
+                return;
+            }
+
+            if (confirm(`Confermi la registrazione dell'ingresso per ${currentUser.name}?`)) {
+                const result = Auth.decrementEntry(userId, session.name);
+                if (result.success) {
+                    alert('Ingresso registrato! Rimangono ' + result.remainingEntries + ' ingressi.');
+                    window.location.reload();
+                } else {
+                    alert('Errore: ' + result.message);
+                }
+            }
+        }
+
+        function addPackage() {
+            const packageType = prompt('Nuovo Pacchetto:\n1 = Singolo (12€)\n2 = 10 Ingressi (100€)\n3 = Promo (30€)\n\nInserisci il numero:');
+            
+            let type, amount;
+            switch(packageType) {
+                case '1': type = 'single'; amount = 12; break;
+                case '2': type = '10_entries'; amount = 100; break;
+                case '3': type = 'promo'; amount = 30; break;
+                default:
+                    alert('Selezione non valida');
+                    return;
+            }
+
+            const result = Auth.addCashPayment(userId, amount, type, session.name);
+            if (result.success) {
+                alert('Pacchetto aggiunto e pagamento registrato!');
+                window.location.reload();
+            } else {
+                alert('Errore: ' + result.message);
+            }
+        }
+
+        function editUser() {
+            alert('Funzionalità modifica utente da implementare con backend.');
+        }
+
+        function downloadQR() {
+            alert('Download QR code - da implementare con libreria QR generation.');
+        }
+
+        function printQR() {
+            window.print();
+        }
+
+        // Init
+        init();
+    </script>
+</body>
+</html>

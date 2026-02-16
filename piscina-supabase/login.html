@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Sistema Gestione Piscina</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body class="auth-page">
+  
+  <div class="auth-container">
+    <div class="auth-card">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <img src="/assets/logo.png" alt="Logo Piscina">
+        <h1>Sistema Gestione Piscina</h1>
+      </div>
+
+      <!-- Tabs: Login / Registrazione -->
+      <div class="auth-tabs">
+        <button class="tab-btn active" data-tab="login">Login</button>
+        <button class="tab-btn" data-tab="register">Registrati</button>
+      </div>
+
+      <!-- ===== TAB LOGIN ===== -->
+      <div id="tab-login" class="tab-content active">
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input 
+              type="email" 
+              id="loginEmail" 
+              name="email" 
+              placeholder="mario.rossi@email.it" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input 
+              type="password" 
+              id="loginPassword" 
+              name="password" 
+              placeholder="••••••••" 
+              required
+            >
+          </div>
+
+          <div class="form-check">
+            <input type="checkbox" id="rememberMe" name="remember">
+            <label for="rememberMe">Ricordami</label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+            Accedi
+          </button>
+
+          <div class="auth-footer">
+            <a href="/reset-password.html">Password dimenticata?</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- ===== TAB REGISTRAZIONE ===== -->
+      <div id="tab-register" class="tab-content">
+        <form id="registerForm" class="auth-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regNome">Nome *</label>
+              <input 
+                type="text" 
+                id="regNome" 
+                name="nome" 
+                placeholder="Mario" 
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="regCognome">Cognome *</label>
+              <input 
+                type="text" 
+                id="regCognome" 
+                name="cognome" 
+                placeholder="Rossi" 
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regEmail">Email *</label>
+            <input 
+              type="email" 
+              id="regEmail" 
+              name="email" 
+              placeholder="mario.rossi@email.it" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="regTelefono">Telefono *</label>
+            <input 
+              type="tel" 
+              id="regTelefono" 
+              name="telefono" 
+              placeholder="+39 333 123 4567" 
+              required
+            >
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regPassword">Password *</label>
+              <input 
+                type="password" 
+                id="regPassword" 
+                name="password" 
+                placeholder="Min. 8 caratteri" 
+                minlength="8"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="regPasswordConfirm">Conferma Password *</label>
+              <input 
+                type="password" 
+                id="regPasswordConfirm" 
+                name="passwordConfirm" 
+                placeholder="Ripeti password" 
+                minlength="8"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-check">
+            <input type="checkbox" id="acceptTerms" name="terms" required>
+            <label for="acceptTerms">
+              Accetto <a href="/termini.html" target="_blank">Termini e Condizioni</a> 
+              e <a href="/privacy.html" target="_blank">Privacy Policy</a>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+            Registrati
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- Link Homepage -->
+    <div class="auth-back">
+      <a href="/index.html">← Torna alla homepage</a>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div id="loadingSpinner" class="spinner-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <p>Caricamento...</p>
+  </div>
+
+  <!-- Script Supabase -->
+  <script type="module">
+    import { supabase, redirectToDashboard, handleSupabaseError } from '/js/supabase-client.js'
+
+    // ===== GESTIONE TABS =====
+    const tabBtns = document.querySelectorAll('.tab-btn')
+    const tabContents = document.querySelectorAll('.tab-content')
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab
+        
+        // Attiva tab button
+        tabBtns.forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        
+        // Mostra content tab
+        tabContents.forEach(content => {
+          if (content.id === `tab-${targetTab}`) {
+            content.classList.add('active')
+          } else {
+            content.classList.remove('active')
+          }
+        })
+      })
+    })
+
+    // ===== GESTIONE LOGIN =====
+    const loginForm = document.getElementById('loginForm')
+    const loginBtn = document.getElementById('loginBtn')
+    const spinner = document.getElementById('loadingSpinner')
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      
+      const email = document.getElementById('loginEmail').value.trim()
+      const password = document.getElementById('loginPassword').value
+      
+      // Validazione
+      if (!email || !password) {
+        alert('❌ Compila tutti i campi')
+        return
+      }
+
+      // Mostra loading
+      loginBtn.disabled = true
+      loginBtn.textContent = 'Accesso in corso...'
+      spinner.style.display = 'flex'
+
+      try {
+        // Login Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+
+        if (error) throw error
+
+        console.log('✅ Login effettuato:', data.user.email)
+
+        // Fetch ruolo utente
+        const { data: profilo, error: profiloError } = await supabase
+          .from('profili')
+          .select('ruolo:ruoli(nome)')
+          .eq('id', data.user.id)
+          .single()
+
+        if (profiloError) throw profiloError
+
+        // Log activity
+        await supabase
+          .from('activity_log')
+          .insert({
+            user_id: data.user.id,
+            azione: 'login',
+            entita: 'auth',
+            dettagli: { email }
+          })
+
+        // Redirect dashboard corretto
+        alert('✅ Accesso effettuato con successo!')
+        redirectToDashboard(profilo.ruolo.nome)
+
+      } catch (error) {
+        console.error('Errore login:', error)
+        alert('❌ Errore: ' + handleSupabaseError(error))
+        loginBtn.disabled = false
+        loginBtn.textContent = 'Accedi'
+        spinner.style.display = 'none'
+      }
+    })
+
+    // ===== GESTIONE REGISTRAZIONE =====
+    const registerForm = document.getElementById('registerForm')
+    const registerBtn = document.getElementById('registerBtn')
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const nome = document.getElementById('regNome').value.trim()
+      const cognome = document.getElementById('regCognome').value.trim()
+      const email = document.getElementById('regEmail').value.trim()
+      const telefono = document.getElementById('regTelefono').value.trim()
+      const password = document.getElementById('regPassword').value
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value
+      const terms = document.getElementById('acceptTerms').checked
+
+      // Validazione
+      if (!nome || !cognome || !email || !telefono || !password) {
+        alert('❌ Compila tutti i campi obbligatori')
+        return
+      }
+
+      if (password !== passwordConfirm) {
+        alert('❌ Le password non corrispondono')
+        return
+      }
+
+      if (password.length < 8) {
+        alert('❌ La password deve essere di almeno 8 caratteri')
+        return
+      }
+
+      if (!terms) {
+        alert('❌ Devi accettare i Termini e Condizioni')
+        return
+      }
+
+      // Mostra loading
+      registerBtn.disabled = true
+      registerBtn.textContent = 'Registrazione in corso...'
+      spinner.style.display = 'flex'
+
+      try {
+        // 1. Registrazione Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              nome,
+              cognome,
+              telefono
+            }
+          }
+        })
+
+        if (error) throw error
+
+        console.log('✅ Registrazione completata:', data.user.email)
+
+        // 2. Aggiorna profilo con dati completi
+        const { error: updateError } = await supabase
+          .from('profili')
+          .update({
+            nome,
+            cognome,
+            telefono
+          })
+          .eq('id', data.user.id)
+
+        if (updateError) console.error('Errore update profilo:', updateError)
+
+        // 3. Mostra messaggio successo
+        alert('✅ Registrazione completata! Controlla la tua email per confermare l\'account.')
+        
+        // 4. Switch a tab login
+        document.querySelector('[data-tab="login"]').click()
+        document.getElementById('loginEmail').value = email
+
+      } catch (error) {
+        console.error('Errore registrazione:', error)
+        alert('❌ Errore: ' + handleSupabaseError(error))
+      } finally {
+        registerBtn.disabled = false
+        registerBtn.textContent = 'Registrati'
+        spinner.style.display = 'none'
+      }
+    })
+
+    // ===== AUTO-LOGIN SE GIÀ AUTENTICATO =====
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        // Già loggato → redirect dashboard
+        const { data: profilo } = await supabase
+          .from('profili')
+          .select('ruolo:ruoli(nome)')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profilo) {
+          redirectToDashboard(profilo.ruolo.nome)
+        }
+      }
+    })
+
+  </script>
+
+</body>
+</html>

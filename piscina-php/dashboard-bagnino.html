@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Bagnino</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .scanner-box { background: #f9fafb; border: 3px dashed #e5e7eb; border-radius: 12px; padding: 40px; text-align: center; margin: 20px 0; }
+        .scanner-icon { font-size: 64px; margin-bottom: 15px; }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 18px; text-align: center; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 5px; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-box { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-box h3 { font-size: 32px; margin-bottom: 5px; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { background: #f9fafb; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e5e7eb; }
+        .table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 2px solid #10b981; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
+        .user-info { background: #eff6ff; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #3b82f6; }
+        .user-info h3 { margin-bottom: 10px; color: #1e40af; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>🏊 Dashboard Bagnino</h1>
+            <small id="user-name"></small>
+        </div>
+        <button class="btn btn-danger" onclick="logout()">Esci</button>
+    </div>
+
+    <div class="container">
+        <!-- Statistiche giornaliere -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h3 id="checkin-oggi">0</h3>
+                <p>Check-in Oggi</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="checkin-mattina">0</h3>
+                <p>Mattina</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="checkin-pomeriggio">0</h3>
+                <p>Pomeriggio</p>
+            </div>
+        </div>
+
+        <!-- Scanner QR -->
+        <div class="card">
+            <h2>📱 Scansiona Codice QR</h2>
+            
+            <div id="alert-box"></div>
+
+            <div class="scanner-box">
+                <div class="scanner-icon">📷</div>
+                <h3>Inserisci o scansiona il codice QR</h3>
+                <br>
+                <input type="text" id="qr-input" placeholder="PSC-xxxxx-xxxxx" autofocus>
+                <br><br>
+                <button class="btn btn-success" onclick="verificaQR()">Verifica QR</button>
+            </div>
+
+            <div id="user-info-box" style="display: none;"></div>
+        </div>
+
+        <!-- Check-in di oggi -->
+        <div class="card">
+            <h2>Check-in di Oggi</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ora</th>
+                        <th>Utente</th>
+                        <th>Telefono</th>
+                        <th>Pacchetto</th>
+                        <th>Fascia</th>
+                    </tr>
+                </thead>
+                <tbody id="today-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/piscina-php/api';
+        let token = localStorage.getItem('token');
+        let user = JSON.parse(localStorage.getItem('user') || '{}');
+        let currentQRData = null;
+
+        if (!token || user.ruolo !== 'bagnino') {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('user-name').textContent = `${user.nome} ${user.cognome}`;
+
+        // Auto-focus input
+        document.getElementById('qr-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verificaQR();
+        });
+
+        async function verificaQR() {
+            const qrCode = document.getElementById('qr-input').value.trim();
+            
+            if (!qrCode) {
+                showAlert('Inserisci un codice QR', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/checkin.php?qr=${qrCode}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.valid) {
+                    currentQRData = data;
+                    showAlert('✅ QR valido! Conferma check-in', 'success');
+                    showUserInfo(data);
+                } else {
+                    currentQRData = null;
+                    showAlert(`❌ ${data.message}`, 'error');
+                    document.getElementById('user-info-box').style.display = 'none';
+                }
+            } catch (err) {
+                showAlert('Errore di connessione', 'error');
+                console.error(err);
+            }
+        }
+
+        function showUserInfo(data) {
+            const box = document.getElementById('user-info-box');
+            box.style.display = 'block';
+            box.innerHTML = `
+                <div class="user-info">
+                    <h3>👤 ${data.utente.nome} ${data.utente.cognome}</h3>
+                    <p><strong>Telefono:</strong> ${data.utente.telefono || '-'}</p>
+                    <p><strong>Pacchetto:</strong> ${data.acquisto.pacchetto_nome}</p>
+                    <p><strong>Ingressi rimanenti:</strong> ${data.acquisto.ingressi_rimanenti}</p>
+                    <p><strong>Scadenza:</strong> ${data.acquisto.data_scadenza || '-'}</p>
+                    <br>
+                    <button class="btn btn-success" onclick="confermaCheckIn()">✅ Conferma Check-in</button>
+                    <button class="btn btn-danger" onclick="annullaCheckIn()">❌ Annulla</button>
+                </div>
+            `;
+        }
+
+        async function confermaCheckIn() {
+            if (!currentQRData) return;
+
+            try {
+                const res = await fetch(`${API_URL}/checkin.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        qr_code: document.getElementById('qr-input').value.trim()
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert(`✅ Check-in registrato! Ingressi rimanenti: ${data.ingressi_rimanenti}`, 'success');
+                    document.getElementById('qr-input').value = '';
+                    document.getElementById('user-info-box').style.display = 'none';
+                    currentQRData = null;
+                    loadTodayCheckins();
+                    
+                    // Audio feedback (opzionale)
+                    playSound('success');
+                } else {
+                    showAlert(`❌ ${data.message}`, 'error');
+                }
+            } catch (err) {
+                showAlert('Errore registrazione check-in', 'error');
+                console.error(err);
+            }
+        }
+
+        function annullaCheckIn() {
+            currentQRData = null;
+            document.getElementById('qr-input').value = '';
+            document.getElementById('user-info-box').style.display = 'none';
+            document.getElementById('alert-box').innerHTML = '';
+        }
+
+        async function loadTodayCheckins() {
+            try {
+                const res = await fetch(`${API_URL}/checkin.php?action=today`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('checkin-oggi').textContent = data.stats.totale;
+                    document.getElementById('checkin-mattina').textContent = data.stats.mattina;
+                    document.getElementById('checkin-pomeriggio').textContent = data.stats.pomeriggio;
+
+                    const tbody = document.getElementById('today-tbody');
+                    tbody.innerHTML = data.checkins.map(c => {
+                        const time = new Date(c.timestamp).toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'});
+                        return `
+                            <tr>
+                                <td>${time}</td>
+                                <td>${c.user_nome} ${c.user_cognome}</td>
+                                <td>${c.user_telefono || '-'}</td>
+                                <td>${c.pacchetto_nome}</td>
+                                <td>${c.fascia_oraria}</td>
+                            </tr>
+                        `;
+                    }).join('') || '<tr><td colspan="5">Nessun check-in oggi</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function showAlert(message, type) {
+            const box = document.getElementById('alert-box');
+            box.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                if (type === 'success') box.innerHTML = '';
+            }, 5000);
+        }
+
+        function playSound(type) {
+            // In produzione: riprodurre un suono
+            // const audio = new Audio(type === 'success' ? '/sounds/success.mp3' : '/sounds/error.mp3');
+            // audio.play();
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // Carica dati iniziali
+        loadTodayCheckins();
+
+        // Auto-refresh ogni 30 secondi
+        setInterval(loadTodayCheckins, 30000);
+    </script>
+</body>
+</html>

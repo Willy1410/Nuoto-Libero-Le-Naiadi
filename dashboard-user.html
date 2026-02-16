@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Utente - Gli Squaletti</title>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="dashboard-nav">
+                <div class="dashboard-logo">
+                    <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti">
+                    <span>Gli Squaletti</span>
+                </div>
+                <div class="dashboard-user">
+                    <div class="dashboard-user-info">
+                        <strong>Mario Rossi</strong>
+                        <small>mario.rossi@email.it</small>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Esci
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="dashboard-content">
+        <div class="container">
+            <h2><i class="fas fa-tachometer-alt"></i> La Tua Dashboard</h2>
+
+            <!-- Stats Cards -->
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-ticket-alt"></i> Ingressi Rimanenti</h3>
+                    <div class="dashboard-stat">8</div>
+                    <p>su 10 acquistati</p>
+                    <small style="color: var(--gray-600);">Validità fino al: 15/08/2026</small>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-calendar-check"></i> Ultimo Ingresso</h3>
+                    <div class="dashboard-stat" style="font-size: 1.5rem;">10/02/2026</div>
+                    <p>Ore 07:30</p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-swimmer"></i> Allenamenti Totali</h3>
+                    <div class="dashboard-stat">24</div>
+                    <p>Dall'iscrizione</p>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="dashboard-card">
+                <h3><i class="fas fa-qrcode"></i> Il Tuo QR Code Personale</h3>
+                <div class="dashboard-qr">
+                    <div class="qr-placeholder">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <p><strong>Mostra questo QR all'ingresso</strong></p>
+                    <p style="color: var(--gray-600); font-size: 0.9rem;">
+                        Codice: <strong id="qrCodeText">-</strong><br>
+                        Il personale scannerizzerà il tuo codice per verificare l'accesso
+                    </p>
+                    <button class="btn btn-secondary" onclick="printQR()">
+                        <i class="fas fa-print"></i> Stampa QR Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Richiedi Iscrizione -->
+            <div class="dashboard-card" style="border-top-color: var(--accent-color);">
+                <h3><i class="fas fa-user-plus"></i> Richiedi Iscrizione</h3>
+                <p>Compila il modulo per richiedere l'iscrizione al nuoto libero. Riceverai conferma via email con le istruzioni per completare l'iscrizione presso la piscina.</p>
+                <button class="btn btn-primary" onclick="showEnrollmentForm()">
+                    <i class="fas fa-edit"></i> Compila Modulo Iscrizione
+                </button>
+            </div>
+
+            <!-- Form Iscrizione (nascosto) -->
+            <div id="enrollmentForm" class="dashboard-card" style="display: none;">
+                <h3><i class="fas fa-file-alt"></i> Modulo di Iscrizione</h3>
+                <form id="formIscrizione">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nome *</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cognome *</label>
+                            <input type="text" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data di Nascita *</label>
+                            <input type="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Luogo di Nascita *</label>
+                            <input type="text" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Indirizzo Completo *</label>
+                        <input type="text" required placeholder="Via, Numero Civico, CAP, Città">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefono *</label>
+                            <input type="tel" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Codice Fiscale *</label>
+                        <input type="text" required maxlength="16">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" required>
+                            <span>Dichiaro di aver letto e accettato il <a href="regolamento.pdf" target="_blank">regolamento</a> e l'<a href="privacy.html" target="_blank">informativa privacy</a></span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> Invia Richiesta
+                    </button>
+                </form>
+            </div>
+
+            <!-- Documenti -->
+            <div class="dashboard-card">
+                <h3><i class="fas fa-folder"></i> Documenti Personali</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-file-pdf" style="color: #e74c3c;"></i> Certificato Medico</span>
+                        <span class="badge badge-success">Valido</span>
+                    </li>
+                    <li style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-file-pdf" style="color: #e74c3c;"></i> Modulo Iscrizione</span>
+                        <span class="badge badge-success">Firmato</span>
+                    </li>
+                    <li style="padding: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-file-pdf" style="color: #e74c3c;"></i> Ricevuta Pagamento</span>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('Download da implementare')">
+                            <i class="fas fa-download"></i> Scarica
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="login-note" style="margin-top: 2rem;">
+                <p><i class="fas fa-info-circle"></i> <strong>MOCKUP VISIVO</strong> - Questa è una versione dimostrativa della dashboard. I dati mostrati sono fittizi. Il sistema completo richiede backend e database.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Verifica autenticazione
+        const session = Auth.requireAuth(['user']);
+        if (!session) return;
+
+        // Carica dati utente
+        const user = Auth.getUserByUsername(session.username);
+        
+        if (user) {
+            // Aggiorna nome utente
+            document.querySelector('.dashboard-user-info strong').textContent = user.name;
+            document.querySelector('.dashboard-user-info small').textContent = user.email;
+            
+            // Aggiorna statistiche
+            document.querySelector('.dashboard-stat').textContent = user.remainingEntries;
+            document.querySelector('.dashboard-card p').innerHTML = `su ${user.totalEntries} acquistati<br><small style="color: var(--gray-600);">Validità fino al: ${user.expiryDate}</small>`;
+            
+            // Aggiorna QR code
+            document.querySelector('#qrCodeText').textContent = user.qrCode;
+        }
+
+        function logout() {
+            Auth.logout();
+        }
+
+        function printQR() {
+            window.print();
+        }
+
+        function showEnrollmentForm() {
+            document.getElementById('enrollmentForm').style.display = 'block';
+            document.getElementById('enrollmentForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        document.getElementById('formIscrizione').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Modulo inviato! Reindirizzamento a pagina ringraziamento...');
+            window.location.href = 'ringraziamento.html';
+        });
+    </script>
+</body>
+</html>

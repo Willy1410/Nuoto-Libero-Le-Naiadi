@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Utente - Piscina</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; }
+        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card h2 { margin-bottom: 20px; color: #333; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-box h3 { font-size: 32px; margin-bottom: 5px; }
+        .stat-box p { opacity: 0.9; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #10b981; color: white; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { background: #f9fafb; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e5e7eb; }
+        .table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .qr-container { text-align: center; padding: 30px; background: #f9fafb; border-radius: 12px; margin: 20px 0; }
+        .qr-code { font-size: 48px; margin-bottom: 15px; }
+        #documenti-list { margin-top: 15px; }
+        .doc-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>🏊 Dashboard Utente</h1>
+            <small id="user-name"></small>
+        </div>
+        <button class="logout-btn" onclick="logout()">Esci</button>
+    </div>
+
+    <div class="container">
+        <!-- Statistiche -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h3 id="ingressi-rimanenti">-</h3>
+                <p>Ingressi Rimanenti</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="totale-checkin">-</h3>
+                <p>Check-in Totali</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="giorni-validita">-</h3>
+                <p>Giorni Validità</p>
+            </div>
+        </div>
+
+        <!-- Codice QR -->
+        <div class="card">
+            <h2>Il Tuo Codice QR</h2>
+            <div id="qr-section">
+                <p>Caricamento...</p>
+            </div>
+        </div>
+
+        <!-- Acquista Pacchetto -->
+        <div class="card">
+            <h2>Acquista Pacchetto</h2>
+            <div id="pacchetti-list">Caricamento pacchetti...</div>
+        </div>
+
+        <!-- I Miei Acquisti -->
+        <div class="card">
+            <h2>I Miei Acquisti</h2>
+            <table class="table" id="acquisti-table">
+                <thead>
+                    <tr>
+                        <th>Pacchetto</th>
+                        <th>Data Acquisto</th>
+                        <th>Stato</th>
+                        <th>Ingressi</th>
+                        <th>Scadenza</th>
+                    </tr>
+                </thead>
+                <tbody id="acquisti-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Documenti -->
+        <div class="card">
+            <h2>Documenti Obbligatori</h2>
+            <p><strong>Documenti mancanti:</strong> <span id="doc-mancanti">-</span></p>
+            <div id="documenti-list"></div>
+        </div>
+
+        <!-- Storico Check-in -->
+        <div class="card">
+            <h2>Storico Check-in</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Fascia</th>
+                        <th>Pacchetto</th>
+                    </tr>
+                </thead>
+                <tbody id="checkin-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/piscina-php/api';
+        let token = localStorage.getItem('token');
+        let user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Verifica auth
+        if (!token || !user.id) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('user-name').textContent = `${user.nome} ${user.cognome}`;
+
+        // Carica dati
+        async function loadData() {
+            await Promise.all([
+                loadAcquisti(),
+                loadCheckins(),
+                loadDocumenti(),
+                loadPacchetti()
+            ]);
+        }
+
+        async function loadAcquisti() {
+            try {
+                const res = await fetch(`${API_URL}/pacchetti.php?action=my-purchases`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (data.success && data.acquisti.length > 0) {
+                    const tbody = document.getElementById('acquisti-tbody');
+                    tbody.innerHTML = data.acquisti.map(a => `
+                        <tr>
+                            <td>${a.pacchetto_nome}</td>
+                            <td>${new Date(a.data_acquisto).toLocaleDateString('it-IT')}</td>
+                            <td><span class="badge badge-${a.stato_pagamento === 'confirmed' ? 'success' : 'warning'}">${a.stato_pagamento}</span></td>
+                            <td>${a.ingressi_rimanenti} / ${a.num_ingressi || '-'}</td>
+                            <td>${a.data_scadenza || '-'}</td>
+                        </tr>
+                    `).join('');
+
+                    // Aggiorna stats
+                    const confermati = data.acquisti.filter(a => a.stato_pagamento === 'confirmed');
+                    const ingr = confermati.reduce((sum, a) => sum + a.ingressi_rimanenti, 0);
+                    document.getElementById('ingressi-rimanenti').textContent = ingr;
+
+                    // QR Code
+                    const ultimo = confermati[0];
+                    if (ultimo && ultimo.qr_code) {
+                        document.getElementById('qr-section').innerHTML = `
+                            <div class="qr-container">
+                                <div class="qr-code">📱</div>
+                                <h3>${ultimo.qr_code}</h3>
+                                <p>Mostra questo codice all'ingresso</p>
+                                <button class="btn btn-primary" onclick="downloadQR('${ultimo.qr_code}')">Scarica QR</button>
+                            </div>
+                        `;
+                        const giorni = Math.ceil((new Date(ultimo.data_scadenza) - new Date()) / (1000*60*60*24));
+                        document.getElementById('giorni-validita').textContent = giorni > 0 ? giorni : 0;
+                    }
+                } else {
+                    document.getElementById('acquisti-tbody').innerHTML = '<tr><td colspan="5">Nessun acquisto</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadCheckins() {
+            try {
+                const res = await fetch(`${API_URL}/checkin.php?action=history`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('totale-checkin').textContent = data.checkins.length;
+                    const tbody = document.getElementById('checkin-tbody');
+                    tbody.innerHTML = data.checkins.slice(0, 10).map(c => `
+                        <tr>
+                            <td>${new Date(c.timestamp).toLocaleDateString('it-IT')}</td>
+                            <td><span class="badge badge-${c.fascia_oraria === 'mattina' ? 'success' : 'warning'}">${c.fascia_oraria}</span></td>
+                            <td>${c.pacchetto_nome}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="3">Nessun check-in</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadDocumenti() {
+            try {
+                const res = await fetch(`${API_URL}/documenti.php`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('doc-mancanti').textContent = data.documenti_obbligatori_mancanti;
+                    const list = document.getElementById('documenti-list');
+                    list.innerHTML = data.documenti.map(d => `
+                        <div class="doc-item">
+                            <span>${d.tipo_nome}</span>
+                            <span class="badge badge-${d.stato === 'approved' ? 'success' : d.stato === 'pending' ? 'warning' : 'danger'}">${d.stato}</span>
+                        </div>
+                    `).join('') || '<p>Nessun documento caricato</p>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadPacchetti() {
+            try {
+                const res = await fetch(`${API_URL}/pacchetti.php`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    const list = document.getElementById('pacchetti-list');
+                    list.innerHTML = data.pacchetti.map(p => `
+                        <div class="doc-item">
+                            <div>
+                                <strong>${p.nome}</strong> - €${p.prezzo}
+                                <br><small>${p.descrizione}</small>
+                            </div>
+                            <button class="btn btn-success" onclick="acquistaPacchetto(${p.id}, '${p.nome}')">Acquista</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function acquistaPacchetto(id, nome) {
+            if (!confirm(`Confermi l'acquisto di: ${nome}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/pacchetti.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        pacchetto_id: id,
+                        metodo_pagamento: 'bonifico'
+                    })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) loadAcquisti();
+            } catch (err) {
+                alert('Errore durante l\'acquisto');
+            }
+        }
+
+        function downloadQR(code) {
+            alert(`QR Code: ${code}\n\nIn produzione, qui verrà generato un PDF scaricabile.`);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // Carica all'avvio
+        loadData();
+    </script>
+</body>
+</html>
