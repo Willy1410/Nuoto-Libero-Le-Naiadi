@@ -73,14 +73,17 @@ function acquistaPacchetto() {
     }
     
     try {
+        $acquistoId = generateUuid();
+
         // Crea acquisto
         $stmt = $pdo->prepare("
             INSERT INTO acquisti 
             (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, ingressi_rimanenti, importo_pagato)
-            VALUES (UUID(), ?, ?, ?, 'pending', ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)
         ");
         
         $stmt->execute([
+            $acquistoId,
             $currentUser['user_id'],
             $pacchetto_id,
             $metodo_pagamento,
@@ -90,16 +93,14 @@ function acquistaPacchetto() {
             $pacchetto['prezzo']
         ]);
         
-        $acquisto_id = $pdo->lastInsertId();
-        
         // Recupera acquisto completo
         $stmt = $pdo->prepare("
             SELECT a.*, p.nome as pacchetto_nome, p.descrizione as pacchetto_descrizione
             FROM acquisti a
             JOIN pacchetti p ON a.pacchetto_id = p.id
-            WHERE a.id = (SELECT id FROM acquisti ORDER BY created_at DESC LIMIT 1)
+            WHERE a.id = ?
         ");
-        $stmt->execute();
+        $stmt->execute([$acquistoId]);
         $acquisto = $stmt->fetch();
         
         // Log attività

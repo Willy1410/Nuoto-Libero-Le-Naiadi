@@ -132,8 +132,6 @@ function handleRegister() {
             $codice_fiscale
         ]);
         
-        $userId = $pdo->lastInsertId();
-        
         // Recupera profilo completo
         $stmt = $pdo->prepare("
             SELECT p.*, r.nome as ruolo_nome, r.livello as ruolo_livello

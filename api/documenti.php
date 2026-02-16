@@ -129,6 +129,8 @@ function uploadDocument() {
     }
     
     try {
+        $documentoId = generateUuid();
+
         // Crea directory upload se non esiste
         $upload_dir = UPLOAD_DIR . 'documenti/' . $currentUser['user_id'] . '/';
         if (!is_dir($upload_dir)) {
@@ -150,12 +152,12 @@ function uploadDocument() {
         // Inserisci documento
         $stmt = $pdo->prepare("
             INSERT INTO documenti_utente (id, user_id, tipo_documento_id, file_url, file_name, stato)
-            VALUES (UUID(), ?, ?, ?, ?, 'pending')
+            VALUES (?, ?, ?, ?, ?, 'pending')
         ");
-        $stmt->execute([$currentUser['user_id'], $tipo_documento_id, $file_url, $file['name']]);
+        $stmt->execute([$documentoId, $currentUser['user_id'], $tipo_documento_id, $file_url, $file['name']]);
         
         // Log attività
-        logActivity($currentUser['user_id'], 'upload_documento', "Caricato documento: {$tipo['nome']}", 'documenti_utente', $pdo->lastInsertId());
+        logActivity($currentUser['user_id'], 'upload_documento', "Caricato documento: {$tipo['nome']}", 'documenti_utente', $documentoId);
         
         http_response_code(201);
         echo json_encode([

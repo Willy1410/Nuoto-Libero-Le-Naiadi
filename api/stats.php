@@ -38,7 +38,12 @@ function getDashboardStats() {
     
     try {
         // Totale utenti
-        $stmt = $pdo->query("SELECT COUNT(*) as count FROM profili WHERE ruolo_id = 1 AND attivo = TRUE");
+        $stmt = $pdo->query("
+            SELECT COUNT(*) as count
+            FROM profili p
+            JOIN ruoli r ON p.ruolo_id = r.id
+            WHERE r.nome = 'utente' AND p.attivo = TRUE
+        ");
         $totaleUtenti = $stmt->fetch()['count'];
         
         // Totale check-in oggi
