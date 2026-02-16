@@ -149,3 +149,37 @@ Permessi:
   - verificare `GMAIL_SMTP_USER`, connessione SMTP e `logs/mail.log`
 - Camera non disponibile:
   - usare browser mobile compatibile e HTTPS/localhost; fallback input manuale nel dashboard bagnino
+
+## 13) Moduli scaricabili (CMS Admin/Ufficio)
+### Dove si gestiscono
+- `piscina-php/dashboard-admin.html` tab `Moduli`
+- `piscina-php/dashboard-ufficio.html` tab `Moduli`
+
+### Come caricare un modulo nuovo
+1. Apri tab `Moduli`.
+2. Inserisci `Slug` stabile (es. `modulo-iscrizione`).
+3. Inserisci `Nome modulo`.
+4. Seleziona file (`.pdf`, `.doc`, `.docx`).
+5. Premi `Carica modulo`.
+
+### Come sostituire un modulo esistente
+1. Dalla tabella moduli clicca `Sostituisci` (prefill automatico slug/nome).
+2. Carica il nuovo file.
+3. Lascia attivo checkbox `Sostituisci se esiste`.
+4. Salva: la versione vecchia viene automaticamente disattivata e archiviata.
+
+### Come eliminare un modulo
+1. In tabella clicca `Elimina`.
+2. Conferma operazione.
+3. Il modulo attivo viene disattivato e il file archiviato.
+
+### Link pubblico stabile per utenti
+- Endpoint: `api/moduli-download.php?slug={slug}`
+- Esempio: `api/moduli-download.php?slug=modulo-iscrizione`
+- In `moduli.html` i pulsanti download puntano a questo endpoint stabile.
+
+### Come verificare che l'utente scarichi sempre l'ultima versione
+1. Carica una prima versione per uno slug (es. `modulo-iscrizione`).
+2. Scarica da `moduli.html` e controlla file.
+3. Sostituisci con nuova versione mantenendo lo stesso slug.
+4. Riscarica dallo stesso link: il file servito e la versione aggiornata.

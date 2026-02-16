@@ -259,7 +259,7 @@ function initPayPal() {
         onApprove: function(data, actions) {
             return actions.order.capture().then(function(details) {
                 // Payment successful
-                handlePaymentSuccess('paypal', details.id, details);
+                return handlePaymentSuccess('paypal', details.id, details);
             });
         },
         onError: function(err) {
@@ -346,7 +346,7 @@ async function handleStripePayment() {
         // Show success (in production, wait for actual Stripe confirmation)
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        handlePaymentSuccess('stripe', simulatedPaymentIntentId, formData);
+        await handlePaymentSuccess('stripe', simulatedPaymentIntentId, formData);
         
     } catch (error) {
         console.error('Stripe error:', error);
@@ -373,7 +373,7 @@ function handleInStorePayment() {
     }
     
     // Simulate order creation
-    setTimeout(() => {
+    setTimeout(async () => {
         const orderId = window.GliSqualetti.generateOrderId();
         
         // Store order info (in production, send to server)
@@ -388,6 +388,8 @@ function handleInStorePayment() {
         };
         
         console.log('In-store order created:', orderData);
+
+        await notifyOrderConfirmationEmail(orderData);
         
         // Redirect to confirmation page
         redirectToConfirmation(orderId, 'instore', orderData);
@@ -465,7 +467,7 @@ async function handleBankTransferNotice() {
 // ===================================
 // Payment Success Handler
 // ===================================
-function handlePaymentSuccess(method, transactionId, details) {
+async function handlePaymentSuccess(method, transactionId, details) {
     const formData = getFormData();
     const orderId = window.GliSqualetti.generateOrderId();
     
@@ -483,6 +485,8 @@ function handlePaymentSuccess(method, transactionId, details) {
     
     // In production, send this to your server
     console.log('Order completed:', orderData);
+
+    await notifyOrderConfirmationEmail(orderData);
     
     // Store in localStorage for confirmation page
     localStorage.setItem('lastOrder', JSON.stringify(orderData));
@@ -529,6 +533,32 @@ function validateFormData(data) {
     }
     
     return true;
+}
+
+async function notifyOrderConfirmationEmail(orderData) {
+    try {
+        const response = await fetch('api/order-confirmation.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Invio email conferma non riuscito');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Order confirmation email error:', error);
+        window.GliSqualetti.showNotification(
+            error.message || 'Ordine registrato ma email conferma non inviata.',
+            'error'
+        );
+        return false;
+    }
 }
 
 function redirectToConfirmation(orderId, method, orderData) {

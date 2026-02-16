@@ -88,6 +88,8 @@ define('JWT_EXPIRATION', 86400);
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);
 define('UPLOAD_ALLOWED_TYPES', ['pdf', 'jpg', 'jpeg', 'png']);
 define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
+define('SITE_NAME', 'Gli Squaletti');
+define('SITE_LOGO_URL', 'https://www.genspark.ai/api/files/s/s3WpPfgP');
 
 $autoloadPath = PROJECT_ROOT . '/vendor/autoload.php';
 if (file_exists($autoloadPath)) {
@@ -480,19 +482,25 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
 function buildEmailTemplate(string $title, string $bodyHtml, string $previewText = ''): string
 {
     $preview = $previewText !== '' ? $previewText : strip_tags($title);
+    $safePreview = htmlspecialchars($preview, ENT_QUOTES, 'UTF-8');
+    $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+    $logoUrl = htmlspecialchars(SITE_LOGO_URL, ENT_QUOTES, 'UTF-8');
 
     return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>'
-        . '<body style="margin:0;padding:0;background:#f8f9fa;font-family:Arial,sans-serif;color:#1f2937;">'
+        . '<body style="margin:0;padding:0;background:#f8f9fa;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">'
         . '<div style="max-width:640px;margin:0 auto;padding:24px;">'
-        . '<div style="background:linear-gradient(135deg,#00a8e8,#0077b6);padding:22px;border-radius:12px 12px 0 0;color:#fff;">'
-        . '<h1 style="margin:0;font-size:24px;">Nuoto Libero</h1>'
-        . '<p style="margin:8px 0 0 0;opacity:.92;">' . htmlspecialchars($preview, ENT_QUOTES, 'UTF-8') . '</p>'
+        . '<div style="background:linear-gradient(135deg,#00a8e8,#0077b6);padding:18px 22px;border-radius:12px 12px 0 0;color:#fff;">'
+        . '<table role="presentation" style="width:100%;border-collapse:collapse;"><tr>'
+        . '<td style="width:70px;vertical-align:middle;"><img src="' . $logoUrl . '" alt="Logo Gli Squaletti" style="width:56px;height:56px;border-radius:8px;display:block;"></td>'
+        . '<td style="vertical-align:middle;"><h1 style="margin:0;font-size:22px;line-height:1.2;">' . SITE_NAME . '</h1>'
+        . '<p style="margin:6px 0 0 0;opacity:.92;font-size:13px;">' . $safePreview . '</p></td>'
+        . '</tr></table>'
         . '</div>'
         . '<div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none;">'
-        . '<h2 style="margin-top:0;color:#0077b6;font-size:20px;">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2>'
+        . '<h2 style="margin-top:0;color:#0077b6;font-size:20px;">' . $safeTitle . '</h2>'
         . $bodyHtml
         . '<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">'
-        . '<p style="margin:0;font-size:12px;color:#6b7280;">Messaggio automatico di test locale - Nuoto Libero</p>'
+        . '<p style="margin:0;font-size:12px;color:#6b7280;">Messaggio automatico - ' . SITE_NAME . '</p>'
         . '</div></div></body></html>';
 }
 

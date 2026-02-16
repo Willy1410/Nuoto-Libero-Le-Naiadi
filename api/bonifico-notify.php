@@ -79,6 +79,28 @@ if (!$sent) {
     sendJson(500, ['success' => false, 'message' => 'Invio notifica bonifico non riuscito. Verifica logs/mail.log']);
 }
 
+$customerBody = '<p>Ciao <strong>' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+    . '<p>abbiamo ricevuto la tua segnalazione di bonifico.</p>'
+    . '<p><strong>Ordine:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+    . '<strong>Pacchetto:</strong> ' . htmlspecialchars($package, ENT_QUOTES, 'UTF-8') . '<br>'
+    . '<strong>Importo:</strong> EUR ' . number_format($amount, 2, ',', '.') . '<br>'
+    . '<strong>Riferimento bonifico:</strong> ' . htmlspecialchars($transferReference, ENT_QUOTES, 'UTF-8') . '<br>'
+    . '<strong>Data bonifico:</strong> ' . htmlspecialchars($transferDate, ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p>Ti invieremo una conferma finale appena la segreteria completa la verifica contabile.</p>';
+
+$customerSent = sendTemplateEmail(
+    $email,
+    $fullName,
+    'Conferma ricezione bonifico - Gli Squaletti',
+    'Richiesta bonifico ricevuta',
+    $customerBody,
+    'Conferma ricezione bonifico'
+);
+
+if (!$customerSent) {
+    sendJson(500, ['success' => false, 'message' => 'Bonifico registrato ma email cliente non inviata. Verifica logs/mail.log']);
+}
+
 sendJson(200, [
     'success' => true,
     'orderId' => $orderId,

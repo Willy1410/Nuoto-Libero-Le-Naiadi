@@ -16,6 +16,7 @@ Script pronto per phpMyAdmin:
 - `acquisti`
 - `check_ins`
 - `documenti_utente`
+- `moduli`
 - `activity_log`
 - `password_reset_tokens`
 - `notifiche_email`

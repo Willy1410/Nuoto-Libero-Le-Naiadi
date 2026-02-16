@@ -266,6 +266,28 @@ CREATE TABLE gallery (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- 13) MODULI SCARICABILI CMS
+-- =====================================================
+CREATE TABLE moduli (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(120) NOT NULL,
+  nome VARCHAR(150) NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  mime VARCHAR(120) NOT NULL,
+  size BIGINT UNSIGNED NOT NULL,
+  version_num INT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_by CHAR(36) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_moduli_updated_by FOREIGN KEY (updated_by) REFERENCES profili(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_moduli_slug_active ON moduli(slug, is_active);
+CREATE INDEX idx_moduli_updated_at ON moduli(updated_at);
+
+-- =====================================================
 -- SEED UTENTI TEST (password per tutti: password123)
 -- =====================================================
 SET @pwd = '$2y$10$qxUYrqnR/jLXoRjbhDGHpOg.v76nOqTvlr18fTrfC5cE1ZvMAmymC';
@@ -329,4 +351,5 @@ UNION ALL SELECT 'profili', COUNT(*) FROM profili
 UNION ALL SELECT 'pacchetti', COUNT(*) FROM pacchetti
 UNION ALL SELECT 'acquisti', COUNT(*) FROM acquisti
 UNION ALL SELECT 'check_ins', COUNT(*) FROM check_ins
-UNION ALL SELECT 'documenti_utente', COUNT(*) FROM documenti_utente;
+UNION ALL SELECT 'documenti_utente', COUNT(*) FROM documenti_utente
+UNION ALL SELECT 'moduli', COUNT(*) FROM moduli;

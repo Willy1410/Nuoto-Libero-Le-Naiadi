@@ -43,6 +43,7 @@ svg{width:100%;height:220px;display:block;border:1px solid #e5e7eb;border-radius
 <button class="tab" data-pane="users">Utenti</button>
 <button class="tab" data-pane="purchases">Acquisti</button>
 <button class="tab" data-pane="docs">Documenti</button>
+<button class="tab" data-pane="modules">Moduli</button>
 <button class="tab" data-pane="report">Report</button>
 </div>
 <div id="p_overview" class="pane active">
@@ -69,6 +70,16 @@ svg{width:100%;height:220px;display:block;border:1px solid #e5e7eb;border-radius
 <div id="p_docs" class="pane">
 <div class="table-wrap"><table class="t"><thead><tr><th>Utente</th><th>Tipo</th><th>Data</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb_docs"></tbody></table></div>
 </div>
+<div id="p_modules" class="pane">
+<form id="moduleForm" class="tools" enctype="multipart/form-data" style="margin-bottom:12px">
+<input id="m_slug" name="slug" placeholder="Slug (es. modulo-iscrizione)" required>
+<input id="m_name" name="nome" placeholder="Nome modulo (es. Modulo Iscrizione)" required>
+<input id="m_file" name="file" type="file" accept=".pdf,.doc,.docx" required>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;"><input id="m_replace" name="replace" type="checkbox" value="1">Sostituisci se esiste</label>
+<button class="btn btn-primary" type="submit">Carica modulo</button>
+</form>
+<div class="table-wrap"><table class="t"><thead><tr><th>Nome</th><th>Slug</th><th>File</th><th>Aggiornato</th><th>Caricato da</th><th>Azioni</th></tr></thead><tbody id="tb_modules"></tbody></table></div>
+</div>
 <div id="p_report" class="pane">
 <div class="tools">
 <select id="r_metric"><option value="entrate">Entrate</option><option value="checkin">Check-in</option><option value="pagamenti">Pagamenti</option></select>
@@ -91,6 +102,7 @@ if(!TOKEN||USER.ruolo!=='admin'){location.href='../login.html';}
 document.getElementById('uname').textContent=`${USER.nome||''} ${USER.cognome||''}`.trim();
 
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('p_'+btn.dataset.pane).classList.add('active');}));
+const moduleForm=document.getElementById('moduleForm');if(moduleForm){moduleForm.addEventListener('submit',submitModuleForm);}
 
 function alertBox(msg,type='success'){const b=document.getElementById('alerts');b.innerHTML=`<div class="alert ${type}">${msg}</div>`;if(type==='success'){setTimeout(()=>b.innerHTML='',3200);}}
 function eur(v){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(v||0));}
@@ -116,6 +128,11 @@ async function cancelPurchase(id){if(!confirm('Annullare acquisto?'))return;try{
 async function loadDocs(){try{const d=await api(`${API}/documenti.php?action=pending`);tb_docs.innerHTML=(d.documenti||[]).map(x=>`<tr><td>${x.user_nome} ${x.user_cognome}</td><td>${x.tipo_nome}</td><td>${new Date(x.data_caricamento).toLocaleDateString('it-IT')}</td><td><span class="badge warn">pending</span></td><td><div class="actions"><a class="btn btn-outline" href="${x.file_url}" target="_blank" rel="noopener">Apri</a><button class="btn btn-success" onclick="reviewDoc('${x.id}','approved')">Approva</button><button class="btn btn-danger" onclick="reviewDoc('${x.id}','rejected')">Rifiuta</button></div></td></tr>`).join('')||'<tr><td colspan="5">Nessun documento</td></tr>';}catch(e){alertBox(e.message,'error')}}
 async function reviewDoc(id,s){let n='';if(s==='rejected'){n=prompt('Motivo rifiuto');if(!n)return;}try{const d=await api(`${API}/documenti.php?action=review&id=${encodeURIComponent(id)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({stato:s,note_revisione:n})});alertBox(d.message||'Documento aggiornato');await loadDocs();await loadStats();}catch(e){alertBox(e.message,'error')}}
 
+async function loadModules(){try{const d=await api(`${API}/moduli.php`);tb_modules.innerHTML=(d.moduli||[]).map(m=>`<tr><td>${m.nome}<br><small>v${m.version_num}</small></td><td><code>${m.slug}</code></td><td>${m.original_name}<br><small>${Number(m.size_kb||0).toFixed(2)} KB</small></td><td>${new Date(m.updated_at).toLocaleString('it-IT')}</td><td>${m.uploader_nome} ${m.uploader_cognome}</td><td><div class="actions"><a class="btn btn-outline" href="${m.download_url}" target="_blank" rel="noopener">Scarica</a><button class="btn btn-warning" onclick="prefillReplace('${m.slug.replace(/'/g,"\\'")}','${m.nome.replace(/'/g,"\\'")}')">Sostituisci</button><button class="btn btn-danger" onclick="deleteModulo(${m.id})">Elimina</button></div></td></tr>`).join('')||'<tr><td colspan="6">Nessun modulo caricato</td></tr>';}catch(e){alertBox(e.message,'error')}}
+function prefillReplace(slug,nome){m_slug.value=slug;m_name.value=nome;m_replace.checked=true;m_file.focus()}
+async function submitModuleForm(e){e.preventDefault();const slug=m_slug.value.trim();const nome=m_name.value.trim();const file=m_file.files[0];if(!slug||!nome||!file){alertBox('Compila slug, nome e file','error');return;}const fd=new FormData();fd.append('slug',slug);fd.append('nome',nome);fd.append('replace',m_replace.checked?'1':'0');fd.append('file',file);try{const r=await fetch(`${API}/moduli.php`,{method:'POST',headers:{Authorization:`Bearer ${TOKEN}`},body:fd});const t=await r.text();let d={};try{d=JSON.parse(t);}catch(x){throw new Error('Risposta API non valida')}if(!r.ok||d.success===false)throw new Error(d.message||'Errore upload modulo');alertBox(d.message||'Modulo salvato');moduleForm.reset();await loadModules();}catch(err){alertBox(err.message,'error')}}
+async function deleteModulo(id){if(!confirm('Confermi eliminazione modulo?'))return;try{const d=await api(`${API}/moduli.php?id=${encodeURIComponent(id)}`,{method:'DELETE'});alertBox(d.message||'Modulo eliminato');await loadModules();}catch(e){alertBox(e.message,'error')}}
+
 function toggleRange(){const c=r_period.value==='custom';r_from.classList.toggle('hidden',!c);r_to.classList.toggle('hidden',!c)}
 function draw(points){const svg=document.getElementById('chart');const W=1000,H=220,P=28,w=W-P*2,h=H-P*2;const vals=points.map(p=>Number(p.value||0));const max=Math.max(...vals,1);const poly=points.map((p,i)=>{const x=P+w*i/Math.max(points.length-1,1);const y=P+h-(h*(Number(p.value||0)/max));return `${x},${y}`}).join(' ');const area=points.map((p,i)=>{const x=P+w*i/Math.max(points.length-1,1);const y=P+h-(h*(Number(p.value||0)/max));return `${x},${y}`}).join(' ');svg.innerHTML=`<line x1="${P}" y1="${P}" x2="${P}" y2="${H-P}" stroke="#d1d5db"/><line x1="${P}" y1="${H-P}" x2="${W-P}" y2="${H-P}" stroke="#d1d5db"/><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dc2626" stop-opacity=".28"/><stop offset="100%" stop-color="#dc2626" stop-opacity=".02"/></linearGradient></defs><polygon points="${P},${H-P} ${area} ${W-P},${H-P}" fill="url(#g)"></polygon><polyline points="${poly}" fill="none" stroke="#dc2626" stroke-width="3"/>`;c_start.textContent=points[0]?points[0].date:'-';c_end.textContent=points.length?points[points.length-1].date:'-';c_max.textContent=`max: ${max.toFixed(2)}`}
 
@@ -125,7 +142,7 @@ async function exportUsers(){try{const r=await fetch(`${API}/stats.php?action=ex
 
 function logout(){localStorage.clear();location.href='../login.html';}
 
-async function init(){try{await loadStats();await loadUsers();await loadPurchases();await loadDocs();await loadReport();}catch(e){alertBox(e.message,'error')}}
+async function init(){try{await loadStats();await loadUsers();await loadPurchases();await loadDocs();await loadModules();await loadReport();}catch(e){alertBox(e.message,'error')}}
 init();
 </script>
 </body>

@@ -122,3 +122,20 @@ File:
 - `DOCUMENTAZIONE_E_CONFIG/CONFIG_PAGAMENTI_STRIPE_PAYPAL.md`
 - `DOCUMENTAZIONE_E_CONFIG/DB_SETUP.md`
 - `DOCUMENTAZIONE_E_CONFIG/GUIDA_TEST_TELEFONO_E_QR.md` (nuovo)
+
+## Blocco 11 - Moduli scaricabili CMS (Admin/Ufficio)
+- Aggiunta gestione moduli con upload/sostituzione/eliminazione.
+- Endpoint pubblico stabile per download ultima versione via slug.
+- Hardening upload (MIME + estensione) e storage dedicato con accesso diretto bloccato.
+
+File:
+- `api/moduli.php` (nuovo)
+- `api/moduli-download.php` (nuovo)
+- `uploads/moduli/.htaccess`
+- `uploads/moduli/_archive/.gitkeep`
+- `piscina-php/dashboard-admin.html`
+- `piscina-php/dashboard-ufficio.html`
+- `moduli.html`
+- `db/CREATE_DATABASE_FROM_ZERO.sql` (tabella `moduli`)
+- `db/README_DB.md`
+- `DOCUMENTAZIONE_E_CONFIG/ISTRUZIONI_SETUP_E_TEST.md`

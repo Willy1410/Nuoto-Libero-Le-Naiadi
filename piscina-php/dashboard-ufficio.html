@@ -33,10 +33,21 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827}
 <div class="tabs">
 <button class="tab active" data-pane="purchases">Acquisti Pending</button>
 <button class="tab" data-pane="docs">Documenti</button>
+<button class="tab" data-pane="modules">Moduli</button>
 <button class="tab" data-pane="report">Report</button>
 </div>
 <div id="p_purchases" class="pane active"><div class="table-wrap"><table class="t"><thead><tr><th>Utente</th><th>Pacchetto</th><th>Importo</th><th>Metodo</th><th>Data</th><th>Azioni</th></tr></thead><tbody id="tb_purchases"></tbody></table></div></div>
 <div id="p_docs" class="pane"><div class="table-wrap"><table class="t"><thead><tr><th>Utente</th><th>Tipo</th><th>Data</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb_docs"></tbody></table></div></div>
+<div id="p_modules" class="pane">
+<form id="moduleForm" class="tools" enctype="multipart/form-data" style="margin-bottom:12px">
+<input id="m_slug" name="slug" placeholder="Slug (es. modulo-iscrizione)" required>
+<input id="m_name" name="nome" placeholder="Nome modulo (es. Modulo Iscrizione)" required>
+<input id="m_file" name="file" type="file" accept=".pdf,.doc,.docx" required>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;"><input id="m_replace" name="replace" type="checkbox" value="1">Sostituisci se esiste</label>
+<button class="btn btn-primary" type="submit">Carica modulo</button>
+</form>
+<div class="table-wrap"><table class="t"><thead><tr><th>Nome</th><th>Slug</th><th>File</th><th>Aggiornato</th><th>Caricato da</th><th>Azioni</th></tr></thead><tbody id="tb_modules"></tbody></table></div>
+</div>
 <div id="p_report" class="pane">
 <div class="tools"><input type="date" id="repDate"><button class="btn btn-primary" onclick="loadDaily()">Carica report giornaliero</button></div>
 <div id="dailySummary" style="font-size:14px;margin-bottom:8px"></div>
@@ -48,6 +59,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827}
 const API='../api';const TOKEN=localStorage.getItem('token');const USER=JSON.parse(localStorage.getItem('user')||'{}');if(!TOKEN||!(USER.ruolo==='ufficio'||USER.ruolo==='segreteria'||USER.ruolo==='admin'))location.href='../login.html';
 uname.textContent=`${USER.nome||''} ${USER.cognome||''}`.trim();repDate.value=new Date().toISOString().split('T')[0];
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('p_'+btn.dataset.pane).classList.add('active');}));
+const moduleForm=document.getElementById('moduleForm');if(moduleForm){moduleForm.addEventListener('submit',submitModuleForm);}
 function alertBox(m,t='success'){alerts.innerHTML=`<div class="alert ${t}">${m}</div>`;if(t==='success')setTimeout(()=>alerts.innerHTML='',3200)}
 function eur(v){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(v||0));}
 async function api(url,opt={}){const r=await fetch(url,{...opt,headers:{Authorization:`Bearer ${TOKEN}`,...(opt.headers||{})}});const tx=await r.text();let d={};try{d=JSON.parse(tx);}catch(e){throw new Error('Risposta API non valida')}if(!r.ok||d.success===false)throw new Error(d.message||`Errore ${r.status}`);return d}async function loadStats(){const d=await api(`${API}/stats.php?action=dashboard`);s_pending.textContent=d.stats.acquisti_pending;s_docs.textContent=d.stats.documenti_pending;s_today.textContent=d.stats.checkin_oggi;s_revenue.textContent=eur(d.stats.incassi_mese)}
@@ -56,9 +68,13 @@ async function confirmPurchase(id){if(!confirm('Confermare pagamento?'))return;t
 async function cancelPurchase(id){if(!confirm('Annullare acquisto?'))return;try{const d=await api(`${API}/pacchetti.php?action=cancel&id=${encodeURIComponent(id)}`,{method:'PATCH'});alertBox(d.message||'Annullato');await loadStats();await loadPurchases();}catch(e){alertBox(e.message,'error')}}
 async function loadDocs(){try{const d=await api(`${API}/documenti.php?action=pending`);tb_docs.innerHTML=(d.documenti||[]).map(x=>`<tr><td>${x.user_nome} ${x.user_cognome}</td><td>${x.tipo_nome}</td><td>${new Date(x.data_caricamento).toLocaleDateString('it-IT')}</td><td><span class="badge warn">pending</span></td><td><div class="actions"><a class="btn btn-outline" href="${x.file_url}" target="_blank" rel="noopener">Apri</a><button class="btn btn-success" onclick="reviewDoc('${x.id}','approved')">Approva</button><button class="btn btn-danger" onclick="reviewDoc('${x.id}','rejected')">Rifiuta</button></div></td></tr>`).join('')||'<tr><td colspan="5">Nessun documento</td></tr>';}catch(e){alertBox(e.message,'error')}}
 async function reviewDoc(id,s){let n='';if(s==='rejected'){n=prompt('Motivo rifiuto');if(!n)return;}try{const d=await api(`${API}/documenti.php?action=review&id=${encodeURIComponent(id)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({stato:s,note_revisione:n})});alertBox(d.message||'Documento aggiornato');await loadStats();await loadDocs();}catch(e){alertBox(e.message,'error')}}
+async function loadModules(){try{const d=await api(`${API}/moduli.php`);tb_modules.innerHTML=(d.moduli||[]).map(m=>`<tr><td>${m.nome}<br><small>v${m.version_num}</small></td><td><code>${m.slug}</code></td><td>${m.original_name}<br><small>${Number(m.size_kb||0).toFixed(2)} KB</small></td><td>${new Date(m.updated_at).toLocaleString('it-IT')}</td><td>${m.uploader_nome} ${m.uploader_cognome}</td><td><div class="actions"><a class="btn btn-outline" href="${m.download_url}" target="_blank" rel="noopener">Scarica</a><button class="btn btn-warning" onclick="prefillReplace('${m.slug.replace(/'/g,"\\'")}','${m.nome.replace(/'/g,"\\'")}')">Sostituisci</button><button class="btn btn-danger" onclick="deleteModulo(${m.id})">Elimina</button></div></td></tr>`).join('')||'<tr><td colspan="6">Nessun modulo caricato</td></tr>';}catch(e){alertBox(e.message,'error')}}
+function prefillReplace(slug,nome){m_slug.value=slug;m_name.value=nome;m_replace.checked=true;m_file.focus()}
+async function submitModuleForm(e){e.preventDefault();const slug=m_slug.value.trim();const nome=m_name.value.trim();const file=m_file.files[0];if(!slug||!nome||!file){alertBox('Compila slug, nome e file','error');return;}const fd=new FormData();fd.append('slug',slug);fd.append('nome',nome);fd.append('replace',m_replace.checked?'1':'0');fd.append('file',file);try{const r=await fetch(`${API}/moduli.php`,{method:'POST',headers:{Authorization:`Bearer ${TOKEN}`},body:fd});const t=await r.text();let d={};try{d=JSON.parse(t);}catch(x){throw new Error('Risposta API non valida')}if(!r.ok||d.success===false)throw new Error(d.message||'Errore upload modulo');alertBox(d.message||'Modulo salvato');moduleForm.reset();await loadModules();}catch(err){alertBox(err.message,'error')}}
+async function deleteModulo(id){if(!confirm('Confermi eliminazione modulo?'))return;try{const d=await api(`${API}/moduli.php?id=${encodeURIComponent(id)}`,{method:'DELETE'});alertBox(d.message||'Modulo eliminato');await loadModules();}catch(e){alertBox(e.message,'error')}}
 async function loadDaily(){try{const date=repDate.value;const d=await api(`${API}/stats.php?action=report-daily&data=${encodeURIComponent(date)}`);dailySummary.textContent=`Totale check-in: ${d.totale} (Mattina: ${d.mattina}, Pomeriggio: ${d.pomeriggio})`;tb_daily.innerHTML=(d.checkins||[]).map(c=>`<tr><td>${new Date(c.timestamp).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</td><td>${c.nome} ${c.cognome}</td><td>${c.fascia_oraria}</td><td>${c.bagnino_nome} ${c.bagnino_cognome}</td></tr>`).join('')||'<tr><td colspan="4">Nessun check-in</td></tr>';}catch(e){alertBox(e.message,'error')}}
 function logout(){localStorage.clear();location.href='../login.html'}
-async function init(){try{await loadStats();await loadPurchases();await loadDocs();await loadDaily();}catch(e){alertBox(e.message,'error')}}init();
+async function init(){try{await loadStats();await loadPurchases();await loadDocs();await loadModules();await loadDaily();}catch(e){alertBox(e.message,'error')}}init();
 </script>
 </body>
 </html>

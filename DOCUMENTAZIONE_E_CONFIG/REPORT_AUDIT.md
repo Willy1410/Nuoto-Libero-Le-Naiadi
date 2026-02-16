@@ -87,3 +87,17 @@ Problemi principali trovati prima dei fix:
 - Verifica presenza log errori: `logs/error.log` creato.
 - Verifica login duplicato rimosso: `piscina-php/login.html` eliminato.
 - Verifica endpoint principali: rotte allineate a `../api` nelle dashboard e `api` nel login principale.
+
+## 5) Aggiornamento moduli CMS
+- Aggiunto modulo CMS in dashboard `admin` e `ufficio/segreteria` con:
+  - upload modulo
+  - sostituzione versione
+  - eliminazione con conferma
+  - lista moduli con metadati
+- Aggiunto endpoint pubblico stabile download:
+  - `api/moduli-download.php?slug={slug}`
+- Hardening sicurezza upload:
+  - estensioni consentite: `pdf`, `doc`, `docx`
+  - verifica MIME lato server
+  - storage dedicato `uploads/moduli/`
+  - accesso diretto ai file bloccato da `uploads/moduli/.htaccess`
