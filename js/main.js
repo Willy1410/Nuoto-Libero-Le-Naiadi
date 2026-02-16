@@ -313,26 +313,36 @@ function initContactForm() {
         }
         
         try {
-            // Simulate form submission (replace with actual API call)
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
+            const response = await fetch('api/contact.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    website: honeypot ? honeypot.value : ''
+                })
+            });
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Invio non riuscito');
+            }
+
             // Success
             if (formMessage) {
                 formMessage.className = 'form-message success';
-                formMessage.textContent = 'Grazie! Il tuo messaggio è stato inviato con successo. Ti risponderemo al più presto.';
+                formMessage.textContent = result.message || 'Grazie! Il tuo messaggio e stato inviato con successo.';
             }
-            
+
             // Reset form
             contactForm.reset();
-            
-            // Log to console (in production, send to server)
-            console.log('Form submitted:', formData);
-            
+
         } catch (error) {
             // Error
             if (formMessage) {
                 formMessage.className = 'form-message error';
-                formMessage.textContent = 'Si è verificato un errore. Riprova più tardi o contattaci direttamente.';
+                formMessage.textContent = error.message || 'Si e verificato un errore. Riprova piu tardi o contattaci direttamente.';
             }
             console.error('Form submission error:', error);
         } finally {
