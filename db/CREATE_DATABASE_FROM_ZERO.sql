@@ -50,6 +50,8 @@ CREATE TABLE profili (
   note TEXT NULL,
   attivo TINYINT(1) NOT NULL DEFAULT 1,
   email_verificata TINYINT(1) NOT NULL DEFAULT 0,
+  stato_iscrizione ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+  force_password_change TINYINT(1) NOT NULL DEFAULT 0,
   ultimo_accesso DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

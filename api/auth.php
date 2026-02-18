@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config.php';
 
 $action = (string)($_GET['action'] ?? '');
+ensureAuthSchemaColumns();
 
 switch ($action) {
     case 'register':
@@ -283,6 +284,29 @@ function handleMe(): void
     } catch (Throwable $e) {
         error_log('me error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore recupero profilo']);
+    }
+}
+
+function ensureAuthSchemaColumns(): void
+{
+    global $pdo;
+
+    static $bootstrapped = false;
+    if ($bootstrapped) {
+        return;
+    }
+    $bootstrapped = true;
+
+    try {
+        $check = $pdo->query("SHOW COLUMNS FROM profili LIKE 'force_password_change'");
+        if (!$check || !$check->fetch()) {
+            $pdo->exec(
+                'ALTER TABLE profili
+                 ADD COLUMN force_password_change TINYINT(1) NOT NULL DEFAULT 0 AFTER email_verificata'
+            );
+        }
+    } catch (Throwable $e) {
+        error_log('ensureAuthSchemaColumns error: ' . $e->getMessage());
     }
 }
 

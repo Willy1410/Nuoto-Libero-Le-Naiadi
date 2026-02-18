@@ -837,7 +837,8 @@ section {
 }
 
 .package-step-card {
-    overflow: hidden;
+    overflow: visible;
+    padding-top: calc(var(--spacing-xl) + 0.5rem);
 }
 
 .package-required-card {
@@ -848,6 +849,25 @@ section {
 .package-required-card .badge-popular {
     background: var(--primary-light);
     color: var(--primary-dark);
+}
+
+.package-step-badge {
+    top: -24px;
+    left: 1.1rem;
+    transform: none;
+    z-index: 3;
+    color: var(--white);
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    letter-spacing: 0.02em;
+}
+
+.package-step-badge-required {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+}
+
+.package-step-badge-package {
+    background: linear-gradient(135deg, #ff9f1c, var(--accent-color));
+    color: var(--dark);
 }
 
 .package-note-inline {

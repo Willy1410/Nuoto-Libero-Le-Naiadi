@@ -8,8 +8,9 @@
  *   GMAIL_SMTP_USER, GMAIL_SMTP_APP_PASSWORD, MAIL_ENABLED
  */
 
-$gmailUser = getenv('GMAIL_SMTP_USER') ?: 'info@glisqualetti.it';
-$gmailAppPassword = getenv('GMAIL_SMTP_APP_PASSWORD') ?: 'yyvb ckzs zvpi rwdb';
+$gmailUser = trim((string)(getenv('GMAIL_SMTP_USER') ?: 'info@glisqualetti.it'));
+$gmailAppPasswordRaw = (string)(getenv('GMAIL_SMTP_APP_PASSWORD') ?: 'yyvb ckzs zvpi rwdb');
+$gmailAppPassword = preg_replace('/\s+/', '', $gmailAppPasswordRaw) ?: '';
 $mailEnabledEnv = getenv('MAIL_ENABLED');
 $mailEnabled = $mailEnabledEnv === false ? true : filter_var($mailEnabledEnv, FILTER_VALIDATE_BOOLEAN);
 

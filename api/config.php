@@ -104,11 +104,15 @@ define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);
 define('UPLOAD_ALLOWED_TYPES', ['pdf', 'jpg', 'jpeg', 'png']);
 define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
 define('MAIL_LOG_PATH', LOG_DIR . '/mail.log');
+define('MAIL_QUEUE_DIR', LOG_DIR . '/mail_queue');
 define('SITE_NAME', 'Gli Squaletti');
 define('SITE_LOGO_URL', 'https://www.genspark.ai/api/files/s/s3WpPfgP');
 
 if (!file_exists(MAIL_LOG_PATH)) {
     touch(MAIL_LOG_PATH);
+}
+if (!is_dir(MAIL_QUEUE_DIR)) {
+    mkdir(MAIL_QUEUE_DIR, 0755, true);
 }
 
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
@@ -119,6 +123,7 @@ if (file_exists($autoloadPath)) {
 $mailConfigPath = __DIR__ . '/../config/mail.php';
 $MAIL_CONFIG = [
     'enabled' => false,
+    'queue_fallback_on_error' => true,
     'from_email' => 'noreply@nuotolibero.local',
     'from_name' => 'Nuoto Libero (Local)',
     'admin_email' => 'admin@nuotolibero.local',
@@ -500,6 +505,66 @@ function logMailEvent(string $level, string $message, array $context = []): void
     file_put_contents(MAIL_LOG_PATH, $line, FILE_APPEND);
 }
 
+function queueEmailFallback(
+    string $to,
+    string $toName,
+    string $subject,
+    string $htmlContent,
+    string $textContent = '',
+    array $attachments = [],
+    string $reason = ''
+): bool {
+    global $MAIL_CONFIG;
+
+    if (empty($MAIL_CONFIG['queue_fallback_on_error'])) {
+        return false;
+    }
+
+    if (!is_dir(MAIL_QUEUE_DIR) && !@mkdir(MAIL_QUEUE_DIR, 0755, true) && !is_dir(MAIL_QUEUE_DIR)) {
+        return false;
+    }
+
+    $safeAttachments = [];
+    foreach ($attachments as $attachment) {
+        if (!is_array($attachment)) {
+            continue;
+        }
+        $safeAttachments[] = [
+            'path' => (string)($attachment['path'] ?? ''),
+            'name' => (string)($attachment['name'] ?? ''),
+            'mime' => (string)($attachment['mime'] ?? ''),
+            'has_string' => is_string($attachment['string'] ?? null),
+        ];
+    }
+
+    $payload = [
+        'queued_at' => date('c'),
+        'to' => $to,
+        'to_name' => $toName,
+        'subject' => $subject,
+        'html' => $htmlContent,
+        'text' => $textContent,
+        'attachments' => $safeAttachments,
+        'reason' => $reason,
+    ];
+
+    $fileName = date('Ymd_His') . '_' . substr(hash('sha256', $to . '|' . $subject . '|' . microtime(true)), 0, 12) . '.json';
+    $filePath = MAIL_QUEUE_DIR . '/' . $fileName;
+    $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (!is_string($encoded) || @file_put_contents($filePath, $encoded) === false) {
+        return false;
+    }
+
+    logMailEvent('warning', 'Email queued in fallback mode', [
+        'to' => $to,
+        'subject' => $subject,
+        'queue_file' => $fileName,
+        'reason' => $reason,
+    ]);
+
+    return true;
+}
+
 function isMailConfigured(): bool
 {
     global $MAIL_CONFIG;
@@ -512,7 +577,7 @@ function isMailConfigured(): bool
     $host = trim((string)($smtp['host'] ?? ''));
     $auth = !empty($smtp['auth']);
     $username = trim((string)($smtp['username'] ?? ''));
-    $password = trim((string)($smtp['password'] ?? ''));
+    $password = preg_replace('/\s+/', '', (string)($smtp['password'] ?? '')) ?: '';
 
     if ($host === '') {
         return false;
@@ -550,7 +615,7 @@ function sendEmail(
             'to' => $to,
             'subject' => $subject,
         ]);
-        return false;
+        return queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, 'smtp_not_configured');
     }
 
     if (!class_exists(PHPMailer::class)) {
@@ -558,7 +623,7 @@ function sendEmail(
             'to' => $to,
             'subject' => $subject,
         ]);
-        return false;
+        return queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, 'phpmailer_missing');
     }
 
     try {
@@ -569,8 +634,8 @@ function sendEmail(
         $mail->Host = (string)($smtp['host'] ?? '');
         $mail->Port = (int)($smtp['port'] ?? 587);
         $mail->SMTPAuth = !empty($smtp['auth']);
-        $mail->Username = (string)($smtp['username'] ?? '');
-        $mail->Password = (string)($smtp['password'] ?? '');
+        $mail->Username = trim((string)($smtp['username'] ?? ''));
+        $mail->Password = preg_replace('/\s+/', '', (string)($smtp['password'] ?? '')) ?: '';
         $mail->Timeout = (int)($smtp['timeout'] ?? 10);
 
         $encryption = strtolower((string)($smtp['encryption'] ?? ''));
@@ -631,6 +696,9 @@ function sendEmail(
             'subject' => $subject,
             'error' => $e->getMessage(),
         ]);
+        if (queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, (string)$e->getMessage())) {
+            return true;
+        }
         return false;
     }
 }
