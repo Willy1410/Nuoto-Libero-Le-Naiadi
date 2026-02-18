@@ -418,7 +418,60 @@
                 throw new Error(message);
             }
 
-            return response.blob();
+            const blob = await response.blob();
+            return { blob, response };
+        }
+
+        function sanitizeFilePart(value) {
+            return String(value || 'QR').replace(/[^A-Za-z0-9-_]/g, '-');
+        }
+
+        function extractFilenameFromDisposition(disposition) {
+            if (!disposition) {
+                return '';
+            }
+
+            const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+            if (utf8Match && utf8Match[1]) {
+                try {
+                    return decodeURIComponent(utf8Match[1]).replace(/"/g, '').trim();
+                } catch (_) {
+                    return utf8Match[1].replace(/"/g, '').trim();
+                }
+            }
+
+            const plainMatch = disposition.match(/filename="?([^\";]+)"?/i);
+            if (plainMatch && plainMatch[1]) {
+                return plainMatch[1].trim();
+            }
+
+            return '';
+        }
+
+        async function downloadQrPdf(acquistoId, qrCode = 'QR') {
+            if (!acquistoId) {
+                showAlert('ID acquisto non valido per download QR.', 'error');
+                return;
+            }
+
+            try {
+                const { blob, response } = await fetchBlobWithAuth(
+                    `${API_URL}/qr.php?action=download&acquisto_id=${encodeURIComponent(acquistoId)}`
+                );
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const fallbackName = `QR_${sanitizeFilePart(qrCode)}.pdf`;
+                const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                showAlert(error.message || 'Errore download QR PDF', 'error');
+            }
         }
 
         function getStatusBadge(status) {
@@ -460,11 +513,15 @@
                         <p><strong>Scadenza:</strong> ${formatDate(purchase.data_scadenza)}</p>
                         <p><strong>Ingressi rimanenti:</strong> ${purchase.ingressi_rimanenti}</p>
                         <p style="margin-top:10px;">
-                            <a class="btn btn-primary" href="../api/qr.php?action=download&acquisto_id=${encodeURIComponent(purchase.id)}">Scarica PDF QR</a>
+                            <button class="btn btn-primary" id="downloadQrBtn" type="button">Scarica PDF QR</button>
                         </p>
                     </div>
                 </div>
             `;
+            const downloadBtn = document.getElementById('downloadQrBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => downloadQrPdf(purchase.id, purchase.qr_code));
+            }
 
             const qrTarget = document.getElementById('qrBox');
             if (!qrTarget) {
@@ -479,7 +536,7 @@
             }
 
             fetchBlobWithAuth(`${API_URL}/qr.php?action=svg&acquisto_id=${encodeURIComponent(purchase.id)}`)
-                .then((blob) => {
+                .then(({ blob }) => {
                     activeQrBlobUrl = URL.createObjectURL(blob);
                     qrTarget.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR code ${purchase.qr_code}">`;
                 })
@@ -543,7 +600,7 @@
 
             body.innerHTML = myPurchases.map(item => {
                 const downloadAction = item.stato_pagamento === 'confirmed' && item.qr_code
-                    ? `<a href="../api/qr.php?action=download&acquisto_id=${encodeURIComponent(item.id)}">PDF QR</a>`
+                    ? `<button class="btn btn-primary js-download-qr" type="button" data-id="${item.id}" data-code="${item.qr_code}">PDF QR</button>`
                     : '-';
 
                 return `
@@ -556,6 +613,11 @@
                     </tr>
                 `;
             }).join('');
+            body.querySelectorAll('.js-download-qr').forEach((button) => {
+                button.addEventListener('click', () => {
+                    downloadQrPdf(button.dataset.id || '', button.dataset.code || 'QR');
+                });
+            });
 
             const totalRemaining = myPurchases
                 .filter(item => item.stato_pagamento === 'confirmed')
@@ -718,6 +780,7 @@
         window.openPurchaseModal = openPurchaseModal;
         window.closePurchaseModal = closePurchaseModal;
         window.confirmPurchase = confirmPurchase;
+        window.downloadQrPdf = downloadQrPdf;
         window.logout = logout;
     </script>
 </body>

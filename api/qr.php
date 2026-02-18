@@ -53,11 +53,12 @@ function getAuthorizedPurchase(array $currentUser, string $acquistoId): array
 
     $stmt = $pdo->prepare(
         'SELECT a.id, a.user_id, a.qr_code, a.stato_pagamento, a.ingressi_rimanenti, a.data_scadenza,
-                a.data_acquisto, a.data_conferma,
+                a.data_acquisto, a.data_conferma, a.metodo_pagamento,
                 p.nome AS pacchetto_nome,
                 prof.nome AS user_nome,
                 prof.cognome AS user_cognome,
-                prof.email AS user_email
+                prof.email AS user_email,
+                prof.telefono AS user_telefono
          FROM acquisti a
          JOIN pacchetti p ON p.id = a.pacchetto_id
          JOIN profili prof ON prof.id = a.user_id
@@ -134,14 +135,55 @@ function outputQrPdf(array $acquisto): void
     $pdf->Cell(0, 10, 'Gli Squaletti - QR Pacchetto', 0, 1, 'C');
 
     $pdf->Ln(2);
-    $pdf->SetFont('helvetica', '', 11);
-    $pdf->Cell(0, 7, 'Cliente: ' . (string)$acquisto['user_nome'] . ' ' . (string)$acquisto['user_cognome'], 0, 1, 'C');
-    $pdf->Cell(0, 7, 'Pacchetto: ' . (string)$acquisto['pacchetto_nome'], 0, 1, 'C');
-    $pdf->Cell(0, 7, 'Codice: ' . (string)$acquisto['qr_code'], 0, 1, 'C');
-    $pdf->Cell(0, 7, 'Ingressi rimanenti: ' . (int)$acquisto['ingressi_rimanenti'], 0, 1, 'C');
+    $pdf->SetFont('helvetica', '', 10);
+    $pdf->Cell(0, 6, 'Documento utente per accesso/check-in in struttura', 0, 1, 'C');
+    $pdf->Ln(2);
 
-    if (!empty($acquisto['data_scadenza'])) {
-        $pdf->Cell(0, 7, 'Scadenza: ' . (string)$acquisto['data_scadenza'], 0, 1, 'C');
+    $formatDateTime = static function ($value): string {
+        $value = (string)$value;
+        if ($value === '' || $value === '0000-00-00 00:00:00') {
+            return '-';
+        }
+        try {
+            $date = new DateTime($value);
+            return $date->format('d/m/Y H:i');
+        } catch (Throwable $e) {
+            return $value;
+        }
+    };
+
+    $formatDate = static function ($value): string {
+        $value = (string)$value;
+        if ($value === '' || $value === '0000-00-00') {
+            return '-';
+        }
+        try {
+            $date = new DateTime($value);
+            return $date->format('d/m/Y');
+        } catch (Throwable $e) {
+            return $value;
+        }
+    };
+
+    $details = [
+        ['Cliente', trim((string)$acquisto['user_nome'] . ' ' . (string)$acquisto['user_cognome'])],
+        ['Email', (string)$acquisto['user_email']],
+        ['Telefono', (string)($acquisto['user_telefono'] ?? '-') ?: '-'],
+        ['Pacchetto', (string)$acquisto['pacchetto_nome']],
+        ['Metodo pagamento', (string)$acquisto['metodo_pagamento']],
+        ['Codice QR', (string)$acquisto['qr_code']],
+        ['ID acquisto', (string)$acquisto['id']],
+        ['Data acquisto', $formatDateTime($acquisto['data_acquisto'] ?? '')],
+        ['Data conferma', $formatDateTime($acquisto['data_conferma'] ?? '')],
+        ['Ingressi rimanenti', (string)((int)$acquisto['ingressi_rimanenti'])],
+        ['Scadenza', $formatDate($acquisto['data_scadenza'] ?? '')],
+    ];
+
+    foreach ($details as $row) {
+        $pdf->SetFont('helvetica', 'B', 10);
+        $pdf->Cell(52, 6, $row[0] . ':', 0, 0, 'R');
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->Cell(0, 6, $row[1], 0, 1, 'L');
     }
 
     $style = [
@@ -151,14 +193,14 @@ function outputQrPdf(array $acquisto): void
         'bgcolor' => [255, 255, 255],
     ];
 
-    $pdf->write2DBarcode((string)$acquisto['qr_code'], 'QRCODE,H', 65, 90, 80, 80, $style, 'N');
+    $pdf->write2DBarcode((string)$acquisto['qr_code'], 'QRCODE,H', 65, 112, 80, 80, $style, 'N');
 
-    $pdf->SetY(178);
+    $pdf->SetY(198);
     $pdf->SetFont('helvetica', '', 10);
     $pdf->MultiCell(
         0,
         6,
-        'Presenta questo QR all\'ingresso. Il bagnino potra verificare il pacchetto e registrare il check-in.',
+        'Presenta questo QR all\'ingresso. Il bagnino puo verificare il pacchetto e registrare il check-in.',
         0,
         'C'
     );

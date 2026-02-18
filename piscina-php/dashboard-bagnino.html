@@ -247,6 +247,23 @@
             }
         }
 
+        function getErrorMessage(error) {
+            if (!error) {
+                return 'Errore sconosciuto';
+            }
+            if (typeof error === 'string') {
+                return error;
+            }
+            if (error.message) {
+                return error.message;
+            }
+            try {
+                return JSON.stringify(error);
+            } catch (_) {
+                return String(error);
+            }
+        }
+
         function normalizeQrCode(rawValue) {
             const value = String(rawValue || '').trim();
             if (!value) {
@@ -338,6 +355,11 @@
             }
 
             scannerLibraryPromise = (async () => {
+                const local = await loadScript('../assets/vendor/html5-qrcode/html5-qrcode.min.js');
+                if (local && typeof Html5Qrcode !== 'undefined') {
+                    return true;
+                }
+
                 const primary = await loadScript('https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js');
                 if (primary && typeof Html5Qrcode !== 'undefined') {
                     return true;
@@ -480,7 +502,8 @@
             if (!window.isSecureContext && !isLocalhost) {
                 startButton.disabled = false;
                 startButton.textContent = 'Avvia camera';
-                showAlert('Camera bloccata: su telefono serve HTTPS (o localhost). Usa "Scatta foto QR" oppure attiva HTTPS.', 'error');
+                showAlert('Camera live bloccata su HTTP mobile. Apro la modalita "Scatta foto QR". Per live camera usa HTTPS.', 'error');
+                triggerImageScan();
                 return;
             }
 
@@ -512,7 +535,7 @@
             const config = { fps: 8, qrbox: { width: 240, height: 240 }, aspectRatio: 1.2 };
 
             try {
-                await scanner.start({ facingMode: { exact: 'environment' } }, config, onScan, () => {});
+                await scanner.start({ facingMode: 'environment' }, config, onScan, () => {});
                 scannerRunning = true;
                 startButton.textContent = 'Camera attiva';
                 startButton.disabled = true;
@@ -541,7 +564,7 @@
             } catch (error) {
                 startButton.disabled = false;
                 startButton.textContent = 'Avvia camera';
-                showAlert('Impossibile avviare la camera: ' + error, 'error');
+                showAlert('Impossibile avviare la camera: ' + getErrorMessage(error), 'error');
             }
         }
 
@@ -608,7 +631,7 @@
                 await verificaQR();
                 showAlert('QR letto dalla foto. Controlla i dati e conferma il check-in.');
             } catch (error) {
-                showAlert('Impossibile leggere il QR dalla foto: ' + error, 'error');
+                showAlert('Impossibile leggere il QR dalla foto: ' + getErrorMessage(error), 'error');
             } finally {
                 event.target.value = '';
             }

@@ -41,6 +41,16 @@ Metodo consigliato:
 6. clic `Avvia camera`
 7. inquadra il QR stampato
 
+Nota importante:
+- Se apri il sito dal telefono con URL `http://192.168.x.x/...`, molti browser bloccano la camera live.
+- La dashboard ora passa automaticamente al fallback `Scatta foto QR` (gratuito) quando la camera live non e consentita.
+- Per avere camera live continua su telefono, usa HTTPS.
+
+Opzioni HTTPS gratuite:
+- Cloudflare Tunnel: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-local-tunnel/
+- ngrok (piano free): https://ngrok.com/docs/getting-started/
+- localhost HTTPS con certificato locale (`mkcert`): https://github.com/FiloSottile/mkcert
+
 ## 6) Verifica regole permessi
 ### A) Non loggato
 Apri dal telefono:
@@ -71,8 +81,9 @@ In dashboard bagnino:
 ### Camera non parte
 - verifica permesso fotocamera nel browser
 - prova Chrome/Edge mobile
-- se usi IP locale, molte versioni mobile richiedono HTTPS per la camera live
-- usa fallback input manuale QR
+- se usi IP locale (`http://192.168.x.x`), molte versioni mobile richiedono HTTPS per la camera live
+- usa fallback `Scatta foto QR` o input manuale QR
+- se vuoi live camera continua, usa uno dei tunnel HTTPS gratuiti sopra
 
 ### Endpoint non raggiungibile da telefono
 - verifica IP locale corretto
