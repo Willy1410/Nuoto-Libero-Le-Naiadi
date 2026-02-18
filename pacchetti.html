@@ -71,37 +71,58 @@
     <section class="page-hero">
         <div class="container">
             <h1><i class="fas fa-id-card"></i> Pacchetti Ingressi</h1>
-            <p>Richiesta adesione e contributo attività per nuoto libero non agonistico</p>
+            <p>Richiedi iscrizione e attivazione ingressi per nuoto libero non agonistico</p>
         </div>
     </section>
 
     <section class="packages-section" id="packagesSection">
         <div class="container">
-            <h2 class="section-title">Scegli il Pacchetto Ingressi</h2>
-            <p class="section-subtitle">Seleziona la formula più adatta e invia la richiesta di attivazione</p>
+            <h2 class="section-title">Iscrizione e Pacchetto Ingressi</h2>
+            <p class="section-subtitle">Percorso in 2 step: quota iniziale obbligatoria + pacchetto ingressi</p>
             <div class="instore-info" style="margin-bottom:16px;">
                 <p><strong>Nota importante:</strong> Il pacchetto da 10 ingressi è acquistabile solo dopo compilazione del modulo di iscrizione e pagamento della quota di iscrizione e tesseramento.</p>
                 <p><strong>Promo attiva:</strong> 2 ingressi omaggio inclusi. Gli ingressi omaggio hanno validità di 60 giorni.</p>
             </div>
 
-            <div class="pricing-grid">
-                <div class="pricing-card featured package-card" data-package="10-ingressi" data-price="110.00" data-name="10 Ingressi">
-                    <div class="badge-popular">PIÙ RICHIESTO</div>
+            <div class="pricing-grid package-offers-grid">
+                <div class="pricing-card package-step-card package-required-card">
+                    <div class="badge-popular">STEP 1 OBBLIGATORIO</div>
                     <div class="pricing-header">
-                        <h3>10 Ingressi</h3>
+                        <h3>Iscrizione EPS + Tesseramento</h3>
                         <div class="price">
                             <span class="currency">EUR</span>
-                            <span class="amount">110</span>
-                            <span class="savings">Include iscrizione + tesseramento + 2 omaggio</span>
+                            <span class="amount">20</span>
+                            <span class="period">/una tantum</span>
                         </div>
+                        <span class="savings">Quota iniziale obbligatoria</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Iscrizione EPS</li>
+                        <li><i class="fas fa-check"></i> Tesseramento associativo</li>
+                        <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio</li>
+                        <li><i class="fas fa-calendar-check"></i> Attivazione in segreteria</li>
+                    </ul>
+                    <p class="package-note-inline">Questo passaggio è necessario prima di selezionare il pacchetto ingressi.</p>
+                </div>
+
+                <div class="pricing-card featured package-card package-step-card" data-package="10-ingressi" data-price="90.00" data-required-fee="20.00" data-name="Pacchetto 10 Ingressi">
+                    <div class="badge-popular">STEP 2</div>
+                    <div class="pricing-header">
+                        <h3>Pacchetto 10 Ingressi</h3>
+                        <div class="price">
+                            <span class="currency">EUR</span>
+                            <span class="amount">90</span>
+                            <span class="period">/pacchetto</span>
+                        </div>
+                        <span class="savings">Selezionabile solo con iscrizione attiva</span>
                     </div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> 10 ingressi validi</li>
-                        <li><i class="fas fa-check"></i> Iscrizione e tesseramento inclusi</li>
-                        <li><i class="fas fa-check"></i> +2 ingressi omaggio (validità 60 giorni)</li>
+                        <li><i class="fas fa-check"></i> Accesso corsie nuoto libero</li>
+                        <li><i class="fas fa-check"></i> Utilizzabile solo dopo STEP 1</li>
                         <li><i class="fas fa-check"></i> Armadietto incluso</li>
                         <li><i class="fas fa-check"></i> Docce calde</li>
-                        <li><i class="fas fa-star"></i> Attivazione in struttura dopo verifica segreteria</li>
+                        <li><i class="fas fa-star"></i> Totale complessivo STEP 1 + STEP 2: EUR 110</li>
                     </ul>
                     <button class="btn btn-primary btn-block select-package">
                         <i class="fas fa-check-circle"></i> Finalizza iscrizione in struttura
@@ -121,12 +142,16 @@
                         <strong id="summaryPackage">-</strong>
                     </div>
                     <div class="summary-item">
-                        <span>Quota:</span>
-                        <strong id="summaryPrice">EUR 0,00</strong>
+                        <span>Quota iscrizione EPS + tesseramento:</span>
+                        <strong id="summaryMandatoryFee">EUR 0,00</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Quota pacchetto 10 ingressi:</span>
+                        <strong id="summaryPackageFee">EUR 0,00</strong>
                     </div>
                     <div class="summary-item">
                         <span>Comprende:</span>
-                        <strong>Iscrizione, Tesseramento, Pacchetto 10 ingressi, +2 omaggio</strong>
+                        <strong>Iscrizione EPS, Tesseramento, Pacchetto 10 ingressi, +2 ingressi promo</strong>
                     </div>
                     <div class="summary-total">
                         <span>Totale:</span>
@@ -252,7 +277,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Sì. Puoi inviare solo la richiesta online e finalizzare iscrizione, firma e contributo direttamente in struttura.</p>
+                        <p>Sì. Puoi inviare la richiesta online e finalizzare iscrizione, firma e quota direttamente in struttura.</p>
                     </div>
                 </div>
 

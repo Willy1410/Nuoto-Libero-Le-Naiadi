@@ -5,6 +5,8 @@
 const paymentState = {
     selectedPackage: null,
     packagePrice: 0,
+    mandatoryFee: 0,
+    totalPrice: 0,
     packageName: ''
 };
 
@@ -26,13 +28,17 @@ function initPackageSelection() {
 
         selectButton.addEventListener('click', function () {
             const packagePrice = parseFloat(card.dataset.price || '0');
+            const mandatoryFee = parseFloat(card.dataset.requiredFee || '0');
             const packageName = card.dataset.name || '10 Ingressi';
+            const totalPrice = packagePrice + mandatoryFee;
 
             paymentState.selectedPackage = card.dataset.package || '10-ingressi';
             paymentState.packagePrice = packagePrice;
+            paymentState.mandatoryFee = mandatoryFee;
+            paymentState.totalPrice = totalPrice;
             paymentState.packageName = packageName;
 
-            updateOrderSummary(packageName, packagePrice);
+            updateOrderSummary(packageName, packagePrice, mandatoryFee, totalPrice);
 
             if (packagesSection && checkoutSection) {
                 packagesSection.style.display = 'none';
@@ -64,14 +70,18 @@ function formatCurrency(value) {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
 }
 
-function updateOrderSummary(packageName, price) {
+function updateOrderSummary(packageName, packageFee, mandatoryFee, totalPrice) {
     const summaryPackage = document.getElementById('summaryPackage');
-    const summaryPrice = document.getElementById('summaryPrice');
+    const summaryMandatoryFee = document.getElementById('summaryMandatoryFee');
+    const summaryPackageFee = document.getElementById('summaryPackageFee');
+    const legacySummaryPrice = document.getElementById('summaryPrice');
     const summaryTotal = document.getElementById('summaryTotal');
 
     if (summaryPackage) summaryPackage.textContent = packageName;
-    if (summaryPrice) summaryPrice.textContent = formatCurrency(price);
-    if (summaryTotal) summaryTotal.textContent = formatCurrency(price);
+    if (summaryMandatoryFee) summaryMandatoryFee.textContent = formatCurrency(mandatoryFee);
+    if (summaryPackageFee) summaryPackageFee.textContent = formatCurrency(packageFee);
+    if (legacySummaryPrice) legacySummaryPrice.textContent = formatCurrency(packageFee);
+    if (summaryTotal) summaryTotal.textContent = formatCurrency(totalPrice);
 }
 
 function initCheckoutForm() {
@@ -108,7 +118,9 @@ function initCheckoutForm() {
                 termsAccept: formData.termsAccept,
                 privacyAccept: formData.privacyAccept,
                 package_name: paymentState.packageName,
-                package_price: paymentState.packagePrice,
+                package_price: paymentState.totalPrice,
+                package_fee: paymentState.packagePrice,
+                registration_fee: paymentState.mandatoryFee,
                 terms_accept: formData.termsAccept,
                 privacy_accept: formData.privacyAccept
             };
@@ -126,7 +138,9 @@ function initCheckoutForm() {
 
             redirectToConfirmation(result.iscrizione_id || ('ISCR-' + Date.now()), {
                 package: paymentState.packageName,
-                price: paymentState.packagePrice,
+                packageFee: paymentState.packagePrice,
+                mandatoryFee: paymentState.mandatoryFee,
+                total: paymentState.totalPrice,
                 email: formData.email,
                 message: result.message || 'Richiesta inviata correttamente'
             });
@@ -229,7 +243,9 @@ function redirectToConfirmation(enrollmentId, orderData) {
                 <div class="box">
                     <div class="row"><strong>Codice richiesta</strong><span>${enrollmentId}</span></div>
                     <div class="row"><strong>Pacchetto</strong><span>${orderData.package}</span></div>
-                    <div class="row"><strong>Totale</strong><span>${formatCurrency(orderData.price)}</span></div>
+                    <div class="row"><strong>Quota iscrizione EPS + tesseramento</strong><span>${formatCurrency(orderData.mandatoryFee)}</span></div>
+                    <div class="row"><strong>Quota pacchetto 10 ingressi</strong><span>${formatCurrency(orderData.packageFee)}</span></div>
+                    <div class="row"><strong>Totale</strong><span>${formatCurrency(orderData.total)}</span></div>
                     <div class="row"><strong>Comprende</strong><span>Iscrizione, Tesseramento, 10 ingressi + 2 omaggio</span></div>
                     <div class="row"><strong>Email</strong><span>${orderData.email}</span></div>
                 </div>
