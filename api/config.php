@@ -12,6 +12,28 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
 date_default_timezone_set('Europe/Rome');
+mb_internal_encoding('UTF-8');
+
+define('PROJECT_ROOT', realpath(__DIR__ . '/..') ?: (__DIR__ . '/..'));
+define('LOG_DIR', PROJECT_ROOT . '/logs');
+define('ERROR_LOG_PATH', LOG_DIR . '/error.log');
+
+if (!is_dir(LOG_DIR)) {
+    mkdir(LOG_DIR, 0755, true);
+}
+if (!file_exists(ERROR_LOG_PATH)) {
+    touch(ERROR_LOG_PATH);
+}
+ini_set('error_log', ERROR_LOG_PATH);
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        ini_set('session.cookie_secure', '1');
+    }
+    session_start();
+}
 
 $allowedOrigins = [
     'http://localhost',
@@ -35,6 +57,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
     exit();
 }
 
+function getAppBaseUrl(): string
+{
+    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+
+    $basePath = preg_replace('#/api/[^/]+$#', '', $scriptName);
+    if (!is_string($basePath)) {
+        $basePath = '';
+    }
+
+    return rtrim($scheme . '://' . $host . $basePath, '/');
+}
+
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
@@ -46,10 +82,14 @@ define('JWT_EXPIRATION', 86400);
 
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);
 define('UPLOAD_ALLOWED_TYPES', ['pdf', 'jpg', 'jpeg', 'png']);
-define('UPLOAD_DIR', __DIR__ . '/../uploads/');
-define('MAIL_LOG_PATH', __DIR__ . '/../logs/mail.log');
+define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
+define('MAIL_LOG_PATH', LOG_DIR . '/mail.log');
 define('SITE_NAME', 'Gli Squaletti');
 define('SITE_LOGO_URL', 'https://www.genspark.ai/api/files/s/s3WpPfgP');
+
+if (!file_exists(MAIL_LOG_PATH)) {
+    touch(MAIL_LOG_PATH);
+}
 
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoloadPath)) {
@@ -99,6 +139,39 @@ try {
     exit();
 }
 
+function sendJson(int $statusCode, array $payload): void
+{
+    http_response_code($statusCode);
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
+function getJsonInput(): array
+{
+    $raw = file_get_contents('php://input');
+    if (!is_string($raw) || trim($raw) === '') {
+        return [];
+    }
+
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+function sanitizeText(string $value, int $maxLength = 1000): string
+{
+    $clean = sanitizeInput($value);
+    if (mb_strlen($clean) > $maxLength) {
+        return mb_substr($clean, 0, $maxLength);
+    }
+
+    return $clean;
+}
+
+function validatePasswordStrength(string $password): bool
+{
+    return strlen($password) >= 8;
+}
+
 function base64UrlEncode(string $value): string
 {
     return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
@@ -114,16 +187,20 @@ function base64UrlDecode(string $value): string
     return base64_decode(strtr($value, '-_', '+/')) ?: '';
 }
 
-function generateJWT(string $userId, string $email, string $role): string
+function generateJWT(string $userId, string $email, string $role, ?int $roleLevel = null): string
 {
     $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
-    $payload = json_encode([
+    $payloadData = [
         'user_id' => $userId,
         'email' => $email,
         'role' => $role,
         'iat' => time(),
         'exp' => time() + JWT_EXPIRATION,
-    ]);
+    ];
+    if ($roleLevel !== null) {
+        $payloadData['role_level'] = $roleLevel;
+    }
+    $payload = json_encode($payloadData);
 
     $base64UrlHeader = base64UrlEncode($header ?: '{}');
     $base64UrlPayload = base64UrlEncode($payload ?: '{}');
@@ -205,9 +282,7 @@ function requireAuth(): array
 {
     $user = getCurrentUser();
     if (!$user) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Non autenticato']);
-        exit();
+        sendJson(401, ['success' => false, 'message' => 'Non autenticato']);
     }
 
     return $user;
@@ -219,16 +294,20 @@ function requireRole(int $minLevel): array
     $user = requireAuth();
 
     $stmt = $pdo->prepare(
-        'SELECT r.livello FROM profili p JOIN ruoli r ON p.ruolo_id = r.id WHERE p.id = ?'
+        'SELECT r.nome, r.livello
+         FROM profili p
+         JOIN ruoli r ON p.ruolo_id = r.id
+         WHERE p.id = ? AND p.attivo = 1'
     );
     $stmt->execute([$user['user_id']]);
     $profile = $stmt->fetch();
 
     if (!$profile || (int)$profile['livello'] < $minLevel) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Accesso negato']);
-        exit();
+        sendJson(403, ['success' => false, 'message' => 'Accesso negato']);
     }
+
+    $user['role'] = $profile['nome'];
+    $user['role_level'] = (int)$profile['livello'];
 
     return $user;
 }
@@ -445,6 +524,73 @@ function sendBrandedEmail(
 ): bool {
     $html = buildBrandedEmail($title, $bodyHtml, $previewText);
     return sendEmail($to, $toName, $subject, $html, $textContent);
+}
+
+function sendTemplateEmail(
+    string $to,
+    string $toName,
+    string $subject,
+    string $title,
+    string $bodyHtml,
+    string $previewText = '',
+    string $textContent = ''
+): bool {
+    return sendBrandedEmail($to, $toName, $subject, $title, $bodyHtml, $previewText, $textContent);
+}
+
+function localAppBaseUrl(): string
+{
+    $fromEnv = getenv('APP_BASE_URL');
+    if (is_string($fromEnv) && trim($fromEnv) !== '') {
+        return rtrim($fromEnv, '/');
+    }
+
+    return getAppBaseUrl();
+}
+
+function dispatchPendingExpiryReminders(?string $userId = null): void
+{
+    global $pdo;
+
+    try {
+        $sql = 'SELECT a.id, a.data_scadenza, DATEDIFF(a.data_scadenza, CURDATE()) AS giorni_alla_scadenza,
+                       p.nome AS pacchetto_nome,
+                       u.nome, u.cognome, u.email
+                FROM acquisti a
+                JOIN pacchetti p ON p.id = a.pacchetto_id
+                JOIN profili u ON u.id = a.user_id
+                WHERE a.stato_pagamento = "confirmed"
+                  AND a.data_scadenza IS NOT NULL
+                  AND DATEDIFF(a.data_scadenza, CURDATE()) BETWEEN 0 AND 7';
+
+        $params = [];
+        if ($userId !== null && $userId !== '') {
+            $sql .= ' AND a.user_id = ?';
+            $params[] = $userId;
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as $row) {
+            $days = (int)$row['giorni_alla_scadenza'];
+            $body = '<p>Ciao <strong>' . htmlspecialchars((string)$row['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+                . '<p>il tuo pacchetto <strong>' . htmlspecialchars((string)$row['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '</strong> scadra tra <strong>' . $days . ' giorni</strong>.</p>'
+                . '<p>Data scadenza: <strong>' . htmlspecialchars((string)$row['data_scadenza'], ENT_QUOTES, 'UTF-8') . '</strong></p>';
+
+            sendTemplateEmail(
+                (string)$row['email'],
+                trim((string)$row['nome'] . ' ' . (string)$row['cognome']),
+                'Promemoria scadenza pacchetto',
+                'Pacchetto in scadenza',
+                $body,
+                'Promemoria scadenza pacchetto'
+            );
+        }
+    } catch (Throwable $e) {
+        error_log('dispatchPendingExpiryReminders error: ' . $e->getMessage());
+    }
 }
 
 function validateEmail(string $email): bool

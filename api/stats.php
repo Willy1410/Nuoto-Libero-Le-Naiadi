@@ -18,6 +18,9 @@ switch ($action) {
     case 'report-daily':
         getDailyReport();
         break;
+    case 'report-daily-pdf':
+        exportDailyReportPdf();
+        break;
     case 'report-timeseries':
         getTimeSeriesReport();
         break;
@@ -104,52 +107,153 @@ function getDashboardStats(): void
 
 function getDailyReport(): void
 {
-    global $pdo;
-
-    $date = sanitizeText((string)($_GET['data'] ?? date('Y-m-d')), 10);
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-        $date = date('Y-m-d');
-    }
+    $date = resolveReportDate();
 
     try {
-        $stmt = $pdo->prepare(
-            'SELECT c.id, c.timestamp, c.fascia_oraria, c.note,
-                    u.nome, u.cognome, u.telefono,
-                    p.nome AS pacchetto_nome,
-                    b.nome AS bagnino_nome, b.cognome AS bagnino_cognome
-             FROM check_ins c
-             JOIN profili u ON u.id = c.user_id
-             JOIN profili b ON b.id = c.bagnino_id
-             JOIN acquisti a ON a.id = c.acquisto_id
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             WHERE DATE(c.timestamp) = ?
-             ORDER BY c.timestamp ASC'
-        );
-        $stmt->execute([$date]);
-        $rows = $stmt->fetchAll();
-
-        $mattina = 0;
-        $pomeriggio = 0;
-        foreach ($rows as $row) {
-            if ($row['fascia_oraria'] === 'mattina') {
-                $mattina++;
-            } else {
-                $pomeriggio++;
-            }
-        }
-
+        $report = fetchDailyReportData($date);
         sendJson(200, [
             'success' => true,
             'data' => $date,
-            'totale' => count($rows),
-            'mattina' => $mattina,
-            'pomeriggio' => $pomeriggio,
-            'checkins' => $rows,
+            'totale' => $report['totale'],
+            'mattina' => $report['mattina'],
+            'pomeriggio' => $report['pomeriggio'],
+            'checkins' => $report['rows'],
         ]);
     } catch (Throwable $e) {
         error_log('getDailyReport error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore report giornaliero']);
     }
+}
+
+function exportDailyReportPdf(): void
+{
+    $date = resolveReportDate();
+
+    try {
+        $report = fetchDailyReportData($date);
+    } catch (Throwable $e) {
+        error_log('exportDailyReportPdf data error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento dati report PDF']);
+    }
+
+    if (!class_exists('TCPDF')) {
+        sendJson(500, ['success' => false, 'message' => 'TCPDF non disponibile. Eseguire composer install.']);
+    }
+
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
+    $pdf->SetCreator('Gli Squaletti');
+    $pdf->SetAuthor('Dashboard Ufficio/Admin');
+    $pdf->SetTitle('Report giornaliero check-in ' . $date);
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->SetMargins(10, 10, 10);
+    $pdf->AddPage();
+
+    $pdf->SetFont('dejavusans', 'B', 16);
+    $pdf->Cell(0, 10, 'Report Giornaliero Check-in', 0, 1, 'L');
+
+    $pdf->SetFont('dejavusans', '', 10);
+    $pdf->Cell(0, 7, 'Data: ' . $date, 0, 1, 'L');
+    $pdf->Cell(
+        0,
+        7,
+        'Totale: ' . $report['totale'] . ' | Mattina: ' . $report['mattina'] . ' | Pomeriggio: ' . $report['pomeriggio'],
+        0,
+        1,
+        'L'
+    );
+    $pdf->Ln(2);
+
+    $rowsHtml = '';
+    foreach ($report['rows'] as $row) {
+        $time = date('H:i', strtotime((string)$row['timestamp']));
+        $rowsHtml .= '<tr>'
+            . '<td>' . htmlspecialchars($time, ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td>' . htmlspecialchars((string)$row['nome'] . ' ' . (string)$row['cognome'], ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td>' . htmlspecialchars((string)($row['telefono'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td>' . htmlspecialchars((string)($row['fascia_oraria'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td>' . htmlspecialchars((string)($row['pacchetto_nome'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td>' . htmlspecialchars((string)$row['bagnino_nome'] . ' ' . (string)$row['bagnino_cognome'], ENT_QUOTES, 'UTF-8') . '</td>'
+            . '</tr>';
+    }
+
+    if ($rowsHtml === '') {
+        $rowsHtml = '<tr><td colspan="6">Nessun check-in registrato</td></tr>';
+    }
+
+    $html = '<table border="1" cellpadding="5">'
+        . '<thead>'
+        . '<tr style="background-color:#f2f2f2;">'
+        . '<th width="10%"><strong>Ora</strong></th>'
+        . '<th width="23%"><strong>Utente</strong></th>'
+        . '<th width="17%"><strong>Telefono</strong></th>'
+        . '<th width="12%"><strong>Fascia</strong></th>'
+        . '<th width="22%"><strong>Pacchetto</strong></th>'
+        . '<th width="16%"><strong>Bagnino</strong></th>'
+        . '</tr>'
+        . '</thead>'
+        . '<tbody>' . $rowsHtml . '</tbody>'
+        . '</table>';
+
+    $pdf->writeHTML($html, true, false, true, false, '');
+
+    header_remove('Content-Type');
+    header('Content-Type: application/pdf');
+    header('Cache-Control: private, max-age=0, must-revalidate');
+    $pdf->Output('report_checkin_' . $date . '.pdf', 'D');
+    exit();
+}
+
+function resolveReportDate(): string
+{
+    $date = sanitizeText((string)($_GET['data'] ?? date('Y-m-d')), 10);
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return date('Y-m-d');
+    }
+
+    return $date;
+}
+
+function fetchDailyReportData(string $date): array
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare(
+        'SELECT c.id, c.timestamp, c.fascia_oraria, c.note,
+                u.nome, u.cognome, u.telefono,
+                p.nome AS pacchetto_nome,
+                b.nome AS bagnino_nome, b.cognome AS bagnino_cognome
+         FROM check_ins c
+         JOIN profili u ON u.id = c.user_id
+         JOIN profili b ON b.id = c.bagnino_id
+         JOIN acquisti a ON a.id = c.acquisto_id
+         JOIN pacchetti p ON p.id = a.pacchetto_id
+         WHERE DATE(c.timestamp) = ?
+         ORDER BY c.timestamp ASC'
+    );
+    $stmt->execute([$date]);
+    $rows = $stmt->fetchAll();
+
+    $mattina = 0;
+    $pomeriggio = 0;
+    foreach ($rows as $row) {
+        if ((string)$row['fascia_oraria'] === 'mattina') {
+            $mattina++;
+        } else {
+            $pomeriggio++;
+        }
+    }
+
+    return [
+        'rows' => $rows,
+        'totale' => count($rows),
+        'mattina' => $mattina,
+        'pomeriggio' => $pomeriggio,
+    ];
 }
 
 function getTimeSeriesReport(): void

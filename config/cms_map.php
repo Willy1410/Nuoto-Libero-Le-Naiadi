@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 return [
     'index' => [
@@ -71,6 +71,12 @@ return [
             'field' => 'text',
         ],
         [
+            'key' => 'faq_subtitle',
+            'label' => 'Home - Sottotitolo FAQ',
+            'selector' => '.faq .section-subtitle',
+            'field' => 'text',
+        ],
+        [
             'key' => 'cta_title',
             'label' => 'Home - Titolo CTA finale',
             'selector' => '.cta-box h2',
@@ -83,6 +89,7 @@ return [
             'field' => 'text',
         ],
     ],
+
     'chi-siamo' => [
         [
             'key' => 'page_title',
@@ -120,7 +127,26 @@ return [
             'selector' => '.mission-box p',
             'field' => 'text',
         ],
+        [
+            'key' => 'brands_title',
+            'label' => 'Chi siamo - Titolo marchi',
+            'selector' => '.brands-section .section-title',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_title',
+            'label' => 'Chi siamo - Titolo CTA finale',
+            'selector' => '.cta-box h2',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_subtitle',
+            'label' => 'Chi siamo - Testo CTA finale',
+            'selector' => '.cta-box p',
+            'field' => 'text',
+        ],
     ],
+
     'orari-tariffe' => [
         [
             'key' => 'page_title',
@@ -141,12 +167,49 @@ return [
             'field' => 'text',
         ],
         [
+            'key' => 'schedule_subtitle',
+            'label' => 'Orari e tariffe - Sottotitolo sezione orari',
+            'selector' => '.schedule-section .section-subtitle',
+            'field' => 'text',
+        ],
+        [
             'key' => 'prices_title',
             'label' => 'Orari e tariffe - Titolo prezzi',
             'selector' => '.pricing-section .section-title',
             'field' => 'text',
         ],
+        [
+            'key' => 'prices_subtitle',
+            'label' => 'Orari e tariffe - Sottotitolo prezzi',
+            'selector' => '.pricing-section .section-subtitle',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'rules_title',
+            'label' => 'Orari e tariffe - Titolo regolamento',
+            'selector' => '.rules-section .section-title',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'rules_subtitle',
+            'label' => 'Orari e tariffe - Sottotitolo regolamento',
+            'selector' => '.rules-section .section-subtitle',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_title',
+            'label' => 'Orari e tariffe - Titolo CTA',
+            'selector' => '.cta-box h2',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_subtitle',
+            'label' => 'Orari e tariffe - Testo CTA',
+            'selector' => '.cta-box p',
+            'field' => 'text',
+        ],
     ],
+
     'galleria' => [
         [
             'key' => 'page_title',
@@ -163,10 +226,23 @@ return [
         [
             'key' => 'gallery_intro',
             'label' => 'Galleria - Testo introduttivo',
-            'selector' => '.gallery-intro',
+            'selector' => '.gallery-intro p',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_title',
+            'label' => 'Galleria - Titolo CTA',
+            'selector' => '.cta-box h2',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_subtitle',
+            'label' => 'Galleria - Testo CTA',
+            'selector' => '.cta-box p',
             'field' => 'text',
         ],
     ],
+
     'moduli' => [
         [
             'key' => 'page_title',
@@ -182,17 +258,42 @@ return [
         ],
         [
             'key' => 'docs_title',
-            'label' => 'Moduli - Titolo sezione documenti',
-            'selector' => '.documents-section .section-title',
+            'label' => 'Moduli - Titolo documenti',
+            'selector' => '.documents-intro h2',
             'field' => 'text',
         ],
         [
             'key' => 'docs_subtitle',
-            'label' => 'Moduli - Sottotitolo sezione documenti',
-            'selector' => '.documents-section .section-subtitle',
+            'label' => 'Moduli - Testo intro documenti',
+            'selector' => '.documents-intro p',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'info_title',
+            'label' => 'Moduli - Titolo info utili',
+            'selector' => '.info-box h2',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'faq_title',
+            'label' => 'Moduli - Titolo FAQ',
+            'selector' => '.faq .section-title',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_title',
+            'label' => 'Moduli - Titolo CTA',
+            'selector' => '.cta-box h2',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_subtitle',
+            'label' => 'Moduli - Testo CTA',
+            'selector' => '.cta-box p',
             'field' => 'text',
         ],
     ],
+
     'pacchetti' => [
         [
             'key' => 'page_title',
@@ -231,6 +332,7 @@ return [
             'field' => 'text',
         ],
     ],
+
     'contatti' => [
         [
             'key' => 'page_title',
@@ -247,15 +349,107 @@ return [
         [
             'key' => 'contact_form_title',
             'label' => 'Contatti - Titolo form',
-            'selector' => '.contact-form-container h3',
+            'selector' => '.contact-form-wrapper .form-intro h2',
             'field' => 'text',
         ],
         [
-            'key' => 'contact_info_title',
-            'label' => 'Contatti - Titolo info',
-            'selector' => '.contact-info h3',
+            'key' => 'contact_form_intro',
+            'label' => 'Contatti - Testo introduttivo form',
+            'selector' => '.contact-form-wrapper .form-intro p',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'map_title',
+            'label' => 'Contatti - Titolo mappa',
+            'selector' => '.map-section .section-title',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'opening_hours_title',
+            'label' => 'Contatti - Titolo orari reception',
+            'selector' => '.opening-hours-section .section-title',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'faq_title',
+            'label' => 'Contatti - Titolo FAQ',
+            'selector' => '.faq .section-title',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_title',
+            'label' => 'Contatti - Titolo CTA',
+            'selector' => '.cta-box h2',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'cta_subtitle',
+            'label' => 'Contatti - Testo CTA',
+            'selector' => '.cta-box p',
+            'field' => 'text',
+        ],
+    ],
+
+    'privacy' => [
+        [
+            'key' => 'page_title',
+            'label' => 'Privacy - Titolo pagina',
+            'selector' => '.page-hero h1',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'page_subtitle',
+            'label' => 'Privacy - Sottotitolo pagina',
+            'selector' => '.page-hero p',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'last_update',
+            'label' => 'Privacy - Data ultimo aggiornamento',
+            'selector' => '.legal-box p em',
+            'field' => 'text',
+        ],
+    ],
+
+    'cookie' => [
+        [
+            'key' => 'page_title',
+            'label' => 'Cookie - Titolo pagina',
+            'selector' => '.page-hero h1',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'page_subtitle',
+            'label' => 'Cookie - Sottotitolo pagina',
+            'selector' => '.page-hero p',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'last_update',
+            'label' => 'Cookie - Data ultimo aggiornamento',
+            'selector' => '.legal-box p em',
+            'field' => 'text',
+        ],
+    ],
+
+    'termini' => [
+        [
+            'key' => 'page_title',
+            'label' => 'Termini - Titolo pagina',
+            'selector' => '.page-hero h1',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'page_subtitle',
+            'label' => 'Termini - Sottotitolo pagina',
+            'selector' => '.page-hero p',
+            'field' => 'text',
+        ],
+        [
+            'key' => 'last_update',
+            'label' => 'Termini - Data ultimo aggiornamento',
+            'selector' => '.legal-box p em',
             'field' => 'text',
         ],
     ],
 ];
-

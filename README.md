@@ -11,10 +11,10 @@ Progetto consolidato su frontend HTML/CSS/JS + API PHP + MySQL/MariaDB.
 - `DOCUMENTAZIONE_E_CONFIG/` guide operative
 
 ## Avvio rapido
-1. Copia in `C:\xampp\htdocs\nuoto-libero`
+1. Copia la cartella progetto in `C:\xampp\htdocs\` (qualsiasi nome, es. `Nuoto Libero Le Naiadi`)
 2. Avvia Apache + MySQL in XAMPP
 3. Importa `db/CREATE_DATABASE_FROM_ZERO.sql`
-4. Apri `http://localhost/nuoto-libero/login.html`
+4. Apri `http://localhost/<NOME_CARTELLA_PROGETTO>/login.html`
 
 ## Documentazione
 - `DOCUMENTAZIONE_E_CONFIG/ISTRUZIONI_SETUP_E_TEST.md`

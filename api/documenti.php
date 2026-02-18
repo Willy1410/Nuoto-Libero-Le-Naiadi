@@ -24,6 +24,30 @@ if ($method === 'GET' && $action === '') {
     sendJson(404, ['success' => false, 'message' => 'Endpoint non trovato']);
 }
 
+function documentBlobStorageSupported(): bool
+{
+    static $supported = null;
+    if ($supported !== null) {
+        return $supported;
+    }
+
+    global $pdo;
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM documenti_utente LIKE 'file_blob'");
+        $supported = (bool)$stmt->fetch();
+    } catch (Throwable $e) {
+        $supported = false;
+    }
+
+    return $supported;
+}
+
+function buildDocumentDownloadUrl(string $documentId): string
+{
+    return getAppBaseUrl() . '/api/documenti-download.php?id=' . rawurlencode($documentId);
+}
+
 function getDocumentTypes(): void
 {
     global $pdo;
@@ -54,7 +78,10 @@ function getMyDocuments(): void
              ORDER BY d.data_caricamento DESC'
         );
         $stmt->execute([$currentUser['user_id']]);
-        $documents = $stmt->fetchAll();
+        $documents = array_map(static function (array $row): array {
+            $row['file_url'] = buildDocumentDownloadUrl((string)$row['id']);
+            return $row;
+        }, $stmt->fetchAll());
 
         $stmt = $pdo->prepare(
             'SELECT COUNT(*) AS total
@@ -101,10 +128,30 @@ function uploadDocument(): void
         sendJson(400, ['success' => false, 'message' => 'File troppo grande (max 5MB)']);
     }
 
+    $tmpPath = (string)($file['tmp_name'] ?? '');
+    if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+        sendJson(400, ['success' => false, 'message' => 'Upload non valido']);
+    }
+
     $originalName = isset($file['name']) ? sanitizeText((string)$file['name'], 255) : 'file';
     $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
     if (!in_array($ext, UPLOAD_ALLOWED_TYPES, true)) {
         sendJson(400, ['success' => false, 'message' => 'Tipo file non consentito (solo PDF/JPG/PNG)']);
+    }
+
+    $mimeByExt = [
+        'pdf' => ['application/pdf'],
+        'jpg' => ['image/jpeg'],
+        'jpeg' => ['image/jpeg'],
+        'png' => ['image/png'],
+    ];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $detectedMime = $finfo ? (string)finfo_file($finfo, $tmpPath) : '';
+    if ($finfo) {
+        finfo_close($finfo);
+    }
+    if ($detectedMime === '' || !in_array($detectedMime, $mimeByExt[$ext], true)) {
+        sendJson(400, ['success' => false, 'message' => 'MIME file non valido']);
     }
 
     try {
@@ -115,38 +162,62 @@ function uploadDocument(): void
             sendJson(404, ['success' => false, 'message' => 'Tipo documento non trovato']);
         }
 
-        $uploadDir = UPLOAD_DIR . 'documenti/' . $currentUser['user_id'] . '/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
-        $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
-        if (!is_string($safeName) || $safeName === '') {
-            $safeName = 'documento.' . $ext;
-        }
-
-        $storedName = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '_' . $safeName;
-        $destination = $uploadDir . $storedName;
-
-        if (!move_uploaded_file((string)$file['tmp_name'], $destination)) {
-            sendJson(500, ['success' => false, 'message' => 'Errore salvataggio file']);
-        }
-
         $documentId = generateUuid();
-        $fileUrl = '/nuoto-libero/uploads/documenti/' . $currentUser['user_id'] . '/' . $storedName;
+        $downloadUrl = buildDocumentDownloadUrl($documentId);
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO documenti_utente (id, user_id, tipo_documento_id, file_url, file_name, stato)
-             VALUES (?, ?, ?, ?, ?, "pending")'
-        );
-        $stmt->execute([$documentId, $currentUser['user_id'], $tipoDocumentoId, $fileUrl, $originalName]);
+        if (documentBlobStorageSupported()) {
+            $blob = file_get_contents($tmpPath);
+            if (!is_string($blob) || $blob === '') {
+                sendJson(500, ['success' => false, 'message' => 'Errore lettura file caricato']);
+            }
+
+            $stmt = $pdo->prepare(
+                'INSERT INTO documenti_utente
+                (id, user_id, tipo_documento_id, file_url, file_name, file_mime, file_size, file_blob, stato)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, "pending")'
+            );
+            $stmt->execute([
+                $documentId,
+                $currentUser['user_id'],
+                $tipoDocumentoId,
+                'db_blob',
+                $originalName,
+                $detectedMime,
+                (int)$file['size'],
+                $blob,
+            ]);
+        } else {
+            $uploadDir = UPLOAD_DIR . 'documenti/' . $currentUser['user_id'] . '/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+            if (!is_string($safeName) || $safeName === '') {
+                $safeName = 'documento.' . $ext;
+            }
+
+            $storedName = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '_' . $safeName;
+            $destination = $uploadDir . $storedName;
+
+            if (!move_uploaded_file($tmpPath, $destination)) {
+                sendJson(500, ['success' => false, 'message' => 'Errore salvataggio file']);
+            }
+
+            $relativePath = 'uploads/documenti/' . $currentUser['user_id'] . '/' . $storedName;
+            $stmt = $pdo->prepare(
+                'INSERT INTO documenti_utente (id, user_id, tipo_documento_id, file_url, file_name, stato)
+                 VALUES (?, ?, ?, ?, ?, "pending")'
+            );
+            $stmt->execute([$documentId, $currentUser['user_id'], $tipoDocumentoId, $relativePath, $originalName]);
+        }
 
         logActivity((string)$currentUser['user_id'], 'upload_documento', 'Upload documento: ' . $tipo['nome'], 'documenti_utente', $documentId);
 
         sendJson(201, [
             'success' => true,
             'message' => 'Documento caricato con successo',
-            'file_url' => $fileUrl,
+            'file_url' => $downloadUrl,
         ]);
     } catch (Throwable $e) {
         error_log('uploadDocument error: ' . $e->getMessage());
@@ -173,7 +244,12 @@ function getPendingDocuments(): void
              ORDER BY d.data_caricamento ASC'
         );
 
-        sendJson(200, ['success' => true, 'documenti' => $stmt->fetchAll()]);
+        $documents = array_map(static function (array $row): array {
+            $row['file_url'] = buildDocumentDownloadUrl((string)$row['id']);
+            return $row;
+        }, $stmt->fetchAll());
+
+        sendJson(200, ['success' => true, 'documenti' => $documents]);
     } catch (Throwable $e) {
         error_log('getPendingDocuments error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore caricamento documenti pending']);

@@ -1,14 +1,15 @@
-﻿<?php
+<?php
 
 /**
  * QR code endpoint
  * GET /api/qr.php?action=download&acquisto_id=...
+ * GET /api/qr.php?action=svg&acquisto_id=...
  */
 
 require_once __DIR__ . '/config.php';
 
 $action = (string)($_GET['action'] ?? 'download');
-if ($action !== 'download') {
+if (!in_array($action, ['download', 'svg'], true)) {
     http_response_code(404);
     echo json_encode(['success' => false, 'message' => 'Azione non valida']);
     exit();
@@ -24,6 +25,30 @@ if ($acquistoId === '') {
 }
 
 try {
+    $acquisto = getAuthorizedPurchase($currentUser, $acquistoId);
+
+    if ((string)$acquisto['stato_pagamento'] !== 'confirmed' || empty($acquisto['qr_code'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'QR non disponibile: acquisto non confermato']);
+        exit();
+    }
+
+    if ($action === 'svg') {
+        outputQrSvg($acquisto);
+    }
+
+    outputQrPdf($acquisto);
+} catch (Throwable $e) {
+    error_log('QR generation error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Errore durante la generazione del QR',
+    ]);
+}
+
+function getAuthorizedPurchase(array $currentUser, string $acquistoId): array
+{
     global $pdo;
 
     $stmt = $pdo->prepare(
@@ -56,12 +81,38 @@ try {
         exit();
     }
 
-    if ((string)$acquisto['stato_pagamento'] !== 'confirmed' || empty($acquisto['qr_code'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'QR non disponibile: acquisto non confermato']);
-        exit();
+    return $acquisto;
+}
+
+function outputQrSvg(array $acquisto): void
+{
+    $barcodeClassPath = __DIR__ . '/../vendor/tecnickcom/tcpdf/tcpdf_barcodes_2d.php';
+    if (!class_exists('TCPDF2DBarcode') && file_exists($barcodeClassPath)) {
+        require_once $barcodeClassPath;
     }
 
+    if (!class_exists('TCPDF2DBarcode')) {
+        throw new RuntimeException('TCPDF2DBarcode non disponibile. Eseguire composer install.');
+    }
+
+    $barcode = new TCPDF2DBarcode((string)$acquisto['qr_code'], 'QRCODE,H');
+    $svg = $barcode->getBarcodeSVGcode(5, 5, 'black');
+
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    header_remove('Content-Type');
+    header('Content-Type: image/svg+xml; charset=UTF-8');
+    header('Cache-Control: private, no-store, max-age=0');
+    header('Pragma: no-cache');
+
+    echo $svg;
+    exit();
+}
+
+function outputQrPdf(array $acquisto): void
+{
     if (!class_exists('TCPDF')) {
         throw new RuntimeException('TCPDF non disponibile. Eseguire composer install.');
     }
@@ -120,13 +171,4 @@ try {
 
     $pdf->Output('QR_' . $safeCode . '.pdf', 'D');
     exit();
-} catch (Throwable $e) {
-    error_log('QR PDF generation error: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Errore durante la generazione del PDF QR',
-    ]);
 }
-
-

@@ -61,6 +61,23 @@ function isImmediatePaymentMethod(string $method): bool
     return in_array($method, ['paypal', 'stripe', 'carta'], true);
 }
 
+function generateUniqueQrCode(string $acquistoId, int $maxAttempts = 12): string
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare('SELECT id FROM acquisti WHERE qr_code = ? LIMIT 1');
+
+    for ($i = 0; $i < $maxAttempts; $i++) {
+        $candidate = generateQRCode($acquistoId);
+        $stmt->execute([$candidate]);
+        if (!$stmt->fetch()) {
+            return $candidate;
+        }
+    }
+
+    throw new RuntimeException('Impossibile generare un QR univoco');
+}
+
 function buildAbsoluteUrl(string $path): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -122,7 +139,7 @@ function acquistaPacchetto(): void
 
     try {
         $acquistoId = generateUuid();
-        $qrCode = $isImmediate ? generateQRCode($acquistoId) : null;
+        $qrCode = $isImmediate ? generateUniqueQrCode($acquistoId) : null;
         $dataScadenza = $isImmediate
             ? date('Y-m-d', strtotime('+' . (int)$pacchetto['validita_giorni'] . ' days'))
             : null;
@@ -290,37 +307,61 @@ function confirmPayment(): void
     }
 
     try {
+        $pdo->beginTransaction();
+
         $stmt = $pdo->prepare(
             'SELECT a.*, p.validita_giorni, p.nome AS pacchetto_nome, p.num_ingressi
              FROM acquisti a
              JOIN pacchetti p ON a.pacchetto_id = p.id
              WHERE a.id = ?
-             LIMIT 1'
+             LIMIT 1
+             FOR UPDATE'
         );
         $stmt->execute([$acquistoId]);
         $acquisto = $stmt->fetch();
 
         if (!$acquisto) {
+            $pdo->rollBack();
             respond(404, ['success' => false, 'message' => 'Acquisto non trovato']);
         }
 
-        if ((string)$acquisto['stato_pagamento'] === 'confirmed') {
-            respond(400, ['success' => false, 'message' => 'Acquisto gia confermato']);
+        $alreadyConfirmed = (string)$acquisto['stato_pagamento'] === 'confirmed';
+        $existingQr = trim((string)($acquisto['qr_code'] ?? ''));
+        $dataScadenza = !empty($acquisto['data_scadenza'])
+            ? (string)$acquisto['data_scadenza']
+            : date('Y-m-d', strtotime('+' . (int)$acquisto['validita_giorni'] . ' days'));
+
+        if ($alreadyConfirmed && $existingQr !== '') {
+            $pdo->commit();
+            respond(200, [
+                'success' => true,
+                'message' => 'Pagamento gia confermato',
+                'qr_code' => $existingQr,
+                'mail_sent' => false,
+                'already_confirmed' => true,
+            ]);
         }
 
-        $qrCode = generateQRCode($acquistoId);
-        $dataScadenza = date('Y-m-d', strtotime('+' . (int)$acquisto['validita_giorni'] . ' days'));
+        if ($alreadyConfirmed) {
+            $qrCode = $existingQr !== '' ? $existingQr : generateUniqueQrCode($acquistoId);
+        } else {
+            // Per flusso ufficio/admin rigeneriamo sempre il QR al momento della conferma.
+            $qrCode = generateUniqueQrCode($acquistoId);
+        }
+        $shouldNotify = !$alreadyConfirmed || $existingQr === '';
 
         $stmt = $pdo->prepare(
             'UPDATE acquisti
              SET stato_pagamento = \'confirmed\',
                  qr_code = ?,
-                 data_scadenza = ?,
-                 confermato_da = ?,
-                 data_conferma = NOW()
+                 data_scadenza = COALESCE(data_scadenza, ?),
+                 confermato_da = COALESCE(confermato_da, ?),
+                 data_conferma = COALESCE(data_conferma, NOW())
              WHERE id = ?'
         );
         $stmt->execute([$qrCode, $dataScadenza, $currentUser['user_id'], $acquistoId]);
+
+        $pdo->commit();
 
         logActivity(
             (string)$currentUser['user_id'],
@@ -335,7 +376,7 @@ function confirmPayment(): void
         $user = $stmt->fetch();
 
         $mailSent = false;
-        if ($user && !empty($user['email'])) {
+        if ($shouldNotify && $user && !empty($user['email'])) {
             $qrDownloadUrl = buildAbsoluteUrl('api/qr.php?action=download&acquisto_id=' . urlencode($acquistoId));
             $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
                 . '<p>il tuo pagamento e stato <strong>confermato</strong> e il tuo QR e pronto.</p>'
@@ -364,11 +405,15 @@ function confirmPayment(): void
 
         respond(200, [
             'success' => true,
-            'message' => 'Pagamento confermato',
+            'message' => $alreadyConfirmed ? 'Pagamento gia confermato, QR ripristinato' : 'Pagamento confermato',
             'qr_code' => $qrCode,
             'mail_sent' => $mailSent,
+            'already_confirmed' => $alreadyConfirmed,
         ]);
     } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log('confirmPayment error: ' . $e->getMessage());
         respond(500, ['success' => false, 'message' => 'Errore durante la conferma del pagamento']);
     }

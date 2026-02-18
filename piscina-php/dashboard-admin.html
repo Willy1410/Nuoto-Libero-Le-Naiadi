@@ -168,6 +168,7 @@
                     <h4>Report Giornaliero</h4>
                     <input type="date" id="report-date" style="padding:10px; border:1px solid #ddd; border-radius:5px;">
                     <button class="btn btn-primary" onclick="loadDailyReport()">Carica</button>
+                    <button class="btn btn-success" onclick="downloadDailyReportPdf()">Scarica PDF stampabile</button>
                 </div>
                 <div id="report-stats"></div>
                 <table class="table">
@@ -425,6 +426,40 @@
             }
         }
 
+        async function downloadDailyReportPdf() {
+            const data_report = document.getElementById('report-date').value;
+
+            try {
+                const res = await fetch(`${API_URL}/stats.php?action=report-daily-pdf&data=${encodeURIComponent(data_report)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) {
+                    let message = 'Errore generazione PDF';
+                    try {
+                        const raw = await res.text();
+                        const data = raw ? JSON.parse(raw) : {};
+                        message = data.message || message;
+                    } catch (_) {
+                        // ignora parse error su risposte non JSON
+                    }
+                    throw new Error(message);
+                }
+
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `report_checkin_${data_report}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message || 'Errore download PDF');
+            }
+        }
+
         function exportUsers() {
             window.open(`${API_URL}/stats.php?action=export-users`, '_blank');
         }
@@ -441,6 +476,16 @@
         // Carica dati iniziali
         loadStats();
         loadAcquistiPending();
+
+        setInterval(() => {
+            loadStats();
+            if (document.getElementById('tab-acquisti').classList.contains('active')) {
+                loadAcquistiPending();
+            }
+            if (document.getElementById('tab-documenti').classList.contains('active')) {
+                loadDocumenti();
+            }
+        }, 30000);
     </script>
 </body>
 </html>

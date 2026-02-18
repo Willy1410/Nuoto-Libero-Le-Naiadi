@@ -34,7 +34,7 @@ Metodo consigliato:
    - `ipconfig`
    - usa IPv4 della scheda attiva (es. `192.168.1.45`)
 3. sul telefono apri:
-   - `http://192.168.1.45/nuoto-libero/login.html`
+   - `http://192.168.1.45/<NOME_CARTELLA_PROGETTO>/login.html`
 4. login come bagnino:
    - `bagnino@piscina.it / password123`
 5. apri `piscina-php/dashboard-bagnino.html`
@@ -44,7 +44,7 @@ Metodo consigliato:
 ## 6) Verifica regole permessi
 ### A) Non loggato
 Apri dal telefono:
-- `http://192.168.1.45/nuoto-libero/qr-view.html?qr=CODICE`
+- `http://192.168.1.45/<NOME_CARTELLA_PROGETTO>/qr-view.html?qr=CODICE`
 
 Risultato atteso:
 - solo dati utente/pacchetto in sola lettura
@@ -71,6 +71,7 @@ In dashboard bagnino:
 ### Camera non parte
 - verifica permesso fotocamera nel browser
 - prova Chrome/Edge mobile
+- se usi IP locale, molte versioni mobile richiedono HTTPS per la camera live
 - usa fallback input manuale QR
 
 ### Endpoint non raggiungibile da telefono

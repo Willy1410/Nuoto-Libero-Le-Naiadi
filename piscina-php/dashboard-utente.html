@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Utente - Gli Squaletti</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --primary: #00a8e8;
@@ -100,6 +99,15 @@
             align-items: center;
             justify-content: center;
             padding: 8px;
+        }
+        .qr-box img {
+            max-width: 100%;
+            width: 200px;
+            height: 200px;
+            display: block;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #fff;
         }
 
         .muted { color: var(--muted); font-size: 14px; }
@@ -334,6 +342,7 @@
 
         let selectedPackage = null;
         let myPurchases = [];
+        let activeQrBlobUrl = '';
 
         if (!token || !user) {
             window.location.href = '../login.html';
@@ -387,6 +396,31 @@
             return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
         }
 
+        async function fetchBlobWithAuth(url) {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                let message = 'Errore caricamento QR';
+                try {
+                    const text = (await response.text()).replace(/^\uFEFF/, '');
+                    if (text) {
+                        const json = JSON.parse(text);
+                        message = json.message || message;
+                    }
+                } catch (_) {
+                    // fallback: mantieni messaggio standard
+                }
+                throw new Error(message);
+            }
+
+            return response.blob();
+        }
+
         function getStatusBadge(status) {
             if (status === 'confirmed') {
                 return '<span class="badge badge-success">confermato</span>';
@@ -433,17 +467,27 @@
             `;
 
             const qrTarget = document.getElementById('qrBox');
-            if (window.QRCode && qrTarget) {
-                qrTarget.innerHTML = '';
-                new QRCode(qrTarget, {
-                    text: purchase.qr_code,
-                    width: 200,
-                    height: 200,
-                    colorDark: '#000000',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.M
-                });
+            if (!qrTarget) {
+                return;
             }
+
+            qrTarget.innerHTML = '<span class="small">Generazione QR in corso...</span>';
+
+            if (activeQrBlobUrl) {
+                URL.revokeObjectURL(activeQrBlobUrl);
+                activeQrBlobUrl = '';
+            }
+
+            fetchBlobWithAuth(`${API_URL}/qr.php?action=svg&acquisto_id=${encodeURIComponent(purchase.id)}`)
+                .then((blob) => {
+                    activeQrBlobUrl = URL.createObjectURL(blob);
+                    qrTarget.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR code ${purchase.qr_code}">`;
+                })
+                .catch((error) => {
+                    console.error(error);
+                    qrTarget.innerHTML = '<span class="small">Errore durante la generazione del QR.</span>';
+                    showAlert(error.message || 'Errore generazione QR', 'error');
+                });
         }
 
         async function loadPackages() {
@@ -636,6 +680,10 @@
         }
 
         function logout() {
+            if (activeQrBlobUrl) {
+                URL.revokeObjectURL(activeQrBlobUrl);
+                activeQrBlobUrl = '';
+            }
             localStorage.clear();
             window.location.href = '../login.html';
         }
@@ -650,8 +698,22 @@
             }
         });
 
+        async function refreshRuntimeData() {
+            await Promise.allSettled([loadPurchases(), loadCheckins()]);
+        }
+
         Promise.all([loadPackages(), loadPurchases(), loadCheckins(), loadDocuments()])
             .catch(error => showAlert(error.message, 'error'));
+
+        setInterval(() => {
+            refreshRuntimeData();
+        }, 30000);
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshRuntimeData();
+            }
+        });
 
         window.openPurchaseModal = openPurchaseModal;
         window.closePurchaseModal = closePurchaseModal;

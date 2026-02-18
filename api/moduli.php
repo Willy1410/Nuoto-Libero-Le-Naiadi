@@ -27,6 +27,25 @@ if ($method === 'GET') {
     sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
 }
 
+function moduliBlobStorageSupported(): bool
+{
+    static $supported = null;
+    if ($supported !== null) {
+        return $supported;
+    }
+
+    global $pdo;
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM moduli LIKE 'file_data'");
+        $supported = (bool)$stmt->fetch();
+    } catch (Throwable $e) {
+        $supported = false;
+    }
+
+    return $supported;
+}
+
 function ensureModuliDirs(): void
 {
     if (!is_dir(MODULI_UPLOAD_DIR)) {
@@ -115,7 +134,6 @@ function uploadOrReplaceModulo(): void
     global $pdo;
 
     $staff = requireRole(3);
-    ensureModuliDirs();
 
     if (!isset($_FILES['file']) || !is_array($_FILES['file'])) {
         sendJson(400, ['success' => false, 'message' => 'File mancante']);
@@ -170,9 +188,15 @@ function uploadOrReplaceModulo(): void
         sendJson(400, ['success' => false, 'message' => 'MIME file non valido o sospetto']);
     }
 
+    $blobSupported = moduliBlobStorageSupported();
+
     $random = bin2hex(random_bytes(12));
     $storedFilename = date('YmdHis') . '_' . $random . '.' . $extension;
-    $destination = MODULI_UPLOAD_DIR . '/' . $storedFilename;
+    $destination = '';
+    if (!$blobSupported) {
+        ensureModuliDirs();
+        $destination = MODULI_UPLOAD_DIR . '/' . $storedFilename;
+    }
 
     $oldRow = null;
     $oldVersion = 0;
@@ -189,9 +213,18 @@ function uploadOrReplaceModulo(): void
             sendJson(409, ['success' => false, 'message' => 'Modulo gia esistente. Usa la sostituzione.']);
         }
 
-        if (!move_uploaded_file($tmpPath, $destination)) {
-            $pdo->rollBack();
-            sendJson(500, ['success' => false, 'message' => 'Impossibile salvare il file caricato']);
+        $fileData = null;
+        if ($blobSupported) {
+            $fileData = file_get_contents($tmpPath);
+            if (!is_string($fileData) || $fileData === '') {
+                $pdo->rollBack();
+                sendJson(500, ['success' => false, 'message' => 'Impossibile leggere il file caricato']);
+            }
+        } else {
+            if (!move_uploaded_file($tmpPath, $destination)) {
+                $pdo->rollBack();
+                sendJson(500, ['success' => false, 'message' => 'Impossibile salvare il file caricato']);
+            }
         }
 
         if ($oldRow) {
@@ -201,26 +234,45 @@ function uploadOrReplaceModulo(): void
         }
 
         $newVersion = $oldVersion + 1;
-        $stmt = $pdo->prepare(
-            'INSERT INTO moduli
-            (slug, nome, filename, original_name, mime, size, version_num, updated_at, updated_by, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, 1)'
-        );
-        $stmt->execute([
-            $slug,
-            $nome,
-            $storedFilename,
-            $originalName,
-            $detectedMime,
-            $size,
-            $newVersion,
-            $staff['user_id'],
-        ]);
+        if ($blobSupported) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO moduli
+                (slug, nome, filename, original_name, mime, size, file_data, version_num, updated_at, updated_by, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 1)'
+            );
+            $stmt->execute([
+                $slug,
+                $nome,
+                $storedFilename,
+                $originalName,
+                $detectedMime,
+                $size,
+                $fileData,
+                $newVersion,
+                $staff['user_id'],
+            ]);
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO moduli
+                (slug, nome, filename, original_name, mime, size, version_num, updated_at, updated_by, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, 1)'
+            );
+            $stmt->execute([
+                $slug,
+                $nome,
+                $storedFilename,
+                $originalName,
+                $detectedMime,
+                $size,
+                $newVersion,
+                $staff['user_id'],
+            ]);
+        }
 
         $newId = (int)$pdo->lastInsertId();
         $pdo->commit();
 
-        if ($oldRow && !empty($oldRow['filename'])) {
+        if (!$blobSupported && $oldRow && !empty($oldRow['filename'])) {
             archiveModuloFileIfExists((string)$oldRow['filename']);
         }
 
@@ -242,7 +294,7 @@ function uploadOrReplaceModulo(): void
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        if (is_file($destination)) {
+        if (!$blobSupported && $destination !== '' && is_file($destination)) {
             @unlink($destination);
         }
         error_log('uploadOrReplaceModulo error: ' . $e->getMessage());
@@ -277,7 +329,9 @@ function deleteModulo(): void
 
         $pdo->commit();
 
-        archiveModuloFileIfExists((string)$row['filename']);
+        if (!moduliBlobStorageSupported()) {
+            archiveModuloFileIfExists((string)$row['filename']);
+        }
         logActivity((string)$staff['user_id'], 'modulo_delete', 'Eliminazione modulo ' . $row['slug'], 'moduli', (string)$id);
 
         sendJson(200, ['success' => true, 'message' => 'Modulo eliminato']);

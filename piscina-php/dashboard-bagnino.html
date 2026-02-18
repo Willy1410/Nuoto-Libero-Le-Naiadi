@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Bagnino - Gli Squaletti</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
             --primary: #10b981;
@@ -180,11 +179,13 @@
                     <div class="actions-row">
                         <button class="btn btn-primary" id="startScannerBtn" onclick="startScanner()">Avvia camera</button>
                         <button class="btn btn-warning" onclick="stopScanner()">Ferma camera</button>
+                        <button class="btn btn-success" onclick="triggerImageScan()">Scatta foto QR</button>
                     </div>
+                    <input type="file" id="qrImageInput" accept="image/*" capture="environment" style="display:none;">
                 </div>
 
                 <div class="manual-box">
-                    <p style="margin-bottom:8px; color:#64748b; font-size:13px;">Se la camera non e disponibile, inserisci il codice manualmente.</p>
+                    <p style="margin-bottom:8px; color:#64748b; font-size:13px;">Se la camera non è disponibile, inserisci il codice manualmente.</p>
                     <input type="text" id="qrInput" placeholder="PSC-XXXXXXXXXX-XXXXXX">
                     <div class="actions-row">
                         <button class="btn btn-primary" onclick="verificaQR()">Verifica QR</button>
@@ -226,6 +227,7 @@
         let lastScanText = '';
         let lastScanAt = 0;
         let checkinBusy = false;
+        let scannerLibraryPromise = null;
 
         if (!token || !user || user.ruolo !== 'bagnino') {
             window.location.href = '../login.html';
@@ -245,6 +247,34 @@
             }
         }
 
+        function normalizeQrCode(rawValue) {
+            const value = String(rawValue || '').trim();
+            if (!value) {
+                return '';
+            }
+
+            if (/^(PSC|NL)-/i.test(value)) {
+                return value;
+            }
+
+            try {
+                const url = new URL(value);
+                const fromParam = (url.searchParams.get('qr') || '').trim();
+                if (fromParam !== '') {
+                    return fromParam;
+                }
+            } catch (_) {
+                // non e una URL valida, continua con fallback
+            }
+
+            const match = value.match(/((?:PSC|NL)-[A-Z0-9-]+)/i);
+            if (match && match[1]) {
+                return match[1];
+            }
+
+            return value;
+        }
+
         async function fetchJson(url, options = {}) {
             const response = await fetch(url, {
                 ...options,
@@ -254,11 +284,70 @@
                     ...(options.headers || {})
                 }
             });
-            const data = await response.json();
+            const rawText = (await response.text()).replace(/^\uFEFF/, '').trim();
+
+            let data = {};
+            if (rawText !== '') {
+                try {
+                    data = JSON.parse(rawText);
+                } catch (_) {
+                    const looksHtml = /^<!doctype html/i.test(rawText) || rawText.startsWith('<html') || rawText.startsWith('<');
+                    if (looksHtml) {
+                        throw new Error('Risposta API non valida (HTML ricevuto). Verifica percorso API e sessione login.');
+                    }
+                    throw new Error('Risposta API non valida. Controlla i log backend.');
+                }
+            }
+
             if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Errore richiesta API');
+                throw new Error(data.message || `Errore richiesta API (HTTP ${response.status})`);
             }
             return data;
+        }
+
+        function loadScript(src) {
+            return new Promise((resolve) => {
+                const existing = document.querySelector(`script[data-src="${src}"]`);
+                if (existing) {
+                    if (typeof Html5Qrcode !== 'undefined') {
+                        resolve(true);
+                        return;
+                    }
+                    existing.addEventListener('load', () => resolve(true), { once: true });
+                    existing.addEventListener('error', () => resolve(false), { once: true });
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = true;
+                script.setAttribute('data-src', src);
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.head.appendChild(script);
+            });
+        }
+
+        function ensureScannerLibraryLoaded() {
+            if (typeof Html5Qrcode !== 'undefined') {
+                return Promise.resolve(true);
+            }
+
+            if (scannerLibraryPromise) {
+                return scannerLibraryPromise;
+            }
+
+            scannerLibraryPromise = (async () => {
+                const primary = await loadScript('https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js');
+                if (primary && typeof Html5Qrcode !== 'undefined') {
+                    return true;
+                }
+
+                const fallback = await loadScript('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js');
+                return fallback && typeof Html5Qrcode !== 'undefined';
+            })();
+
+            return scannerLibraryPromise;
         }
 
         function formatTime(value) {
@@ -276,7 +365,8 @@
         }
 
         async function verificaQR() {
-            const qrCode = document.getElementById('qrInput').value.trim();
+            const qrCode = normalizeQrCode(document.getElementById('qrInput').value);
+            document.getElementById('qrInput').value = qrCode;
             if (!qrCode) {
                 showAlert('Inserisci un codice QR valido.', 'error');
                 return;
@@ -316,7 +406,8 @@
                 return;
             }
 
-            const qrCode = document.getElementById('qrInput').value.trim();
+            const qrCode = normalizeQrCode(document.getElementById('qrInput').value);
+            document.getElementById('qrInput').value = qrCode;
             if (!qrCode) {
                 showAlert('Codice QR mancante.', 'error');
                 return;
@@ -381,8 +472,23 @@
                 return;
             }
 
-            if (typeof Html5Qrcode === 'undefined') {
-                showAlert('Libreria scanner non caricata.', 'error');
+            const startButton = document.getElementById('startScannerBtn');
+            startButton.disabled = true;
+            startButton.textContent = 'Caricamento...';
+
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            if (!window.isSecureContext && !isLocalhost) {
+                startButton.disabled = false;
+                startButton.textContent = 'Avvia camera';
+                showAlert('Camera bloccata: su telefono serve HTTPS (o localhost). Usa "Scatta foto QR" oppure attiva HTTPS.', 'error');
+                return;
+            }
+
+            const libraryLoaded = await ensureScannerLibraryLoaded();
+            if (!libraryLoaded) {
+                startButton.disabled = false;
+                startButton.textContent = 'Avvia camera';
+                showAlert('Libreria scanner non disponibile. Usa inserimento manuale o foto QR.', 'error');
                 return;
             }
 
@@ -390,31 +496,59 @@
                 scanner = new Html5Qrcode('reader');
             }
 
+            const onScan = (decodedText) => {
+                const normalized = normalizeQrCode(decodedText);
+                const now = Date.now();
+                if (normalized === lastScanText && (now - lastScanAt) < 2500) {
+                    return;
+                }
+
+                lastScanText = normalized;
+                lastScanAt = now;
+                document.getElementById('qrInput').value = normalized;
+                verificaQR();
+            };
+
+            const config = { fps: 8, qrbox: { width: 240, height: 240 }, aspectRatio: 1.2 };
+
             try {
-                await scanner.start(
-                    { facingMode: 'environment' },
-                    { fps: 8, qrbox: { width: 240, height: 240 }, aspectRatio: 1.2 },
-                    (decodedText) => {
-                        const now = Date.now();
-                        if (decodedText === lastScanText && (now - lastScanAt) < 2500) {
-                            return;
-                        }
-
-                        lastScanText = decodedText;
-                        lastScanAt = now;
-                        document.getElementById('qrInput').value = decodedText;
-                        verificaQR();
-                    },
-                    () => {}
-                );
-
+                await scanner.start({ facingMode: { exact: 'environment' } }, config, onScan, () => {});
                 scannerRunning = true;
-                document.getElementById('startScannerBtn').textContent = 'Camera attiva';
-                document.getElementById('startScannerBtn').disabled = true;
+                startButton.textContent = 'Camera attiva';
+                startButton.disabled = true;
+                showAlert('Camera avviata. Inquadra il QR da leggere.');
+                return;
+            } catch (_) {
+                // fallback su camera disponibile
+            }
+
+            try {
+                const cameras = await Html5Qrcode.getCameras();
+                if (!Array.isArray(cameras) || cameras.length === 0) {
+                    throw new Error('Nessuna camera disponibile');
+                }
+
+                const preferred = cameras.find((cam) => {
+                    const label = (cam.label || '').toLowerCase();
+                    return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('posteriore');
+                }) || cameras[0];
+
+                await scanner.start({ deviceId: { exact: preferred.id } }, config, onScan, () => {});
+                scannerRunning = true;
+                startButton.textContent = 'Camera attiva';
+                startButton.disabled = true;
                 showAlert('Camera avviata. Inquadra il QR da leggere.');
             } catch (error) {
+                startButton.disabled = false;
+                startButton.textContent = 'Avvia camera';
                 showAlert('Impossibile avviare la camera: ' + error, 'error');
             }
+        }
+
+        async function triggerImageScan() {
+            const input = document.getElementById('qrImageInput');
+            input.value = '';
+            input.click();
         }
 
         async function stopScanner() {
@@ -448,7 +582,44 @@
             }
         });
 
+        document.getElementById('qrImageInput').addEventListener('change', async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            try {
+                if (scannerRunning) {
+                    await stopScanner();
+                }
+
+                const libraryLoaded = await ensureScannerLibraryLoaded();
+                if (!libraryLoaded) {
+                    throw new Error('Libreria scanner non disponibile');
+                }
+
+                if (!scanner) {
+                    scanner = new Html5Qrcode('reader');
+                }
+
+                const decodedText = await scanner.scanFile(file, true);
+                const normalized = normalizeQrCode(decodedText);
+                document.getElementById('qrInput').value = normalized;
+                await verificaQR();
+                showAlert('QR letto dalla foto. Controlla i dati e conferma il check-in.');
+            } catch (error) {
+                showAlert('Impossibile leggere il QR dalla foto: ' + error, 'error');
+            } finally {
+                event.target.value = '';
+            }
+        });
+
         loadToday();
+        ensureScannerLibraryLoaded().then((ok) => {
+            if (!ok) {
+                showAlert('Scanner camera non disponibile: usa il campo manuale QR.', 'error');
+            }
+        });
         setInterval(loadToday, 30000);
 
         window.startScanner = startScanner;
@@ -456,6 +627,7 @@
         window.verificaQR = verificaQR;
         window.confermaCheckin = confermaCheckin;
         window.clearCurrent = clearCurrent;
+        window.triggerImageScan = triggerImageScan;
         window.logout = logout;
     </script>
 </body>

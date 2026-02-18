@@ -10,6 +10,25 @@ require_once __DIR__ . '/config.php';
 
 const MODULI_UPLOAD_DIR = PROJECT_ROOT . '/uploads/moduli';
 
+function moduliBlobStorageSupported(): bool
+{
+    static $supported = null;
+    if ($supported !== null) {
+        return $supported;
+    }
+
+    global $pdo;
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM moduli LIKE 'file_data'");
+        $supported = (bool)$stmt->fetch();
+    } catch (Throwable $e) {
+        $supported = false;
+    }
+
+    return $supported;
+}
+
 function normalizeModuloSlug(string $value): string
 {
     $value = strtolower(trim($value));
@@ -60,6 +79,26 @@ function sendDownloadFile(string $path, string $mime, string $downloadName, ?int
     exit();
 }
 
+function sendDownloadBytes(string $bytes, string $mime, string $downloadName, ?int $knownSize = null): void
+{
+    $size = $knownSize ?? strlen($bytes);
+
+    header_remove('Content-Type');
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Description: File Transfer');
+    header('Content-Type: ' . $mime);
+    header('Content-Disposition: attachment; filename="' . rawurlencode($downloadName) . '"; filename*=UTF-8\'\'' . rawurlencode($downloadName));
+    header('Content-Transfer-Encoding: binary');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    if ((int)$size > 0) {
+        header('Content-Length: ' . (string)$size);
+    }
+
+    echo $bytes;
+    exit();
+}
+
 $slug = normalizeModuloSlug((string)($_GET['slug'] ?? ''));
 if ($slug === '') {
     http_response_code(400);
@@ -69,22 +108,50 @@ if ($slug === '') {
 }
 
 try {
-    $stmt = $pdo->prepare(
-        'SELECT slug, filename, original_name, mime, size
-         FROM moduli
-         WHERE slug = ? AND is_active = 1
-         ORDER BY updated_at DESC
-         LIMIT 1'
-    );
+    if (moduliBlobStorageSupported()) {
+        $stmt = $pdo->prepare(
+            'SELECT slug, filename, original_name, mime, size, file_data
+             FROM moduli
+             WHERE slug = ? AND is_active = 1
+             ORDER BY updated_at DESC
+             LIMIT 1'
+        );
+    } else {
+        $stmt = $pdo->prepare(
+            'SELECT slug, filename, original_name, mime, size
+             FROM moduli
+             WHERE slug = ? AND is_active = 1
+             ORDER BY updated_at DESC
+             LIMIT 1'
+        );
+    }
     $stmt->execute([$slug]);
     $row = $stmt->fetch();
 
     if ($row) {
-        $filename = (string)$row['filename'];
-        $path = MODULI_UPLOAD_DIR . '/' . $filename;
         $mime = (string)$row['mime'];
         $downloadName = (string)$row['original_name'];
-        sendDownloadFile($path, $mime !== '' ? $mime : 'application/octet-stream', $downloadName !== '' ? $downloadName : ($slug . '.pdf'), (int)$row['size']);
+
+        if (moduliBlobStorageSupported()) {
+            $fileData = $row['file_data'] ?? null;
+            if (is_string($fileData) && $fileData !== '') {
+                sendDownloadBytes(
+                    $fileData,
+                    $mime !== '' ? $mime : 'application/octet-stream',
+                    $downloadName !== '' ? $downloadName : ($slug . '.pdf'),
+                    (int)$row['size']
+                );
+            }
+        }
+
+        $filename = (string)$row['filename'];
+        $path = MODULI_UPLOAD_DIR . '/' . $filename;
+        sendDownloadFile(
+            $path,
+            $mime !== '' ? $mime : 'application/octet-stream',
+            $downloadName !== '' ? $downloadName : ($slug . '.pdf'),
+            (int)$row['size']
+        );
     }
 
     // Fallback statico (solo se nessun modulo caricato da CMS)

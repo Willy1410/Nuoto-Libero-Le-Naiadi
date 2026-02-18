@@ -2,6 +2,7 @@
 
 ## File SQL principale
 - `db/CREATE_DATABASE_FROM_ZERO.sql`
+- Migrazione incrementale: `db/MIGRATION_2026_02_17_STORAGE_DB.sql`
 
 Script pronto per phpMyAdmin:
 - crea database `nuoto_libero`
@@ -25,6 +26,7 @@ Script pronto per phpMyAdmin:
 1. Apri `http://localhost/phpmyadmin`
 2. Tab `SQL`
 3. Esegui tutto il contenuto di `db/CREATE_DATABASE_FROM_ZERO.sql`
+4. Se parti da un DB esistente, esegui anche `db/MIGRATION_2026_02_17_STORAGE_DB.sql`
 
 ## Utenti test seed
 - admin@piscina.it / password123

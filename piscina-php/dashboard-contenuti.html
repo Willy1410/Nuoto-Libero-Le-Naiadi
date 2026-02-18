@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CMS Contenuti - Gli Squaletti</title>
+    <link rel="stylesheet" href="../assets/vendor/quill/quill.snow.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: "Segoe UI", Arial, sans-serif; background: #f2f4f7; color: #1f2937; }
@@ -29,6 +30,12 @@
         }
         .btn-secondary { background: rgba(255,255,255,0.2); color: #fff; }
         .btn-danger { background: #ef4444; color: #fff; }
+        .btn-open { background: #2563eb; color: #fff; }
+        .btn-save-all { background: #15803d; color: #fff; }
+        .btn-save { background: #16a34a; color: #fff; }
+        .btn-reset { background: #f59e0b; color: #fff; }
+        .btn-editor { background: #0ea5e9; color: #fff; }
+
         .container { max-width: 1280px; margin: 20px auto; padding: 0 16px; }
         .card {
             background: #fff;
@@ -61,6 +68,7 @@
         }
         .status.ok { display: block; background: #dcfce7; color: #166534; }
         .status.err { display: block; background: #fee2e2; color: #991b1b; }
+
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
         th { text-align: left; background: #f8fafc; font-size: 13px; }
@@ -84,12 +92,64 @@
             font-size: 13px;
             resize: vertical;
         }
+        .input-url {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 13px;
+        }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-save { background: #16a34a; color: #fff; }
-        .btn-reset { background: #f59e0b; color: #fff; }
-        .btn-open { background: #2563eb; color: #fff; }
         .hint { color: #64748b; font-size: 12px; margin-top: 8px; }
         .empty { padding: 14px; color: #64748b; }
+
+        .editor-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 1000;
+        }
+        .editor-overlay.open { display: flex; }
+        .editor-modal {
+            width: 100%;
+            max-width: 880px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 36px rgba(15, 23, 42, 0.2);
+            overflow: hidden;
+        }
+        .editor-modal header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+        }
+        .editor-modal header h4 { font-size: 16px; margin-bottom: 4px; }
+        .editor-modal header p { font-size: 12px; color: #64748b; }
+        .editor-body { padding: 14px 16px; }
+        .editor-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 16px 16px;
+        }
+        #richEditorHost {
+            min-height: 220px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+        #fallbackEditor {
+            width: 100%;
+            min-height: 220px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            display: none;
+        }
 
         @media (max-width: 900px) {
             .header { flex-direction: column; align-items: flex-start; }
@@ -116,6 +176,7 @@
                 <label for="pageSelect">Pagina:</label>
                 <select id="pageSelect"></select>
                 <button class="btn btn-open" id="openPageBtn" type="button">Apri pagina pubblica</button>
+                <button class="btn btn-save-all" id="saveAllBtn" type="button">Salva campi visibili</button>
                 <input type="text" id="filterInput" placeholder="Filtra per label/chiave...">
             </div>
             <div class="hint">Modifica i campi e salva. Se un valore viene svuotato, il sito usa il testo statico originale del file HTML.</div>
@@ -141,6 +202,24 @@
         </div>
     </div>
 
+    <div id="editorOverlay" class="editor-overlay">
+        <div class="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+            <header>
+                <h4 id="editorTitle">Editor contenuto</h4>
+                <p id="editorSubtitle">Modifica testo campo selezionato</p>
+            </header>
+            <div class="editor-body">
+                <div id="richEditorHost"></div>
+                <textarea id="fallbackEditor" placeholder="Inserisci il contenuto..."></textarea>
+            </div>
+            <div class="editor-footer">
+                <button class="btn" type="button" id="editorCancelBtn">Annulla</button>
+                <button class="btn btn-save" type="button" id="editorApplyBtn">Applica al campo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/vendor/quill/quill.min.js"></script>
     <script>
         const API_URL = '../api';
         const token = localStorage.getItem('token');
@@ -151,9 +230,15 @@
         const rowsBody = document.getElementById('rowsBody');
         const statusBox = document.getElementById('statusBox');
         const openPageBtn = document.getElementById('openPageBtn');
+        const saveAllBtn = document.getElementById('saveAllBtn');
+        const editorOverlay = document.getElementById('editorOverlay');
+        const editorTitle = document.getElementById('editorTitle');
+        const editorSubtitle = document.getElementById('editorSubtitle');
+        const fallbackEditor = document.getElementById('fallbackEditor');
 
-        let templatesByPage = {};
         let currentItems = [];
+        let quillEditor = null;
+        let activeEditorSafeKey = '';
 
         if (!token || !user || !['admin', 'ufficio', 'segreteria'].includes(user.ruolo)) {
             window.location.href = '../login.html';
@@ -181,7 +266,14 @@
                 }
             });
 
-            const data = await response.json();
+            const rawText = (await response.text()).replace(/^\uFEFF/, '');
+            let data = {};
+            try {
+                data = rawText ? JSON.parse(rawText) : {};
+            } catch (error) {
+                throw new Error('Risposta API non valida');
+            }
+
             if (!response.ok || !data.success) {
                 throw new Error(data.message || 'Operazione non riuscita');
             }
@@ -193,6 +285,30 @@
                 return '../index.html';
             }
             return `../${page}.html`;
+        }
+
+        function getItemBySafeKey(safeKey) {
+            return currentItems.find(item => escapeAttr(item.key) === safeKey) || null;
+        }
+
+        function resolveRawKey(safeKey) {
+            const item = getItemBySafeKey(safeKey);
+            return item ? item.key : safeKey;
+        }
+
+        function getValueElement(safeKey) {
+            return document.getElementById(`value_${safeKey}`);
+        }
+
+        function renderValueControl(item) {
+            const safeKey = escapeAttr(item.key);
+            const value = escapeHtml(item.value || '');
+
+            if (item.field === 'url') {
+                return `<input class="input-url" type="url" id="value_${safeKey}" value="${value}" placeholder="Inserisci URL (https://...)">`;
+            }
+
+            return `<textarea id="value_${safeKey}" placeholder="Valore override...">${value}</textarea>`;
         }
 
         function renderRows() {
@@ -207,30 +323,36 @@
                 return;
             }
 
-            rowsBody.innerHTML = list.map(item => `
-                <tr>
-                    <td>${escapeHtml(item.label)}</td>
-                    <td class="key">${escapeHtml(item.key)}</td>
-                    <td class="selector">${escapeHtml(item.selector)}</td>
-                    <td><span class="field-badge">${escapeHtml(item.field)}</span></td>
-                    <td>
-                        <textarea id="value_${escapeAttr(item.key)}" placeholder="Valore override...">${escapeHtml(item.value || '')}</textarea>
-                    </td>
-                    <td>
-                        <div class="actions">
-                            <button class="btn btn-save" type="button" onclick="saveItem('${escapeAttr(item.key)}')">Salva</button>
-                            <button class="btn btn-reset" type="button" onclick="clearItem('${escapeAttr(item.key)}')">Reset</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            rowsBody.innerHTML = list.map(item => {
+                const safeKey = escapeAttr(item.key);
+                const editorButton = item.field === 'url'
+                    ? ''
+                    : `<button class="btn btn-editor" type="button" onclick="openRichEditor('${safeKey}')">Editor</button>`;
+
+                return `
+                    <tr data-safe-key="${safeKey}">
+                        <td>${escapeHtml(item.label)}</td>
+                        <td class="key">${escapeHtml(item.key)}</td>
+                        <td class="selector">${escapeHtml(item.selector)}</td>
+                        <td><span class="field-badge">${escapeHtml(item.field)}</span></td>
+                        <td>${renderValueControl(item)}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-save" type="button" onclick="saveItem('${safeKey}')">Salva</button>
+                                <button class="btn btn-reset" type="button" onclick="clearItem('${safeKey}')">Reset</button>
+                                ${editorButton}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function loadTemplates() {
             const data = await apiFetch(`${API_URL}/contenuti.php?action=templates`, { method: 'GET' });
-            templatesByPage = data.templates || {};
+            const pages = Object.keys(data.templates || {}).sort((a, b) => a.localeCompare(b));
 
-            pageSelect.innerHTML = Object.keys(templatesByPage)
+            pageSelect.innerHTML = pages
                 .map(page => `<option value="${escapeAttr(page)}">${escapeHtml(page)}</option>`)
                 .join('');
 
@@ -253,39 +375,170 @@
             renderRows();
         }
 
-        async function saveItem(key) {
+        async function saveItem(safeKey) {
             const page = pageSelect.value;
-            const textarea = document.getElementById(`value_${key}`);
-            if (!textarea) return;
+            const input = getValueElement(safeKey);
+            if (!input) return;
 
-            const value = textarea.value;
+            const rawKey = resolveRawKey(safeKey);
+
             try {
                 await apiFetch(`${API_URL}/contenuti.php?action=save`, {
                     method: 'POST',
-                    body: JSON.stringify({ page, key, value })
+                    body: JSON.stringify({ page, key: rawKey, value: input.value })
                 });
-                showStatus(`Contenuto salvato: ${key}`, 'ok');
+                showStatus(`Contenuto salvato: ${rawKey}`, 'ok');
                 await loadPage(page);
             } catch (error) {
                 showStatus(error.message, 'error');
             }
         }
 
-        async function clearItem(key) {
+        async function clearItem(safeKey) {
             const page = pageSelect.value;
-            if (!confirm(`Eliminare override per "${key}"?`)) {
+            const rawKey = resolveRawKey(safeKey);
+
+            if (!confirm(`Eliminare override per "${rawKey}"?`)) {
                 return;
             }
 
             try {
-                await apiFetch(`${API_URL}/contenuti.php?action=delete&page=${encodeURIComponent(page)}&key=${encodeURIComponent(key)}`, {
+                await apiFetch(`${API_URL}/contenuti.php?action=delete&page=${encodeURIComponent(page)}&key=${encodeURIComponent(rawKey)}`, {
                     method: 'DELETE'
                 });
-                showStatus(`Override rimosso: ${key}`, 'ok');
+                showStatus(`Override rimosso: ${rawKey}`, 'ok');
                 await loadPage(page);
             } catch (error) {
                 showStatus(error.message, 'error');
             }
+        }
+
+        async function saveVisibleItems() {
+            const rows = Array.from(rowsBody.querySelectorAll('tr[data-safe-key]'));
+            if (!rows.length) {
+                showStatus('Nessun campo visibile da salvare.', 'error');
+                return;
+            }
+
+            saveAllBtn.disabled = true;
+            saveAllBtn.textContent = 'Salvataggio...';
+
+            let successCount = 0;
+            let errorCount = 0;
+            const page = pageSelect.value;
+
+            for (const row of rows) {
+                const safeKey = row.getAttribute('data-safe-key') || '';
+                const input = getValueElement(safeKey);
+                if (!safeKey || !input) {
+                    continue;
+                }
+
+                try {
+                    await apiFetch(`${API_URL}/contenuti.php?action=save`, {
+                        method: 'POST',
+                        body: JSON.stringify({ page, key: resolveRawKey(safeKey), value: input.value })
+                    });
+                    successCount += 1;
+                } catch (error) {
+                    console.error('saveVisibleItems error', error);
+                    errorCount += 1;
+                }
+            }
+
+            saveAllBtn.disabled = false;
+            saveAllBtn.textContent = 'Salva campi visibili';
+
+            if (errorCount > 0) {
+                showStatus(`Salvati ${successCount} campi, errori su ${errorCount} campi.`, 'error');
+            } else {
+                showStatus(`Salvataggio completato: ${successCount} campi aggiornati.`, 'ok');
+            }
+
+            await loadPage(page);
+        }
+
+        function initRichEditor() {
+            if (window.Quill) {
+                quillEditor = new window.Quill('#richEditorHost', {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, false] }],
+                            ['bold', 'italic', 'underline'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link'],
+                            ['clean']
+                        ]
+                    }
+                });
+                fallbackEditor.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('richEditorHost').style.display = 'none';
+            fallbackEditor.style.display = 'block';
+        }
+
+        function closeRichEditor() {
+            editorOverlay.classList.remove('open');
+            activeEditorSafeKey = '';
+        }
+
+        function openRichEditor(safeKey) {
+            const item = getItemBySafeKey(safeKey);
+            const input = getValueElement(safeKey);
+
+            if (!item || !input) {
+                showStatus('Campo non disponibile.', 'error');
+                return;
+            }
+
+            if (item.field === 'url') {
+                showStatus('Per i link usa il campo URL diretto.', 'error');
+                return;
+            }
+
+            activeEditorSafeKey = safeKey;
+            editorTitle.textContent = item.label;
+            editorSubtitle.textContent = `Chiave: ${item.key} | Tipo: ${item.field}`;
+
+            if (quillEditor) {
+                if (item.field === 'html') {
+                    quillEditor.root.innerHTML = input.value || '';
+                } else {
+                    quillEditor.setText(input.value || '');
+                }
+            } else {
+                fallbackEditor.value = input.value || '';
+            }
+
+            editorOverlay.classList.add('open');
+        }
+
+        function applyRichEditorValue() {
+            if (!activeEditorSafeKey) {
+                closeRichEditor();
+                return;
+            }
+
+            const item = getItemBySafeKey(activeEditorSafeKey);
+            const input = getValueElement(activeEditorSafeKey);
+            if (!item || !input) {
+                closeRichEditor();
+                return;
+            }
+
+            if (quillEditor) {
+                input.value = item.field === 'html'
+                    ? quillEditor.root.innerHTML
+                    : quillEditor.getText().replace(/\n$/, '');
+            } else {
+                input.value = fallbackEditor.value;
+            }
+
+            closeRichEditor();
+            showStatus('Editor avanzato applicato. Ricorda di salvare il campo.', 'ok');
         }
 
         function escapeHtml(value) {
@@ -318,6 +571,21 @@
         pageSelect.addEventListener('change', async () => {
             await loadPage(pageSelect.value);
         });
+        saveAllBtn.addEventListener('click', saveVisibleItems);
+        document.getElementById('editorCancelBtn').addEventListener('click', closeRichEditor);
+        document.getElementById('editorApplyBtn').addEventListener('click', applyRichEditorValue);
+        editorOverlay.addEventListener('click', (event) => {
+            if (event.target === editorOverlay) {
+                closeRichEditor();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && editorOverlay.classList.contains('open')) {
+                closeRichEditor();
+            }
+        });
+
+        initRichEditor();
 
         loadTemplates().catch(error => {
             rowsBody.innerHTML = `<tr><td colspan="6" class="empty">Errore caricamento CMS: ${escapeHtml(error.message)}</td></tr>`;
@@ -326,6 +594,7 @@
 
         window.saveItem = saveItem;
         window.clearItem = clearItem;
+        window.openRichEditor = openRichEditor;
         window.logout = logout;
         window.goBack = goBack;
     </script>

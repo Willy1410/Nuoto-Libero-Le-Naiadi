@@ -13,11 +13,9 @@ Ambiente: locale/test only
 
 ### Opzione A - htdocs (consigliata)
 1. Copia il progetto in:
-   - `C:\xampp\htdocs\nuoto-libero`
+   - `C:\xampp\htdocs\<NOME_CARTELLA_PROGETTO>`
 2. Apri il sito:
-   - `http://localhost/nuoto-libero/`
-
-Nota: evita cartelle con spazi nel nome URL per ridurre problemi di percorso.
+   - `http://localhost/<NOME_CARTELLA_PROGETTO>/`
 
 ### Opzione B - VirtualHost
 1. Punta DocumentRoot alla root del progetto.
@@ -52,8 +50,8 @@ Se in XAMPP usi credenziali diverse, modifica questi valori (o variabili ambient
 ## 4) Avvio e test flussi principali (login, area admin, QR/scansione)
 
 ### URL base
-- Homepage: `http://localhost/nuoto-libero/`
-- Login area riservata: `http://localhost/nuoto-libero/login.html`
+- Homepage: `http://localhost/<NOME_CARTELLA_PROGETTO>/`
+- Login area riservata: `http://localhost/<NOME_CARTELLA_PROGETTO>/login.html`
 
 ### Login e redirect ruoli
 1. Apri `login.html`.
