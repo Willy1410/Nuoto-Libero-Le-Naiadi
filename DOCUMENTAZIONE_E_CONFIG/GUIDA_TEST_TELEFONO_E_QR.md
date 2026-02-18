@@ -38,8 +38,9 @@ Metodo consigliato:
 4. login come bagnino:
    - `bagnino@piscina.it / password123`
 5. apri `piscina-php/dashboard-bagnino.html`
-6. clic `Avvia camera`
-7. inquadra il QR stampato
+6. la camera prova ad avviarsi automaticamente (se HTTPS disponibile)
+7. inquadra il QR stampato: il sistema compila i dati utente in automatico
+8. premi solo `Conferma check-in`
 
 Nota importante:
 - Se apri il sito dal telefono con URL `http://192.168.x.x/...`, molti browser bloccano la camera live.

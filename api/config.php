@@ -17,9 +17,13 @@ mb_internal_encoding('UTF-8');
 define('PROJECT_ROOT', realpath(__DIR__ . '/..') ?: (__DIR__ . '/..'));
 define('LOG_DIR', PROJECT_ROOT . '/logs');
 define('ERROR_LOG_PATH', LOG_DIR . '/error.log');
+define('RATE_LIMIT_DIR', LOG_DIR . '/ratelimit');
 
 if (!is_dir(LOG_DIR)) {
     mkdir(LOG_DIR, 0755, true);
+}
+if (!is_dir(RATE_LIMIT_DIR)) {
+    mkdir(RATE_LIMIT_DIR, 0755, true);
 }
 if (!file_exists(ERROR_LOG_PATH)) {
     touch(ERROR_LOG_PATH);
@@ -50,6 +54,13 @@ if ($requestOrigin && in_array($requestOrigin, $allowedOrigins, true)) {
 header('Vary: Origin');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Cross-Origin-Resource-Policy: same-origin');
+header("Permissions-Policy: geolocation=(), microphone=(), camera=(self)");
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 header('Content-Type: application/json; charset=UTF-8');
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
@@ -61,6 +72,10 @@ function getAppBaseUrl(): string
 {
     $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
     $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $host = preg_replace('/[^a-zA-Z0-9\\.\\-:\\[\\]]/', '', $host) ?? 'localhost';
+    if ($host === '') {
+        $host = 'localhost';
+    }
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 
     $basePath = preg_replace('#/api/[^/]+$#', '', $scriptName);
@@ -79,6 +94,11 @@ define('DB_CHARSET', 'utf8mb4');
 
 define('JWT_SECRET', getenv('JWT_SECRET_LOCAL') ?: 'LOCAL_TEST_SECRET_CHANGE_ME_2026');
 define('JWT_EXPIRATION', 86400);
+
+$currentHost = strtolower((string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+if (JWT_SECRET === 'LOCAL_TEST_SECRET_CHANGE_ME_2026' && !in_array($currentHost, ['localhost', '127.0.0.1'], true)) {
+    error_log('SECURITY WARNING: JWT_SECRET default value in uso su host non locale');
+}
 
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);
 define('UPLOAD_ALLOWED_TYPES', ['pdf', 'jpg', 'jpeg', 'png']);
@@ -310,6 +330,96 @@ function requireRole(int $minLevel): array
     $user['role_level'] = (int)$profile['livello'];
 
     return $user;
+}
+
+function getClientIp(): string
+{
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
+        return $ip;
+    }
+
+    return '0.0.0.0';
+}
+
+/**
+ * Semplice rate limiter persistente su file per endpoint sensibili.
+ */
+function enforceRateLimit(string $scope, int $maxRequests, int $windowSeconds, ?string $identifier = null): void
+{
+    if ($maxRequests < 1 || $windowSeconds < 1) {
+        return;
+    }
+
+    $scope = strtolower(trim($scope));
+    $scope = preg_replace('/[^a-z0-9_-]/', '_', $scope) ?: 'global';
+    $idSource = trim((string)($identifier ?? getClientIp()));
+    if ($idSource === '') {
+        $idSource = getClientIp();
+    }
+
+    if (!is_dir(RATE_LIMIT_DIR)) {
+        @mkdir(RATE_LIMIT_DIR, 0755, true);
+    }
+
+    $hash = hash('sha256', $scope . '|' . $idSource);
+    $path = RATE_LIMIT_DIR . '/' . $scope . '_' . $hash . '.json';
+    $now = time();
+
+    $state = [
+        'window_start' => $now,
+        'count' => 0,
+    ];
+
+    $blocked = false;
+    $retryAfter = 0;
+
+    $fp = @fopen($path, 'c+');
+    if ($fp === false) {
+        return;
+    }
+
+    try {
+        if (!flock($fp, LOCK_EX)) {
+            return;
+        }
+
+        $raw = stream_get_contents($fp);
+        if (is_string($raw) && trim($raw) !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $state['window_start'] = (int)($decoded['window_start'] ?? $now);
+                $state['count'] = (int)($decoded['count'] ?? 0);
+            }
+        }
+
+        if (($now - (int)$state['window_start']) >= $windowSeconds) {
+            $state['window_start'] = $now;
+            $state['count'] = 0;
+        }
+
+        $state['count'] = (int)$state['count'] + 1;
+        if ($state['count'] > $maxRequests) {
+            $blocked = true;
+            $retryAfter = max(1, $windowSeconds - ($now - (int)$state['window_start']));
+        }
+
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, json_encode($state, JSON_UNESCAPED_UNICODE));
+        fflush($fp);
+        flock($fp, LOCK_UN);
+    } finally {
+        fclose($fp);
+    }
+
+    if ($blocked) {
+        header('Retry-After: ' . $retryAfter);
+        sendJson(429, [
+            'success' => false,
+            'message' => 'Troppe richieste. Riprova tra ' . $retryAfter . ' secondi.',
+        ]);
+    }
 }
 
 function logActivity(?string $userId, string $azione, string $descrizione = '', string $tabella = '', string $recordId = ''): void

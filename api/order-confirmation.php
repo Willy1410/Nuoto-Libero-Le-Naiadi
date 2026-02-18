@@ -14,6 +14,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     exit();
 }
 
+enforceRateLimit('order-confirmation', 10, 600);
+
 $data = json_decode(file_get_contents('php://input'), true);
 if (!is_array($data)) {
     http_response_code(400);
@@ -58,25 +60,24 @@ if (!isMailConfigured()) {
 }
 
 $paymentLabels = [
-    'paypal' => 'PayPal',
-    'stripe' => 'Carta di credito/debito',
-    'carta' => 'Carta di credito/debito',
     'bonifico' => 'Bonifico bancario',
-    'instore' => 'Pagamento in struttura',
-    'contanti' => 'Pagamento in struttura',
+    'instore' => 'Contributo in struttura',
+    'contanti' => 'Contributo in struttura',
 ];
+$allowedMethods = array_keys($paymentLabels);
+if (!in_array($paymentMethod, $allowedMethods, true)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Metodo contributo non supportato']);
+    exit();
+}
 $paymentLabel = $paymentLabels[$paymentMethod] ?? ucfirst($paymentMethod);
 $fullName = trim($firstName . ' ' . $lastName);
-$isImmediatePayment = in_array($paymentMethod, ['paypal', 'stripe', 'carta'], true);
-
-$title = $isImmediatePayment ? 'Pagamento ricevuto' : 'Richiesta pacchetto ricevuta';
-$subject = $isImmediatePayment
-    ? 'Conferma pagamento ordine ' . $orderId . ' - Gli Squaletti'
-    : 'Conferma ordine ' . $orderId . ' - Gli Squaletti';
+$title = 'Richiesta pacchetto ricevuta';
+$subject = 'Conferma richiesta ' . $orderId . ' - Gli Squaletti';
 
 $body = '<p>Ciao <strong>' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
-    . '<p>ti confermiamo la ricezione del tuo ordine.</p>'
-    . '<p><strong>Codice ordine:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+    . '<p>ti confermiamo la ricezione della tua richiesta.</p>'
+    . '<p><strong>Codice pratica:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
     . '<strong>Pacchetto:</strong> ' . htmlspecialchars($package, ENT_QUOTES, 'UTF-8') . '<br>'
     . '<strong>Metodo pagamento:</strong> ' . htmlspecialchars($paymentLabel, ENT_QUOTES, 'UTF-8') . '<br>'
     . '<strong>Importo:</strong> EUR ' . number_format($amount, 2, ',', '.') . '<br>'
@@ -87,13 +88,9 @@ if ($transactionId !== '') {
     $body .= '<p><strong>ID transazione:</strong> <code>' . htmlspecialchars($transactionId, ENT_QUOTES, 'UTF-8') . '</code></p>';
 }
 
-if ($isImmediatePayment) {
-    $body .= '<p>Il pagamento risulta registrato. Riceverai una nuova comunicazione quando il pacchetto sara attivo.</p>';
-} else {
-    $body .= '<p>La richiesta e in fase di verifica. La segreteria ti aggiornera appena possibile.</p>';
-}
+$body .= '<p>La richiesta e in fase di verifica. La segreteria ti aggiornera appena possibile.</p>';
 
-$text = "Conferma ordine {$orderId}\n"
+$text = "Conferma richiesta {$orderId}\n"
     . "Cliente: {$fullName}\n"
     . "Pacchetto: {$package}\n"
     . "Metodo: {$paymentLabel}\n"
@@ -108,7 +105,7 @@ $sent = sendBrandedEmail(
     $subject,
     $title,
     $body,
-    'Conferma ordine pacchetto',
+    'Conferma richiesta pacchetto',
     $text
 );
 
@@ -116,15 +113,15 @@ if (!$sent) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Ordine registrato ma email non inviata. Verifica logs/mail.log',
+        'message' => 'Richiesta registrata ma email non inviata. Verifica logs/mail.log',
     ]);
     exit();
 }
 
 $adminEmail = trim((string)($MAIL_CONFIG['admin_email'] ?? ''));
 if ($adminEmail !== '' && validateEmail($adminEmail)) {
-    $adminBody = '<p>Nuovo ordine pacchetto ricevuto.</p>'
-        . '<p><strong>Ordine:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+    $adminBody = '<p>Nuova richiesta pacchetto ricevuta.</p>'
+        . '<p><strong>Pratica:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
         . '<strong>Cliente:</strong> ' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '<br>'
         . '<strong>Email:</strong> ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '<br>'
         . '<strong>Pacchetto:</strong> ' . htmlspecialchars($package, ENT_QUOTES, 'UTF-8') . '<br>'
@@ -133,10 +130,10 @@ if ($adminEmail !== '' && validateEmail($adminEmail)) {
     sendBrandedEmail(
         $adminEmail,
         (string)($MAIL_CONFIG['admin_name'] ?? 'Amministrazione'),
-        '[Ordine] ' . $orderId . ' - ' . SITE_NAME,
-        'Nuovo ordine pacchetto',
+        '[Richiesta] ' . $orderId . ' - ' . SITE_NAME,
+        'Nuova richiesta pacchetto',
         $adminBody,
-        'Nuovo ordine ricevuto'
+        'Nuova richiesta ricevuta'
     );
 }
 

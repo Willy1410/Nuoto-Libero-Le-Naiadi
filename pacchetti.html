@@ -1,23 +1,40 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Acquista online i pacchetti per il nuoto libero - Gli Squaletti. Pagamento sicuro con PayPal e carte di credito.">
-    <title>Pacchetti & Pagamento - Gli Squaletti</title>
+    <meta name="description" content="Pacchetti ingressi per nuoto libero in piscina 50 metri all'aperto d'estate. Richiesta iscrizione ad associazione sportiva non agonistica Gli Squaletti.">
+    <meta name="keywords" content="nuoto libero, piscina all'aperto, piscina 50 metri, associazione sportiva nuoto, nuoto non agonistico, ingressi piscina, iscrizione nuoto libero">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <link rel="canonical" href="/pacchetti.html">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="it_IT">
+    <meta property="og:site_name" content="Gli Squaletti">
+    <meta property="og:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
+    <meta property="og:description" content="Richiedi iscrizione e attivazione pacchetti ingressi per nuoto libero non agonistico in piscina.">
+    <meta property="og:url" content="/pacchetti.html">
+    <meta property="og:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
+    <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico: iscrizione e pacchetti ingressi.">
+    <meta name="twitter:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <title>Pacchetti Ingressi Nuoto Libero - Gli Squaletti</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SportsActivityLocation",
+      "name": "Gli Squaletti - Nuoto Libero",
+      "sport": "Swimming",
+      "description": "Associazione sportiva per nuoto libero non agonistico in piscina coperta e piscina 50 metri all'aperto in estate.",
+      "url": "/pacchetti.html"
+    }
+    </script>
     <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- Stripe -->
-    <script src="https://js.stripe.com/v3/"></script>
-    
-    <!-- PayPal -->
-    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=EUR"></script>
 </head>
 <body>
-    <!-- Cookie Banner -->
     <div id="cookieBanner" class="cookie-banner">
         <div class="cookie-content">
             <p><i class="fas fa-cookie-bite"></i> Questo sito utilizza cookie per migliorare l'esperienza utente. <a href="cookie.html">Maggiori informazioni</a></p>
@@ -25,7 +42,6 @@
         </div>
     </div>
 
-    <!-- Header -->
     <header class="header" id="header">
         <nav class="navbar">
             <div class="container">
@@ -38,13 +54,12 @@
                         <li><a href="index.html">Home</a></li>
                         <li><a href="chi-siamo.html">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.html">Orari & Tariffe</a></li>
-                        <li><a href="galleria.html">Galleria</a></li>
                         <li><a href="moduli.html">Moduli</a></li>
                         <li><a href="pacchetti.html" class="active">Pacchetti</a></li>
                         <li><a href="contatti.html">Contatti</a></li>
                         <li><a href="login.html" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
-                    <a href="pacchetti.html" class="btn btn-primary btn-header">Acquista Pacchetto</a>
+                    <a href="pacchetti.html" class="btn btn-primary btn-header">Richiedi Iscrizione</a>
                     <button class="hamburger" id="hamburger" aria-label="Menu">
                         <span></span><span></span><span></span>
                     </button>
@@ -53,34 +68,31 @@
         </nav>
     </header>
 
-    <!-- Page Hero -->
     <section class="page-hero">
         <div class="container">
-            <h1><i class="fas fa-shopping-cart"></i> Pacchetti & Pagamento</h1>
-            <p>Acquista online il tuo pacchetto in modo sicuro e veloce</p>
+            <h1><i class="fas fa-id-card"></i> Pacchetti Ingressi</h1>
+            <p>Richiesta adesione e contributo attività per nuoto libero non agonistico</p>
         </div>
     </section>
 
-    <!-- Pacchetti Section -->
     <section class="packages-section" id="packagesSection">
         <div class="container">
-            <h2 class="section-title">Scegli il Tuo Pacchetto</h2>
-            <p class="section-subtitle">Seleziona il pacchetto più adatto alle tue esigenze</p>
+            <h2 class="section-title">Scegli il Pacchetto Ingressi</h2>
+            <p class="section-subtitle">Seleziona la formula più adatta e invia la richiesta di attivazione</p>
 
             <div class="pricing-grid">
-                <!-- Singolo Ingresso -->
                 <div class="pricing-card package-card" data-package="singolo" data-price="8.00" data-name="Singolo Ingresso">
                     <div class="pricing-header">
                         <h3>Singolo Ingresso</h3>
                         <div class="price">
-                            <span class="currency">€</span>
+                            <span class="currency">EUR</span>
                             <span class="amount">8</span>
                             <span class="period">/ingresso</span>
                         </div>
                     </div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> 1 ingresso valido</li>
-                        <li><i class="fas fa-check"></i> Valido per tutte le fasce orarie</li>
+                        <li><i class="fas fa-check"></i> Accesso nelle fasce attive</li>
                         <li><i class="fas fa-check"></i> Armadietto incluso</li>
                         <li><i class="fas fa-check"></i> Docce calde</li>
                     </ul>
@@ -89,71 +101,64 @@
                     </button>
                 </div>
 
-                <!-- 10 Ingressi - PIÙ POPOLARE -->
                 <div class="pricing-card featured package-card" data-package="10-ingressi" data-price="65.00" data-name="10 Ingressi">
-                    <div class="badge-popular">PIÙ POPOLARE</div>
+                    <div class="badge-popular">PIÙ RICHIESTO</div>
                     <div class="pricing-header">
                         <h3>10 Ingressi</h3>
                         <div class="price">
-                            <span class="currency">€</span>
+                            <span class="currency">EUR</span>
                             <span class="amount">65</span>
-                            <span class="savings">Risparmi €15</span>
+                            <span class="savings">Contributo medio 6,50</span>
                         </div>
                     </div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> 10 ingressi validi</li>
-                        <li><i class="fas fa-check"></i> Validità 6 mesi dalla attivazione</li>
-                        <li><i class="fas fa-check"></i> € 6,50 per ingresso</li>
+                        <li><i class="fas fa-check"></i> Validità 6 mesi da attivazione</li>
                         <li><i class="fas fa-check"></i> Armadietto incluso</li>
                         <li><i class="fas fa-check"></i> Docce calde</li>
-                        <li><i class="fas fa-star"></i> Miglior rapporto qualità/prezzo</li>
+                        <li><i class="fas fa-star"></i> Miglior equilibrio utilizzo/contributo</li>
                     </ul>
                     <button class="btn btn-primary btn-block select-package">
                         <i class="fas fa-hand-pointer"></i> Seleziona
                     </button>
                 </div>
 
-                <!-- 20 Ingressi -->
                 <div class="pricing-card package-card" data-package="20-ingressi" data-price="120.00" data-name="20 Ingressi">
                     <div class="pricing-header">
                         <h3>20 Ingressi</h3>
                         <div class="price">
-                            <span class="currency">€</span>
+                            <span class="currency">EUR</span>
                             <span class="amount">120</span>
-                            <span class="savings">Risparmi €40</span>
+                            <span class="savings">Contributo medio 6,00</span>
                         </div>
                     </div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> 20 ingressi validi</li>
-                        <li><i class="fas fa-check"></i> Validità 6 mesi dalla attivazione</li>
-                        <li><i class="fas fa-check"></i> € 6,00 per ingresso</li>
+                        <li><i class="fas fa-check"></i> Validità 6 mesi da attivazione</li>
                         <li><i class="fas fa-check"></i> Armadietto incluso</li>
                         <li><i class="fas fa-check"></i> Docce calde</li>
-                        <li><i class="fas fa-star"></i> Massimo risparmio</li>
+                        <li><i class="fas fa-star"></i> Formula intensiva</li>
                     </ul>
                     <button class="btn btn-secondary btn-block select-package">
                         <i class="fas fa-hand-pointer"></i> Seleziona
                     </button>
                 </div>
 
-                <!-- Mensile -->
-                <div class="pricing-card package-card" data-package="mensile" data-price="90.00" data-name="Abbonamento Mensile">
+                <div class="pricing-card package-card" data-package="mensile" data-price="90.00" data-name="Mensile Nuoto Libero">
                     <div class="pricing-header">
-                        <h3>Abbonamento Mensile</h3>
+                        <h3>Mensile Nuoto Libero</h3>
                         <div class="price">
-                            <span class="currency">€</span>
+                            <span class="currency">EUR</span>
                             <span class="amount">90</span>
-                            <span class="period">/mese</span>
+                            <span class="period">/30 giorni</span>
                         </div>
                     </div>
                     <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> Ingressi illimitati per 30 giorni</li>
-                        <li><i class="fas fa-check"></i> Validità 30 giorni dalla attivazione</li>
-                        <li><i class="fas fa-check"></i> Tutti gli orari disponibili</li>
+                        <li><i class="fas fa-check"></i> Accessi multipli per 30 giorni</li>
+                        <li><i class="fas fa-check"></i> Validità da prima attivazione</li>
+                        <li><i class="fas fa-check"></i> Tutte le fasce disponibili</li>
                         <li><i class="fas fa-check"></i> Armadietto riservato</li>
-                        <li><i class="fas fa-check"></i> Docce calde</li>
-                        <li><i class="fas fa-star"></i> Sconto 10% sugli accessori</li>
-                        <li><i class="fas fa-star"></i> Ideale per chi si allena spesso</li>
+                        <li><i class="fas fa-star"></i> Ideale per frequenza elevata</li>
                     </ul>
                     <button class="btn btn-secondary btn-block select-package">
                         <i class="fas fa-hand-pointer"></i> Seleziona
@@ -163,33 +168,30 @@
         </div>
     </section>
 
-    <!-- Checkout Section (Hidden by default) -->
     <section class="checkout-section" id="checkoutSection" style="display: none;">
         <div class="container">
             <div class="checkout-wrapper">
-                <!-- Riepilogo Ordine -->
                 <div class="order-summary">
-                    <h3><i class="fas fa-receipt"></i> Riepilogo Ordine</h3>
+                    <h3><i class="fas fa-receipt"></i> Riepilogo Richiesta</h3>
                     <div class="summary-item">
                         <span>Pacchetto:</span>
                         <strong id="summaryPackage">-</strong>
                     </div>
                     <div class="summary-item">
-                        <span>Prezzo:</span>
-                        <strong id="summaryPrice">€ 0,00</strong>
+                        <span>Contributo:</span>
+                        <strong id="summaryPrice">EUR 0,00</strong>
                     </div>
                     <div class="summary-total">
                         <span>Totale:</span>
-                        <strong id="summaryTotal">€ 0,00</strong>
+                        <strong id="summaryTotal">EUR 0,00</strong>
                     </div>
                     <button class="btn btn-secondary btn-block" id="backToPackages">
                         <i class="fas fa-arrow-left"></i> Cambia Pacchetto
                     </button>
                 </div>
 
-                <!-- Form Dati Utente -->
                 <div class="checkout-form">
-                    <h3><i class="fas fa-user"></i> I Tuoi Dati</h3>
+                    <h3><i class="fas fa-user"></i> Dati Richiedente</h3>
                     <form id="checkoutForm">
                         <div class="form-row">
                             <div class="form-group">
@@ -214,10 +216,9 @@
 
                         <div class="form-group">
                             <label for="notes">Note (opzionale)</label>
-                            <textarea id="notes" name="notes" rows="3" placeholder="Eventuali richieste particolari..."></textarea>
+                            <textarea id="notes" name="notes" rows="3" placeholder="Eventuali richieste amministrative..."></textarea>
                         </div>
 
-                        <!-- Consensi -->
                         <div class="form-group checkbox-group">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="termsAccept" required>
@@ -235,33 +236,16 @@
                         <div class="form-group checkbox-group">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="marketingAccept">
-                                <span>Acconsento a ricevere comunicazioni promozionali (opzionale)</span>
+                                <span>Acconsento a ricevere comunicazioni informative (opzionale)</span>
                             </label>
                         </div>
 
-                        <!-- Metodo di Pagamento -->
                         <div class="payment-method-section">
-                            <h3><i class="fas fa-credit-card"></i> Metodo di Pagamento</h3>
-                            
+                            <h3><i class="fas fa-file-invoice"></i> Modalità Contributo</h3>
+
                             <div class="payment-options">
                                 <label class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="paypal" checked>
-                                    <div class="payment-option-content">
-                                        <i class="fab fa-paypal"></i>
-                                        <span>PayPal</span>
-                                    </div>
-                                </label>
-
-                                <label class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="stripe">
-                                    <div class="payment-option-content">
-                                        <i class="fas fa-credit-card"></i>
-                                        <span>Carta di Credito/Debito</span>
-                                    </div>
-                                </label>
-
-                                <label class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="bonifico">
+                                    <input type="radio" name="paymentMethod" value="bonifico" checked>
                                     <div class="payment-option-content">
                                         <i class="fas fa-university"></i>
                                         <span>Bonifico Bancario</span>
@@ -272,37 +256,24 @@
                                     <input type="radio" name="paymentMethod" value="instore">
                                     <div class="payment-option-content">
                                         <i class="fas fa-store"></i>
-                                        <span>Pagamento in Struttura</span>
+                                        <span>Contributo in Struttura</span>
                                     </div>
                                 </label>
                             </div>
 
-                            <!-- PayPal Container -->
-                            <div id="paypal-button-container" class="payment-container" style="display: none;"></div>
-
-                            <!-- Stripe Container -->
-                            <div id="stripe-payment-container" class="payment-container" style="display: none;">
-                                <div id="card-element" class="stripe-card-element"></div>
-                                <div id="card-errors" class="stripe-errors"></div>
-                                <button type="button" id="stripe-submit" class="btn btn-primary btn-block">
-                                    <i class="fas fa-lock"></i> Paga con Carta
-                                </button>
-                            </div>
-
-                            <!-- Bank Transfer -->
                             <div id="bank-transfer-container" class="payment-container" style="display: none;">
                                 <div class="instore-info">
                                     <i class="fas fa-university"></i>
-                                    <p><strong>Dati bonifico (test locale):</strong><br>
-                                    Intestatario: Nuoto Libero SSD<br>
+                                    <p><strong>Dati bonifico (esempio locale):</strong><br>
+                                    Intestatario: Associazione Sportiva Gli Squaletti<br>
                                     IBAN: IT00X0000000000000000000000<br>
-                                    Causale suggerita: Nome Cognome - Pacchetto - Email</p>
+                                    Causale: Nome Cognome - Pacchetto ingressi - Email</p>
                                 </div>
 
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="bonificoReference">Riferimento bonifico *</label>
-                                        <input type="text" id="bonificoReference" placeholder="es. CRO/TRN/ID operazione" required>
+                                        <input type="text" id="bonificoReference" placeholder="CRO/TRN/ID operazione" required>
                                     </div>
                                     <div class="form-group">
                                         <label for="bonificoDate">Data bonifico *</label>
@@ -315,14 +286,13 @@
                                 </button>
                             </div>
 
-                            <!-- In-Store Payment -->
                             <div id="instore-payment-container" class="payment-container" style="display: none;">
                                 <div class="instore-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <p>Riceverai un'email di conferma con le istruzioni per completare il pagamento in struttura. Ti aspettiamo!</p>
+                                    <p>Invia la richiesta e completa l'iscrizione in reception con firma modulistica e verifica documenti.</p>
                                 </div>
                                 <button type="submit" id="instore-submit" class="btn btn-primary btn-block">
-                                    <i class="fas fa-check"></i> Conferma Prenotazione
+                                    <i class="fas fa-check"></i> Conferma richiesta
                                 </button>
                             </div>
                         </div>
@@ -332,95 +302,92 @@
         </div>
     </section>
 
-    <!-- Sicurezza Section -->
     <section class="security-section">
         <div class="container">
-            <h2 class="section-title">Pagamento Sicuro e Protetto</h2>
+            <h2 class="section-title">Trasparenza e Conformità</h2>
             <div class="security-grid">
                 <div class="security-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <h3>SSL Certificato</h3>
-                    <p>Connessione sicura e criptata</p>
+                    <i class="fas fa-id-card"></i>
+                    <h3>Tesseramento</h3>
+                    <p>Accesso riservato a utenti iscritti con documentazione valida.</p>
                 </div>
                 <div class="security-item">
-                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-file-signature"></i>
+                    <h3>Moduli Ufficiali</h3>
+                    <p>Documenti scaricabili, compilabili e verificabili da segreteria.</p>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-user-shield"></i>
                     <h3>Dati Protetti</h3>
-                    <p>I tuoi dati non vengono mai memorizzati</p>
+                    <p>Gestione dati con policy privacy e controlli accesso per ruolo.</p>
                 </div>
                 <div class="security-item">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>Pagamenti Verificati</h3>
-                    <p>PayPal e Stripe certificati PCI DSS</p>
-                </div>
-                <div class="security-item">
-                    <i class="fas fa-undo"></i>
-                    <h3>Rimborso Garantito</h3>
-                    <p>Politica rimborsi trasparente</p>
+                    <i class="fas fa-clipboard-check"></i>
+                    <h3>Conferma Manuale</h3>
+                    <p>Attivazione ingressi dopo verifica amministrativa.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- FAQ Section -->
     <section class="faq">
         <div class="container">
-            <h2 class="section-title">Domande Frequenti sull'Acquisto</h2>
-            
-            <div class="faq-container">
-                <div class="faq-item">
-                    <button class="faq-question">
-                        <span>Posso pagare in struttura?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="faq-answer">
-                        <p>Sì, seleziona l'opzione "Pagamento in Struttura" durante il checkout. Riceverai una email di conferma da presentare alla reception.</p>
-                    </div>
-                </div>
+            <h2 class="section-title">Domande Frequenti sui Pacchetti</h2>
 
+            <div class="faq-container">
                 <div class="faq-item">
                     <button class="faq-question">
                         <span>Quando viene attivato il pacchetto?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Il pacchetto viene attivato al primo ingresso in struttura, non dalla data di acquisto. Hai tempo per utilizzarlo!</p>
+                        <p>L'attivazione avviene dopo verifica segreteria e primo accesso in struttura con documenti regolari.</p>
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>Posso regalare un pacchetto?</span>
+                        <span>Posso completare tutto in reception?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Assolutamente sì! Acquista normalmente e comunica in reception che è un regalo. Lo intestiamo al beneficiario al primo utilizzo.</p>
+                        <p>Sì. Puoi inviare solo la richiesta online e finalizzare iscrizione, firma e contributo direttamente in struttura.</p>
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>Posso richiedere un rimborso?</span>
+                        <span>Il certificato medico è obbligatorio?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Sì, puoi richiedere il rimborso entro 14 giorni dall'acquisto se non hai ancora attivato il pacchetto. Consulta i <a href="termini.html">Termini e Condizioni</a>.</p>
+                        <p>Sì, per nuoto non agonistico è richiesto certificato in corso di validità prima dell'attivazione.</p>
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>I miei dati di pagamento sono sicuri?</span>
+                        <span>Posso richiedere un pacchetto regalo?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Assolutamente. Utilizziamo PayPal e Stripe, i sistemi di pagamento più sicuri al mondo. Non memorizziamo mai i dati delle tue carte.</p>
+                        <p>Sì, la segreteria può emettere pacchetti omaggio o buoni regalo intestati al beneficiario.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Dove trovo i moduli da firmare?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Tutti i moduli sono disponibili nella sezione <a href="moduli.html">Moduli</a>, scaricabili e compilabili in autonomia.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
@@ -443,7 +410,6 @@
                     <h4>Link Rapidi</h4>
                     <ul class="footer-links">
                         <li><a href="orari-tariffe.html">Orari & Tariffe</a></li>
-                        <li><a href="galleria.html">Galleria</a></li>
                         <li><a href="moduli.html">Moduli</a></li>
                         <li><a href="pacchetti.html">Pacchetti</a></li>
                         <li><a href="contatti.html">Contatti</a></li>
@@ -476,5 +442,3 @@
     <script src="js/payment.js"></script>
 </body>
 </html>
-
-

@@ -46,6 +46,9 @@
         .btn-primary { background: var(--primary-dark); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-warning { background: var(--warning); color: #fff; }
+        .btn-secondary { background: #475569; color: #fff; }
+        .btn-light { background: #e2e8f0; color: #0f172a; }
+        .btn-sm { padding: 8px 10px; font-size: 12px; }
 
         .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
 
@@ -210,9 +213,106 @@
             margin-top: 12px;
         }
 
+        .profile-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .profile-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .profile-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .profile-field label {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .profile-field input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .profile-actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .doc-column h4 {
+            margin-bottom: 8px;
+            color: #0f172a;
+            font-size: 15px;
+        }
+
+        .doc-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .doc-item {
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .doc-item h5 {
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #0f172a;
+        }
+
+        .doc-item p {
+            margin: 0 0 6px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .doc-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .doc-upload {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .doc-upload input[type="file"] {
+            flex: 1 1 220px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 6px;
+            background: #fff;
+            font-size: 12px;
+        }
+
         @media (max-width: 900px) {
             .grid { grid-template-columns: 1fr; }
             .payment-options { grid-template-columns: 1fr; }
+            .profile-form { grid-template-columns: 1fr; }
+            .documents-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -241,6 +341,52 @@
                 <h2 id="statScadenza">-</h2>
                 <p>Giorni a scadenza</p>
             </div>
+        </div>
+
+        <div class="card">
+            <h3>I tuoi dati</h3>
+            <p class="small">Aggiorna recapiti e dati anagrafici quando cambiano. I documenti precompilati useranno questi dati.</p>
+            <form id="profileForm" class="profile-form">
+                <div class="profile-field">
+                    <label for="profileNome">Nome</label>
+                    <input id="profileNome" type="text" maxlength="100" required>
+                </div>
+                <div class="profile-field">
+                    <label for="profileCognome">Cognome</label>
+                    <input id="profileCognome" type="text" maxlength="100" required>
+                </div>
+                <div class="profile-field">
+                    <label for="profileEmail">Email</label>
+                    <input id="profileEmail" type="email" maxlength="255" required>
+                </div>
+                <div class="profile-field">
+                    <label for="profileTelefono">Telefono</label>
+                    <input id="profileTelefono" type="text" maxlength="30">
+                </div>
+                <div class="profile-field">
+                    <label for="profileDataNascita">Data di nascita</label>
+                    <input id="profileDataNascita" type="date">
+                </div>
+                <div class="profile-field">
+                    <label for="profileCodiceFiscale">Codice fiscale</label>
+                    <input id="profileCodiceFiscale" type="text" maxlength="16" style="text-transform:uppercase;">
+                </div>
+                <div class="profile-field full">
+                    <label for="profileIndirizzo">Indirizzo</label>
+                    <input id="profileIndirizzo" type="text" maxlength="255">
+                </div>
+                <div class="profile-field">
+                    <label for="profileCitta">Citta</label>
+                    <input id="profileCitta" type="text" maxlength="100">
+                </div>
+                <div class="profile-field">
+                    <label for="profileCap">CAP</label>
+                    <input id="profileCap" type="text" maxlength="10">
+                </div>
+                <div class="profile-actions profile-field full">
+                    <button id="saveProfileBtn" class="btn btn-primary" type="submit">Salva dati profilo</button>
+                </div>
+            </form>
         </div>
 
         <div class="grid">
@@ -297,21 +443,28 @@
         <div class="card">
             <h3>Documenti</h3>
             <p class="muted">Documenti obbligatori mancanti: <strong id="missingDocs">0</strong></p>
-            <div id="docList"></div>
+            <div class="documents-grid">
+                <div class="doc-column">
+                    <h4>Documenti caricati</h4>
+                    <div id="uploadedDocsList" class="doc-list"></div>
+                </div>
+                <div class="doc-column">
+                    <h4>Documenti mancanti / da completare</h4>
+                    <div id="missingDocsList" class="doc-list"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="purchaseOverlay" class="overlay">
         <div class="modal">
-            <h4 id="purchaseTitle">Conferma acquisto</h4>
+            <h4 id="purchaseTitle">Conferma richiesta pacchetto</h4>
             <p class="small" id="purchaseMeta"></p>
 
             <div class="row">
-                <label>Metodo pagamento</label>
+                <label>Modalità contributo</label>
                 <div class="payment-options">
-                    <label class="payment-option"><input type="radio" name="paymentMethod" value="carta" checked> Carta</label>
-                    <label class="payment-option"><input type="radio" name="paymentMethod" value="paypal"> PayPal</label>
-                    <label class="payment-option"><input type="radio" name="paymentMethod" value="bonifico"> Bonifico</label>
+                    <label class="payment-option"><input type="radio" name="paymentMethod" value="bonifico" checked> Bonifico</label>
                     <label class="payment-option"><input type="radio" name="paymentMethod" value="contanti"> In struttura</label>
                 </div>
             </div>
@@ -330,15 +483,15 @@
 
             <div class="modal-actions">
                 <button class="btn" type="button" onclick="closePurchaseModal()">Annulla</button>
-                <button class="btn btn-success" id="confirmPurchaseBtn" type="button" onclick="confirmPurchase()">Conferma acquisto</button>
+                <button class="btn btn-success" id="confirmPurchaseBtn" type="button" onclick="confirmPurchase()">Conferma richiesta</button>
             </div>
         </div>
     </div>
 
     <script>
         const API_URL = '../api';
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        let token = localStorage.getItem('token');
+        let user = JSON.parse(localStorage.getItem('user') || 'null');
 
         let selectedPackage = null;
         let myPurchases = [];
@@ -348,7 +501,12 @@
             window.location.href = '../login.html';
         }
 
-        document.getElementById('userName').textContent = `${user.nome} ${user.cognome}`;
+        function updateHeaderUserName() {
+            const displayName = `${user?.nome || ''} ${user?.cognome || ''}`.trim();
+            document.getElementById('userName').textContent = displayName;
+        }
+
+        updateHeaderUserName();
 
         function showAlert(message, type = 'ok') {
             const box = document.getElementById('alertBox');
@@ -362,6 +520,28 @@
             }
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function normalizeDateInput(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                return raw.slice(0, 10);
+            }
+            const parsed = new Date(raw);
+            if (Number.isNaN(parsed.getTime())) {
+                return '';
+            }
+            return parsed.toISOString().slice(0, 10);
+        }
+
         async function fetchJson(url, options = {}) {
             const response = await fetch(url, {
                 ...options,
@@ -371,7 +551,15 @@
                     ...(options.headers || {})
                 }
             });
-            const data = await response.json();
+            const rawText = await response.text();
+            let data = {};
+            if (rawText) {
+                try {
+                    data = JSON.parse(rawText);
+                } catch (_) {
+                    data = { success: false, message: rawText };
+                }
+            }
             if (!response.ok || !data.success) {
                 throw new Error(data.message || 'Errore richiesta API');
             }
@@ -396,7 +584,7 @@
             return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
         }
 
-        async function fetchBlobWithAuth(url) {
+        async function fetchBlobWithAuth(url, fallbackMessage = 'Errore download file') {
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -405,12 +593,16 @@
             });
 
             if (!response.ok) {
-                let message = 'Errore caricamento QR';
+                let message = fallbackMessage;
                 try {
                     const text = (await response.text()).replace(/^\uFEFF/, '');
                     if (text) {
-                        const json = JSON.parse(text);
-                        message = json.message || message;
+                        try {
+                            const json = JSON.parse(text);
+                            message = json.message || message;
+                        } catch (_) {
+                            message = text || message;
+                        }
                     }
                 } catch (_) {
                     // fallback: mantieni messaggio standard
@@ -456,21 +648,137 @@
 
             try {
                 const { blob, response } = await fetchBlobWithAuth(
-                    `${API_URL}/qr.php?action=download&acquisto_id=${encodeURIComponent(acquistoId)}`
+                    `${API_URL}/qr.php?action=download&acquisto_id=${encodeURIComponent(acquistoId)}`,
+                    'Errore download QR'
                 );
                 const disposition = response.headers.get('Content-Disposition') || '';
                 const fallbackName = `QR_${sanitizeFilePart(qrCode)}.pdf`;
                 const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
-                const blobUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(blobUrl);
+                triggerBlobDownload(blob, fileName);
             } catch (error) {
                 showAlert(error.message || 'Errore download QR PDF', 'error');
+            }
+        }
+
+        function triggerBlobDownload(blob, filename) {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+        }
+
+        async function downloadProtectedDocument(documentId, fallbackName = 'documento.pdf') {
+            if (!documentId) {
+                showAlert('Documento non valido.', 'error');
+                return;
+            }
+
+            try {
+                const { blob, response } = await fetchBlobWithAuth(
+                    `${API_URL}/documenti-download.php?id=${encodeURIComponent(documentId)}`,
+                    'Errore download documento'
+                );
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
+                triggerBlobDownload(blob, fileName);
+            } catch (error) {
+                showAlert(error.message || 'Errore download documento', 'error');
+            }
+        }
+
+        async function downloadPrefilledDocument(typeId, typeName = 'documento') {
+            if (!typeId) {
+                showAlert('Tipo documento non valido.', 'error');
+                return;
+            }
+
+            try {
+                const { blob, response } = await fetchBlobWithAuth(
+                    `${API_URL}/documenti-prefill.php?tipo_documento_id=${encodeURIComponent(typeId)}`,
+                    'Errore generazione PDF precompilato'
+                );
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const fallbackName = `prefill_${sanitizeFilePart(typeName)}.pdf`;
+                const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
+                triggerBlobDownload(blob, fileName);
+            } catch (error) {
+                showAlert(error.message || 'Errore download PDF precompilato', 'error');
+            }
+        }
+
+        async function loadProfile() {
+            const data = await fetchJson(`${API_URL}/auth.php?action=me`, { method: 'GET' });
+            const profile = data.user || {};
+
+            user = {
+                ...(user || {}),
+                id: profile.id || user?.id,
+                email: profile.email || user?.email,
+                nome: profile.nome || user?.nome,
+                cognome: profile.cognome || user?.cognome,
+                ruolo: profile.ruolo_nome || user?.ruolo,
+                livello: Number(profile.ruolo_livello || user?.livello || 1),
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+            updateHeaderUserName();
+
+            document.getElementById('profileNome').value = profile.nome || '';
+            document.getElementById('profileCognome').value = profile.cognome || '';
+            document.getElementById('profileEmail').value = profile.email || '';
+            document.getElementById('profileTelefono').value = profile.telefono || '';
+            document.getElementById('profileDataNascita').value = normalizeDateInput(profile.data_nascita);
+            document.getElementById('profileCodiceFiscale').value = (profile.codice_fiscale || '').toUpperCase();
+            document.getElementById('profileIndirizzo').value = profile.indirizzo || '';
+            document.getElementById('profileCitta').value = profile.citta || '';
+            document.getElementById('profileCap').value = profile.cap || '';
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+
+            const button = document.getElementById('saveProfileBtn');
+            const payload = {
+                nome: document.getElementById('profileNome').value.trim(),
+                cognome: document.getElementById('profileCognome').value.trim(),
+                email: document.getElementById('profileEmail').value.trim().toLowerCase(),
+                telefono: document.getElementById('profileTelefono').value.trim(),
+                data_nascita: document.getElementById('profileDataNascita').value.trim(),
+                indirizzo: document.getElementById('profileIndirizzo').value.trim(),
+                citta: document.getElementById('profileCitta').value.trim(),
+                cap: document.getElementById('profileCap').value.trim(),
+                codice_fiscale: document.getElementById('profileCodiceFiscale').value.trim().toUpperCase(),
+            };
+
+            button.disabled = true;
+            button.textContent = 'Salvataggio...';
+
+            try {
+                const data = await fetchJson(`${API_URL}/auth.php?action=update-profile`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload)
+                });
+
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                }
+                if (data.user) {
+                    user = { ...(user || {}), ...data.user };
+                    localStorage.setItem('user', JSON.stringify(user));
+                    updateHeaderUserName();
+                }
+
+                showAlert(data.message || 'Profilo aggiornato.', 'ok');
+                await loadDocuments();
+            } catch (error) {
+                showAlert(error.message || 'Errore aggiornamento profilo', 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Salva dati profilo';
             }
         }
 
@@ -508,10 +816,10 @@
                 <div class="qr-wrap">
                     <div class="qr-box" id="qrBox"></div>
                     <div>
-                        <p><strong>Codice:</strong> <code>${purchase.qr_code}</code></p>
-                        <p><strong>Pacchetto:</strong> ${purchase.pacchetto_nome}</p>
+                        <p><strong>Codice:</strong> <code>${escapeHtml(purchase.qr_code)}</code></p>
+                        <p><strong>Pacchetto:</strong> ${escapeHtml(purchase.pacchetto_nome)}</p>
                         <p><strong>Scadenza:</strong> ${formatDate(purchase.data_scadenza)}</p>
-                        <p><strong>Ingressi rimanenti:</strong> ${purchase.ingressi_rimanenti}</p>
+                        <p><strong>Ingressi rimanenti:</strong> ${Number(purchase.ingressi_rimanenti || 0)}</p>
                         <p style="margin-top:10px;">
                             <button class="btn btn-primary" id="downloadQrBtn" type="button">Scarica PDF QR</button>
                         </p>
@@ -535,10 +843,13 @@
                 activeQrBlobUrl = '';
             }
 
-            fetchBlobWithAuth(`${API_URL}/qr.php?action=svg&acquisto_id=${encodeURIComponent(purchase.id)}`)
+            fetchBlobWithAuth(
+                `${API_URL}/qr.php?action=svg&acquisto_id=${encodeURIComponent(purchase.id)}`,
+                'Errore generazione QR'
+            )
                 .then(({ blob }) => {
                     activeQrBlobUrl = URL.createObjectURL(blob);
-                    qrTarget.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR code ${purchase.qr_code}">`;
+                    qrTarget.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR code ${escapeHtml(purchase.qr_code)}">`;
                 })
                 .catch((error) => {
                     console.error(error);
@@ -559,8 +870,8 @@
             list.innerHTML = data.pacchetti.map(pkg => `
                 <div class="package-item">
                     <div class="package-meta">
-                        <strong>${pkg.nome}</strong>
-                        <p>${pkg.descrizione || 'Pacchetto nuoto libero'}</p>
+                        <strong>${escapeHtml(pkg.nome)}</strong>
+                        <p>${escapeHtml(pkg.descrizione || 'Pacchetto nuoto libero')}</p>
                         <p>${pkg.num_ingressi} ingressi - validita ${pkg.validita_giorni} giorni</p>
                     </div>
                     <div style="text-align:right;">
@@ -570,6 +881,7 @@
                             data-id="${pkg.id}"
                             data-name="${encodeURIComponent(pkg.nome)}"
                             data-price="${Number(pkg.prezzo)}"
+                            type="button"
                         >Acquista</button>
                     </div>
                 </div>
@@ -600,12 +912,12 @@
 
             body.innerHTML = myPurchases.map(item => {
                 const downloadAction = item.stato_pagamento === 'confirmed' && item.qr_code
-                    ? `<button class="btn btn-primary js-download-qr" type="button" data-id="${item.id}" data-code="${item.qr_code}">PDF QR</button>`
+                    ? `<button class="btn btn-primary js-download-qr" type="button" data-id="${escapeHtml(item.id)}" data-code="${escapeHtml(item.qr_code)}">PDF QR</button>`
                     : '-';
 
                 return `
                     <tr>
-                        <td>${item.pacchetto_nome}</td>
+                        <td>${escapeHtml(item.pacchetto_nome)}</td>
                         <td>${formatDate(item.data_acquisto)}</td>
                         <td>${getStatusBadge(item.stato_pagamento)}</td>
                         <td>${item.ingressi_rimanenti} / ${item.num_ingressi || '-'}</td>
@@ -641,45 +953,181 @@
             body.innerHTML = rows.slice(0, 15).map(row => `
                 <tr>
                     <td>${formatDateTime(row.timestamp)}</td>
-                    <td>${row.fascia_oraria || '-'}</td>
-                    <td>${row.pacchetto_nome || '-'}</td>
-                    <td>${row.bagnino_nome || '-'} ${row.bagnino_cognome || ''}</td>
+                    <td>${escapeHtml(row.fascia_oraria || '-')}</td>
+                    <td>${escapeHtml(row.pacchetto_nome || '-')}</td>
+                    <td>${escapeHtml((row.bagnino_nome || '-') + ' ' + (row.bagnino_cognome || ''))}</td>
                 </tr>
             `).join('');
         }
 
-        async function loadDocuments() {
-            const data = await fetchJson(`${API_URL}/documenti.php`, { method: 'GET' });
-            const rows = Array.isArray(data.documenti) ? data.documenti : [];
-            document.getElementById('missingDocs').textContent = String(data.documenti_obbligatori_mancanti || 0);
+        function getDocumentStatusBadge(status) {
+            if (status === 'approved') {
+                return '<span class="badge badge-success">approvato</span>';
+            }
+            if (status === 'pending') {
+                return '<span class="badge badge-warning">in verifica</span>';
+            }
+            return '<span class="badge badge-danger">da correggere</span>';
+        }
 
-            const list = document.getElementById('docList');
-            if (!rows.length) {
+        function renderUploadedDocuments(rows) {
+            const list = document.getElementById('uploadedDocsList');
+            if (!Array.isArray(rows) || !rows.length) {
                 list.innerHTML = '<p class="muted">Nessun documento caricato.</p>';
                 return;
             }
 
-            list.innerHTML = rows.map(row => {
-                const statusClass = row.stato === 'approved' ? 'badge-success' : (row.stato === 'pending' ? 'badge-warning' : 'badge-danger');
+            list.innerHTML = rows.map((row) => `
+                <div class="doc-item">
+                    <h5>${escapeHtml(row.tipo_nome || 'Documento')}</h5>
+                    <p>Caricato: ${formatDate(row.data_caricamento)}</p>
+                    ${row.note_revisione ? `<p>Note revisione: ${escapeHtml(row.note_revisione)}</p>` : ''}
+                    <div class="doc-actions">
+                        ${getDocumentStatusBadge(row.stato)}
+                        <button
+                            class="btn btn-primary btn-sm js-download-doc-btn"
+                            type="button"
+                            data-doc-id="${escapeHtml(row.id)}"
+                            data-file-name="${encodeURIComponent(row.file_name || 'documento.pdf')}"
+                        >Scarica</button>
+                    </div>
+                </div>
+            `).join('');
+
+            list.querySelectorAll('.js-download-doc-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const fileName = decodeURIComponent(button.dataset.fileName || 'documento.pdf');
+                    downloadProtectedDocument(button.dataset.docId || '', fileName);
+                });
+            });
+        }
+
+        function renderMissingDocuments(rows) {
+            const list = document.getElementById('missingDocsList');
+            if (!Array.isArray(rows) || !rows.length) {
+                list.innerHTML = '<p class="muted">Ottimo: non risultano documenti obbligatori mancanti.</p>';
+                return;
+            }
+
+            list.innerHTML = rows.map((row) => {
+                const typeId = Number(row.id || 0);
+                const inputId = `docUploadType${typeId}`;
+                const moduloButton = (!row.is_medical && row.modulo_download_url)
+                    ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(row.modulo_download_url)}" target="_blank" rel="noopener">Scarica modulo</a>`
+                    : '';
+                const prefillButton = (!row.is_medical && row.prefill_download_url)
+                    ? `<button class="btn btn-light btn-sm js-prefill-btn" type="button" data-type-id="${typeId}" data-type-name="${encodeURIComponent(row.nome || 'documento')}">PDF precompilato</button>`
+                    : '';
+                const noteText = row.is_medical
+                    ? '<p>Certificato medico: deve essere rilasciato dal medico e poi caricato.</p>'
+                    : '<p>Scarica, compila online o a mano, firma e carica il documento.</p>';
+
                 return `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-top:8px;">
-                        <div>
-                            <strong>${row.tipo_nome}</strong>
-                            <div class="small">Caricato: ${formatDate(row.data_caricamento)}</div>
+                    <div class="doc-item">
+                        <h5>${escapeHtml(row.nome || 'Documento')}</h5>
+                        <p>${escapeHtml(row.descrizione || '')}</p>
+                        ${noteText}
+                        <div class="doc-actions">
+                            ${moduloButton}
+                            ${prefillButton}
                         </div>
-                        <span class="badge ${statusClass}">${row.stato}</span>
+                        <div class="doc-upload">
+                            <input id="${inputId}" type="file" accept=".pdf,.jpg,.jpeg,.png">
+                            <button
+                                class="btn btn-success btn-sm js-upload-doc-btn"
+                                type="button"
+                                data-type-id="${typeId}"
+                                data-type-name="${encodeURIComponent(row.nome || 'documento')}"
+                                data-input-id="${inputId}"
+                            >Carica firmato</button>
+                        </div>
                     </div>
                 `;
             }).join('');
+
+            list.querySelectorAll('.js-upload-doc-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    uploadDocumentForType(
+                        Number(button.dataset.typeId || 0),
+                        button.dataset.inputId || '',
+                        decodeURIComponent(button.dataset.typeName || 'documento')
+                    );
+                });
+            });
+
+            list.querySelectorAll('.js-prefill-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    downloadPrefilledDocument(
+                        Number(button.dataset.typeId || 0),
+                        decodeURIComponent(button.dataset.typeName || 'documento')
+                    );
+                });
+            });
+        }
+
+        async function uploadDocumentForType(typeId, inputId, typeName) {
+            if (!typeId || !inputId) {
+                showAlert('Tipo documento non valido.', 'error');
+                return;
+            }
+
+            const input = document.getElementById(inputId);
+            const file = input?.files?.[0];
+            if (!file) {
+                showAlert(`Seleziona prima il file per "${typeName}".`, 'error');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('File troppo grande (max 5MB).', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('tipo_documento_id', String(typeId));
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_URL}/documenti.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Errore upload documento');
+                }
+
+                showAlert(data.message || 'Documento caricato con successo.', 'ok');
+                input.value = '';
+                await loadDocuments();
+            } catch (error) {
+                showAlert(error.message || 'Errore upload documento', 'error');
+            }
+        }
+
+        async function loadDocuments() {
+            const data = await fetchJson(`${API_URL}/documenti.php`, { method: 'GET' });
+            const uploadedRows = Array.isArray(data.documenti) ? data.documenti : [];
+            const missingRows = Array.isArray(data.documenti_mancanti) ? data.documenti_mancanti : [];
+
+            document.getElementById('missingDocs').textContent = String(
+                Number(data.documenti_obbligatori_mancanti || missingRows.length || 0)
+            );
+
+            renderUploadedDocuments(uploadedRows);
+            renderMissingDocuments(missingRows);
         }
 
         function openPurchaseModal(id, name, price) {
             selectedPackage = { id, name, price };
-            document.getElementById('purchaseTitle').textContent = `Acquisto: ${name}`;
-            document.getElementById('purchaseMeta').textContent = `Importo: ${formatCurrency(price)} - Conferma metodo di pagamento.`;
+            document.getElementById('purchaseTitle').textContent = `Richiesta pacchetto: ${name}`;
+            document.getElementById('purchaseMeta').textContent = `Contributo: ${formatCurrency(price)} - Seleziona la modalità di conferma.`;
             document.getElementById('paymentReference').value = '';
             document.getElementById('paymentNote').value = '';
-            document.querySelector('input[name="paymentMethod"][value="carta"]').checked = true;
+            document.querySelector('input[name="paymentMethod"][value="bonifico"]').checked = true;
             updatePaymentHint();
             document.getElementById('purchaseOverlay').classList.add('open');
         }
@@ -690,21 +1138,21 @@
         }
 
         function updatePaymentHint() {
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'carta';
+            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'bonifico';
             const hint = document.getElementById('paymentHint');
 
-            if (method === 'carta' || method === 'paypal') {
-                hint.textContent = 'Pagamento online (test locale): il pacchetto viene confermato subito e il QR viene generato immediatamente.';
+            if (method === 'bonifico') {
+                hint.textContent = 'Con bonifico la richiesta resta in attesa finché la segreteria conferma il pagamento.';
                 return;
             }
 
-            hint.textContent = 'Metodo offline: l\'acquisto resta pending finche segreteria non conferma il pagamento.';
+            hint.textContent = 'In struttura: conferma amministrativa in reception prima dell\'attivazione del pacchetto.';
         }
 
         async function confirmPurchase() {
             if (!selectedPackage) return;
 
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'carta';
+            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'bonifico';
             const reference = document.getElementById('paymentReference').value.trim();
             const note = document.getElementById('paymentNote').value.trim();
             const button = document.getElementById('confirmPurchaseBtn');
@@ -730,14 +1178,14 @@
                     body: JSON.stringify(payload)
                 });
 
-                showAlert(data.message || 'Acquisto completato.', 'ok');
+                showAlert(data.message || 'Richiesta registrata.', 'ok');
                 closePurchaseModal();
                 await loadPurchases();
             } catch (error) {
                 showAlert(error.message, 'error');
             } finally {
                 button.disabled = false;
-                button.textContent = 'Conferma acquisto';
+                button.textContent = 'Conferma richiesta';
             }
         }
 
@@ -750,6 +1198,8 @@
             window.location.href = '../login.html';
         }
 
+        document.getElementById('profileForm').addEventListener('submit', saveProfile);
+
         document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
             input.addEventListener('change', updatePaymentHint);
         });
@@ -761,10 +1211,10 @@
         });
 
         async function refreshRuntimeData() {
-            await Promise.allSettled([loadPurchases(), loadCheckins()]);
+            await Promise.allSettled([loadPurchases(), loadCheckins(), loadDocuments()]);
         }
 
-        Promise.all([loadPackages(), loadPurchases(), loadCheckins(), loadDocuments()])
+        Promise.all([loadProfile(), loadPackages(), loadPurchases(), loadCheckins(), loadDocuments()])
             .catch(error => showAlert(error.message, 'error'));
 
         setInterval(() => {

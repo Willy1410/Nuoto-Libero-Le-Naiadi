@@ -11,6 +11,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
 }
 
+enforceRateLimit('contact-form', 8, 300);
+
 $data = getJsonInput();
 if (!$data) {
     $data = $_POST;

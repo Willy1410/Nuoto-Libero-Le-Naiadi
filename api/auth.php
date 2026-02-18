@@ -22,6 +22,9 @@ switch ($action) {
     case 'me':
         handleMe();
         break;
+    case 'update-profile':
+        handleUpdateProfile();
+        break;
     case 'change-password':
         handleChangePassword();
         break;
@@ -41,6 +44,8 @@ switch ($action) {
 function handleRegister(): void
 {
     global $pdo;
+
+    enforceRateLimit('auth-register', 5, 900);
 
     $data = getJsonInput();
 
@@ -147,6 +152,8 @@ function handleLogin(): void
 {
     global $pdo;
 
+    enforceRateLimit('auth-login-ip', 40, 300);
+
     $data = getJsonInput();
 
     $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
@@ -159,6 +166,8 @@ function handleLogin(): void
     if (!validateEmail($email)) {
         sendJson(400, ['success' => false, 'message' => 'Email non valida']);
     }
+
+    enforceRateLimit('auth-login-identity', 15, 300, getClientIp() . '|' . $email);
 
     $cooldown = &$_SESSION['login_cooldown'];
     if (!is_array($cooldown)) {
@@ -276,6 +285,150 @@ function handleMe(): void
     }
 }
 
+function handleUpdateProfile(): void
+{
+    global $pdo;
+
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if (!in_array($method, ['PATCH', 'POST'], true)) {
+        sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
+    }
+
+    $currentUser = requireAuth();
+    enforceRateLimit('auth-update-profile', 25, 600, getClientIp() . '|' . (string)$currentUser['user_id']);
+
+    $data = getJsonInput();
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
+                    p.codice_fiscale, r.nome AS ruolo_nome, r.livello AS ruolo_livello
+             FROM profili p
+             JOIN ruoli r ON r.id = p.ruolo_id
+             WHERE p.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $existing = $stmt->fetch();
+        if (!$existing) {
+            sendJson(404, ['success' => false, 'message' => 'Utente non trovato']);
+        }
+
+        $email = array_key_exists('email', $data)
+            ? strtolower(sanitizeText((string)$data['email'], 255))
+            : (string)$existing['email'];
+        $nome = array_key_exists('nome', $data)
+            ? sanitizeText((string)$data['nome'], 100)
+            : (string)$existing['nome'];
+        $cognome = array_key_exists('cognome', $data)
+            ? sanitizeText((string)$data['cognome'], 100)
+            : (string)$existing['cognome'];
+        $telefono = array_key_exists('telefono', $data)
+            ? sanitizeText((string)$data['telefono'], 30)
+            : (string)($existing['telefono'] ?? '');
+        $dataNascita = array_key_exists('data_nascita', $data)
+            ? sanitizeText((string)$data['data_nascita'], 10)
+            : (string)($existing['data_nascita'] ?? '');
+        $indirizzo = array_key_exists('indirizzo', $data)
+            ? sanitizeText((string)$data['indirizzo'], 255)
+            : (string)($existing['indirizzo'] ?? '');
+        $citta = array_key_exists('citta', $data)
+            ? sanitizeText((string)$data['citta'], 100)
+            : (string)($existing['citta'] ?? '');
+        $cap = array_key_exists('cap', $data)
+            ? sanitizeText((string)$data['cap'], 10)
+            : (string)($existing['cap'] ?? '');
+        $codiceFiscale = array_key_exists('codice_fiscale', $data)
+            ? strtoupper(sanitizeText((string)$data['codice_fiscale'], 16))
+            : strtoupper((string)($existing['codice_fiscale'] ?? ''));
+
+        if ($email === '' || $nome === '' || $cognome === '') {
+            sendJson(400, ['success' => false, 'message' => 'Nome, cognome ed email sono obbligatori']);
+        }
+        if (!validateEmail($email)) {
+            sendJson(400, ['success' => false, 'message' => 'Email non valida']);
+        }
+        if ($dataNascita !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataNascita)) {
+            sendJson(400, ['success' => false, 'message' => 'Data di nascita non valida']);
+        }
+        if ($codiceFiscale !== '' && !validateCodiceFiscale($codiceFiscale)) {
+            sendJson(400, ['success' => false, 'message' => 'Codice fiscale non valido']);
+        }
+
+        $stmt = $pdo->prepare('SELECT id FROM profili WHERE email = ? AND id <> ? LIMIT 1');
+        $stmt->execute([$email, $currentUser['user_id']]);
+        if ($stmt->fetch()) {
+            sendJson(409, ['success' => false, 'message' => 'Email gia in uso']);
+        }
+
+        if ($codiceFiscale !== '') {
+            $stmt = $pdo->prepare('SELECT id FROM profili WHERE codice_fiscale = ? AND id <> ? LIMIT 1');
+            $stmt->execute([$codiceFiscale, $currentUser['user_id']]);
+            if ($stmt->fetch()) {
+                sendJson(409, ['success' => false, 'message' => 'Codice fiscale gia in uso']);
+            }
+        }
+
+        $stmt = $pdo->prepare(
+            'UPDATE profili
+             SET email = ?, nome = ?, cognome = ?, telefono = ?, data_nascita = ?, indirizzo = ?, citta = ?, cap = ?, codice_fiscale = ?
+             WHERE id = ?'
+        );
+        $stmt->execute([
+            $email,
+            $nome,
+            $cognome,
+            $telefono !== '' ? $telefono : null,
+            $dataNascita !== '' ? $dataNascita : null,
+            $indirizzo !== '' ? $indirizzo : null,
+            $citta !== '' ? $citta : null,
+            $cap !== '' ? $cap : null,
+            $codiceFiscale !== '' ? $codiceFiscale : null,
+            $currentUser['user_id'],
+        ]);
+
+        $token = generateJWT(
+            (string)$currentUser['user_id'],
+            $email,
+            (string)$existing['ruolo_nome'],
+            (int)$existing['ruolo_livello']
+        );
+
+        logActivity(
+            (string)$currentUser['user_id'],
+            'aggiornamento_profilo',
+            'Aggiornamento dati profilo utente',
+            'profili',
+            (string)$currentUser['user_id']
+        );
+
+        sendJson(200, [
+            'success' => true,
+            'message' => 'Profilo aggiornato',
+            'token' => $token,
+            'user' => [
+                'id' => $currentUser['user_id'],
+                'email' => $email,
+                'nome' => $nome,
+                'cognome' => $cognome,
+                'ruolo' => $existing['ruolo_nome'],
+                'livello' => (int)$existing['ruolo_livello'],
+            ],
+            'profilo' => [
+                'telefono' => $telefono !== '' ? $telefono : null,
+                'data_nascita' => $dataNascita !== '' ? $dataNascita : null,
+                'indirizzo' => $indirizzo !== '' ? $indirizzo : null,
+                'citta' => $citta !== '' ? $citta : null,
+                'cap' => $cap !== '' ? $cap : null,
+                'codice_fiscale' => $codiceFiscale !== '' ? $codiceFiscale : null,
+            ],
+        ]);
+    } catch (Throwable $e) {
+        error_log('update-profile error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore aggiornamento profilo']);
+    }
+}
+
 function handleChangePassword(): void
 {
     global $pdo;
@@ -319,6 +472,8 @@ function handleChangePassword(): void
 function handleForgotPassword(): void
 {
     global $pdo;
+
+    enforceRateLimit('auth-forgot-password', 8, 900);
 
     $data = getJsonInput();
     $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
@@ -406,6 +561,8 @@ function handleValidateResetToken(): void
 {
     global $pdo;
 
+    enforceRateLimit('auth-validate-reset-token', 60, 300);
+
     $token = sanitizeText((string)($_GET['token'] ?? ''), 128);
     if ($token === '') {
         sendJson(400, ['success' => false, 'valid' => false, 'message' => 'Token mancante']);
@@ -436,6 +593,8 @@ function handleValidateResetToken(): void
 function handleResetPassword(): void
 {
     global $pdo;
+
+    enforceRateLimit('auth-reset-password', 10, 900);
 
     $data = getJsonInput();
 

@@ -48,6 +48,103 @@ function buildDocumentDownloadUrl(string $documentId): string
     return getAppBaseUrl() . '/api/documenti-download.php?id=' . rawurlencode($documentId);
 }
 
+function buildPrefillDocumentUrl(int $tipoDocumentoId): string
+{
+    return getAppBaseUrl() . '/api/documenti-prefill.php?tipo_documento_id=' . rawurlencode((string)$tipoDocumentoId);
+}
+
+function normalizeModuloSlug(string $value): string
+{
+    $value = strtolower(trim($value));
+    $value = preg_replace('/[^a-z0-9]+/', '-', $value) ?? '';
+    $value = trim($value, '-');
+    if (strlen($value) > 120) {
+        $value = substr($value, 0, 120);
+        $value = rtrim($value, '-');
+    }
+    return $value;
+}
+
+function isMedicalDocumentType(string $name): bool
+{
+    $name = mb_strtolower(trim($name), 'UTF-8');
+    return str_contains($name, 'certificato') && str_contains($name, 'medic');
+}
+
+function inferModuloSlugCandidates(array $docType): array
+{
+    $candidates = [];
+    $nome = (string)($docType['nome'] ?? '');
+    $templateUrl = trim((string)($docType['template_url'] ?? ''));
+
+    if ($templateUrl !== '') {
+        $templatePath = parse_url($templateUrl, PHP_URL_PATH);
+        if (is_string($templatePath) && $templatePath !== '') {
+            $base = pathinfo($templatePath, PATHINFO_FILENAME);
+            $slug = normalizeModuloSlug((string)$base);
+            if ($slug !== '') {
+                $candidates[] = $slug;
+            }
+        }
+    }
+
+    $normalizedName = normalizeModuloSlug($nome);
+    if ($normalizedName !== '') {
+        $candidates[] = $normalizedName;
+    }
+
+    $aliases = [
+        'modulo-iscrizione' => ['modulo-iscrizione'],
+        'regolamento-interno' => ['regolamento-piscina'],
+        'privacy-gdpr' => ['informativa-privacy', 'privacy-gdpr'],
+        'documento-identita' => ['documento-identita', 'modulo-documento-identita'],
+    ];
+    foreach (($aliases[$normalizedName] ?? []) as $alias) {
+        $aliasSlug = normalizeModuloSlug($alias);
+        if ($aliasSlug !== '') {
+            $candidates[] = $aliasSlug;
+        }
+    }
+
+    if (isMedicalDocumentType($nome)) {
+        $candidates[] = 'certificato-medico-info';
+    }
+
+    $unique = [];
+    foreach ($candidates as $candidate) {
+        if ($candidate !== '') {
+            $unique[$candidate] = true;
+        }
+    }
+
+    return array_keys($unique);
+}
+
+function resolveModuloDownloadUrl(array $docType, array $activeModuloSlugs): ?string
+{
+    $baseUrl = getAppBaseUrl();
+    foreach (inferModuloSlugCandidates($docType) as $slug) {
+        if (isset($activeModuloSlugs[$slug])) {
+            return $baseUrl . '/api/moduli-download.php?slug=' . rawurlencode($slug);
+        }
+    }
+
+    $templateUrl = trim((string)($docType['template_url'] ?? ''));
+    if ($templateUrl === '') {
+        return null;
+    }
+
+    if (str_starts_with($templateUrl, 'http://') || str_starts_with($templateUrl, 'https://')) {
+        return $templateUrl;
+    }
+
+    if (str_starts_with($templateUrl, '/')) {
+        return $baseUrl . $templateUrl;
+    }
+
+    return null;
+}
+
 function getDocumentTypes(): void
 {
     global $pdo;
@@ -84,6 +181,89 @@ function getMyDocuments(): void
         }, $stmt->fetchAll());
 
         $stmt = $pdo->prepare(
+            'SELECT tipo_documento_id
+             FROM documenti_utente
+             WHERE user_id = ?
+               AND stato = "approved"
+             GROUP BY tipo_documento_id'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $approvedByType = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $approvedByType[(int)$row['tipo_documento_id']] = true;
+        }
+
+        $activeModuloSlugs = [];
+        try {
+            $moduliStmt = $pdo->query('SELECT slug FROM moduli WHERE is_active = 1');
+            foreach ($moduliStmt->fetchAll() as $moduloRow) {
+                $slug = normalizeModuloSlug((string)($moduloRow['slug'] ?? ''));
+                if ($slug !== '') {
+                    $activeModuloSlugs[$slug] = true;
+                }
+            }
+        } catch (Throwable $e) {
+            // Tabella moduli non presente o non accessibile: fallback su template_url statici.
+            $activeModuloSlugs = [];
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT t.id, t.nome, t.descrizione, t.obbligatorio, t.template_url, t.ordine,
+                    d.id AS last_document_id, d.file_name AS last_file_name, d.stato AS last_stato,
+                    d.note_revisione AS last_note_revisione, d.data_caricamento AS last_data_caricamento
+             FROM tipi_documento t
+             LEFT JOIN documenti_utente d
+               ON d.id = (
+                    SELECT d2.id
+                    FROM documenti_utente d2
+                    WHERE d2.user_id = ?
+                      AND d2.tipo_documento_id = t.id
+                    ORDER BY d2.data_caricamento DESC
+                    LIMIT 1
+               )
+             ORDER BY t.ordine ASC, t.nome ASC'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $typeRows = $stmt->fetchAll();
+
+        $typesOverview = [];
+        $missingRequired = [];
+
+        foreach ($typeRows as $typeRow) {
+            $tipoId = (int)$typeRow['id'];
+            $isMedical = isMedicalDocumentType((string)$typeRow['nome']);
+            $hasApproved = isset($approvedByType[$tipoId]);
+            $moduloUrl = $isMedical ? null : resolveModuloDownloadUrl($typeRow, $activeModuloSlugs);
+            $prefillUrl = $isMedical ? null : buildPrefillDocumentUrl($tipoId);
+
+            $entry = [
+                'id' => $tipoId,
+                'nome' => $typeRow['nome'],
+                'descrizione' => $typeRow['descrizione'],
+                'obbligatorio' => (int)$typeRow['obbligatorio'],
+                'template_url' => $typeRow['template_url'],
+                'is_medical' => $isMedical,
+                'has_approved' => $hasApproved,
+                'modulo_download_url' => $moduloUrl,
+                'prefill_download_url' => $prefillUrl,
+                'ultimo_documento' => $typeRow['last_document_id'] ? [
+                    'id' => $typeRow['last_document_id'],
+                    'file_name' => $typeRow['last_file_name'],
+                    'stato' => $typeRow['last_stato'],
+                    'note_revisione' => $typeRow['last_note_revisione'],
+                    'data_caricamento' => $typeRow['last_data_caricamento'],
+                    'file_url' => buildDocumentDownloadUrl((string)$typeRow['last_document_id']),
+                ] : null,
+            ];
+
+            $typesOverview[] = $entry;
+
+            if ((int)$typeRow['obbligatorio'] === 1 && !$hasApproved) {
+                $missingRequired[] = $entry;
+            }
+        }
+
+        $stmt = $pdo->prepare(
             'SELECT COUNT(*) AS total
              FROM tipi_documento t
              LEFT JOIN documenti_utente d
@@ -100,6 +280,8 @@ function getMyDocuments(): void
             'success' => true,
             'documenti' => $documents,
             'documenti_obbligatori_mancanti' => $missing,
+            'documenti_mancanti' => $missingRequired,
+            'tipi_documento' => $typesOverview,
         ]);
     } catch (Throwable $e) {
         error_log('getMyDocuments error: ' . $e->getMessage());

@@ -12,6 +12,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     exit();
 }
 
+enforceRateLimit('bonifico-notify', 6, 600);
+
 $data = json_decode(file_get_contents('php://input'), true);
 if (!is_array($data)) {
     http_response_code(400);
@@ -63,11 +65,11 @@ if ($bonificoEmail === '') {
 }
 
 $orderId = 'BON-' . strtoupper(substr(str_replace('-', '', generateUuid()), 0, 10));
-$subject = '[Bonifico] Notifica pagamento ' . $orderId;
+$subject = '[Bonifico] Notifica contributo ' . $orderId;
 $fullName = trim($firstName . ' ' . $lastName);
 
 $htmlContent = '<h2>Nuova notifica bonifico</h2>'
-    . '<p><strong>Ordine:</strong> ' . $orderId . '</p>'
+    . '<p><strong>Pratica:</strong> ' . $orderId . '</p>'
     . '<p><strong>Cliente:</strong> ' . $fullName . '</p>'
     . '<p><strong>Email:</strong> ' . $email . '</p>'
     . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? $phone : '-') . '</p>'
@@ -78,7 +80,7 @@ $htmlContent = '<h2>Nuova notifica bonifico</h2>'
     . '<p><strong>Note:</strong><br>' . ($notes !== '' ? nl2br($notes) : '-') . '</p>';
 
 $textContent = "Nuova notifica bonifico\n"
-    . "Ordine: {$orderId}\n"
+    . "Pratica: {$orderId}\n"
     . "Cliente: {$fullName}\n"
     . "Email: {$email}\n"
     . 'Telefono: ' . ($phone !== '' ? $phone : '-') . "\n"
@@ -109,7 +111,7 @@ if (!$adminSent) {
 
 $customerBody = '<p>Ciao <strong>' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
     . '<p>abbiamo ricevuto la tua segnalazione di bonifico.</p>'
-    . '<p><strong>Riferimento ordine:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+    . '<p><strong>Riferimento pratica:</strong> <code>' . htmlspecialchars($orderId, ENT_QUOTES, 'UTF-8') . '</code><br>'
     . '<strong>Pacchetto:</strong> ' . htmlspecialchars($package, ENT_QUOTES, 'UTF-8') . '<br>'
     . '<strong>Importo:</strong> EUR ' . number_format($amount, 2, ',', '.') . '<br>'
     . '<strong>Riferimento bonifico:</strong> ' . htmlspecialchars($transferReference, ENT_QUOTES, 'UTF-8') . '<br>'
@@ -117,7 +119,7 @@ $customerBody = '<p>Ciao <strong>' . htmlspecialchars($fullName, ENT_QUOTES, 'UT
     . '<p>Ti invieremo una conferma finale appena la segreteria completera la verifica contabile.</p>';
 
 $customerText = "Conferma ricezione bonifico\n"
-    . "Ordine: {$orderId}\n"
+    . "Pratica: {$orderId}\n"
     . "Pacchetto: {$package}\n"
     . 'Importo: EUR ' . number_format($amount, 2, ',', '.') . "\n"
     . "Riferimento bonifico: {$transferReference}\n"

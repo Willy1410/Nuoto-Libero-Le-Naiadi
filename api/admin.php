@@ -15,6 +15,8 @@ if ($method === 'GET' && $action === 'users') {
     listUsers();
 } elseif ($method === 'GET' && $action === 'user-detail') {
     getUserDetail();
+} elseif ($method === 'POST' && $action === 'send-doc-reminder') {
+    sendDocumentReminder($staff);
 } elseif ($method === 'POST' && $action === 'create-user') {
     createUser($staff);
 } elseif ($method === 'PATCH' && $action === 'update-user') {
@@ -146,16 +148,157 @@ function getUserDetail(): void
             ];
         }
 
+        $stmt = $pdo->prepare(
+            'SELECT d.id, d.tipo_documento_id, d.file_name, d.file_url, d.file_mime, d.file_size, d.stato,
+                    d.note_revisione, d.data_caricamento, d.data_revisione, d.scadenza,
+                    t.nome AS tipo_nome, t.obbligatorio
+             FROM documenti_utente d
+             JOIN tipi_documento t ON t.id = d.tipo_documento_id
+             WHERE d.user_id = ?
+             ORDER BY d.data_caricamento DESC'
+        );
+        $stmt->execute([$userId]);
+        $documents = $stmt->fetchAll();
+
+        $missingDocs = getMissingRequiredDocuments($userId);
+
+        $pendingDocs = 0;
+        $approvedDocs = 0;
+        foreach ($documents as $doc) {
+            if ((string)$doc['stato'] === 'pending') {
+                $pendingDocs++;
+            } elseif ((string)$doc['stato'] === 'approved') {
+                $approvedDocs++;
+            }
+        }
+
         sendJson(200, [
             'success' => true,
             'user' => $user,
             'pacchetti' => $purchases,
             'checkins' => $checkins,
             'pagamenti' => $payments,
+            'documenti' => $documents,
+            'documenti_mancanti' => $missingDocs,
+            'summary' => [
+                'totale_pacchetti' => count($purchases),
+                'totale_checkin' => count($checkins),
+                'totale_pagamenti' => count($payments),
+                'documenti_pending' => $pendingDocs,
+                'documenti_approved' => $approvedDocs,
+                'documenti_mancanti' => count($missingDocs),
+            ],
         ]);
     } catch (Throwable $e) {
         error_log('getUserDetail error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore caricamento dettaglio utente']);
+    }
+}
+
+function getMissingRequiredDocuments(string $userId): array
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare(
+        'SELECT t.id, t.nome
+         FROM tipi_documento t
+         WHERE t.obbligatorio = 1
+           AND NOT EXISTS (
+               SELECT 1
+               FROM documenti_utente d
+               WHERE d.user_id = ?
+                 AND d.tipo_documento_id = t.id
+                 AND d.stato = "approved"
+           )
+         ORDER BY t.ordine ASC, t.nome ASC'
+    );
+    $stmt->execute([$userId]);
+
+    return $stmt->fetchAll();
+}
+
+function sendDocumentReminder(array $staff): void
+{
+    global $pdo;
+
+    $userId = sanitizeText((string)($_GET['id'] ?? ''), 36);
+    if ($userId === '') {
+        sendJson(400, ['success' => false, 'message' => 'ID utente mancante']);
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.nome, p.cognome, p.email
+             FROM profili p
+             WHERE p.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $target = $stmt->fetch();
+
+        if (!$target) {
+            sendJson(404, ['success' => false, 'message' => 'Utente non trovato']);
+        }
+
+        $missingDocs = getMissingRequiredDocuments($userId);
+        if (!$missingDocs) {
+            sendJson(200, [
+                'success' => true,
+                'message' => 'Nessun documento mancante: promemoria non necessario',
+                'mail_sent' => false,
+            ]);
+        }
+
+        $missingListHtml = '<ul>';
+        foreach ($missingDocs as $doc) {
+            $missingListHtml .= '<li>' . htmlspecialchars((string)$doc['nome'], ENT_QUOTES, 'UTF-8') . '</li>';
+        }
+        $missingListHtml .= '</ul>';
+
+        $baseUrl = localAppBaseUrl();
+        $loginUrl = htmlspecialchars($baseUrl . '/login.html', ENT_QUOTES, 'UTF-8');
+        $moduliUrl = htmlspecialchars($baseUrl . '/moduli.html', ENT_QUOTES, 'UTF-8');
+
+        $body = '<p>Ciao <strong>' . htmlspecialchars((string)$target['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+            . '<p>per completare la tua posizione amministrativa risultano ancora mancanti i seguenti documenti obbligatori:</p>'
+            . $missingListHtml
+            . '<p>Puoi caricare i documenti accedendo alla tua area riservata.</p>'
+            . '<p><a href="' . $loginUrl . '">Accedi all\'area riservata</a><br>'
+            . '<a href="' . $moduliUrl . '">Consulta moduli e documenti</a></p>';
+
+        $mailSent = sendBrandedEmail(
+            (string)$target['email'],
+            trim((string)$target['nome'] . ' ' . (string)$target['cognome']),
+            'Promemoria documenti mancanti - Gli Squaletti',
+            'Documenti mancanti',
+            $body,
+            'Promemoria documenti mancanti'
+        );
+
+        if (!$mailSent) {
+            sendJson(500, [
+                'success' => false,
+                'message' => 'Invio promemoria non riuscito. Controlla logs/mail.log',
+            ]);
+        }
+
+        logActivity(
+            (string)$staff['user_id'],
+            'invio_promemoria_documenti',
+            'Promemoria documenti inviato',
+            'profili',
+            $userId
+        );
+
+        sendJson(200, [
+            'success' => true,
+            'message' => 'Promemoria documenti inviato con successo',
+            'mail_sent' => true,
+            'missing_count' => count($missingDocs),
+        ]);
+    } catch (Throwable $e) {
+        error_log('sendDocumentReminder error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore invio promemoria documenti']);
     }
 }
 

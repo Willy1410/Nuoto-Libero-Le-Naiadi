@@ -227,6 +227,7 @@
         let lastScanText = '';
         let lastScanAt = 0;
         let checkinBusy = false;
+        let verifyBusy = false;
         let scannerLibraryPromise = null;
 
         if (!token || !user || user.ruolo !== 'bagnino') {
@@ -234,6 +235,11 @@
         }
 
         document.getElementById('userName').textContent = `${user.nome} ${user.cognome}`;
+
+        function canUseLiveCamera() {
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            return window.isSecureContext || isLocalhost;
+        }
 
         function showAlert(message, type = 'ok') {
             const box = document.getElementById('alertBox');
@@ -386,7 +392,9 @@
             box.innerHTML = '';
         }
 
-        async function verificaQR() {
+        async function verificaQR(options = {}) {
+            const fromScanner = !!options.fromScanner;
+            const stopScannerOnSuccess = !!options.stopScannerOnSuccess;
             const qrCode = normalizeQrCode(document.getElementById('qrInput').value);
             document.getElementById('qrInput').value = qrCode;
             if (!qrCode) {
@@ -394,15 +402,29 @@
                 return;
             }
 
+            if (verifyBusy) {
+                return;
+            }
+            verifyBusy = true;
+
             try {
                 const data = await fetchJson(`${API_URL}/checkin.php?qr=${encodeURIComponent(qrCode)}`, { method: 'GET' });
                 currentQrData = data;
                 renderUserBox(data);
-                showAlert('QR valido. Puoi confermare il check-in.');
+
+                if (stopScannerOnSuccess && scannerRunning) {
+                    await stopScanner();
+                }
+
+                showAlert(fromScanner
+                    ? 'QR riconosciuto e dati compilati. Conferma il check-in.'
+                    : 'QR valido. Puoi confermare il check-in.');
             } catch (error) {
                 currentQrData = null;
                 document.getElementById('userBox').style.display = 'none';
                 showAlert(error.message, 'error');
+            } finally {
+                verifyBusy = false;
             }
         }
 
@@ -489,7 +511,8 @@
             }
         }
 
-        async function startScanner() {
+        async function startScanner(options = {}) {
+            const silent = !!options.silent;
             if (scannerRunning) {
                 return;
             }
@@ -498,12 +521,10 @@
             startButton.disabled = true;
             startButton.textContent = 'Caricamento...';
 
-            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-            if (!window.isSecureContext && !isLocalhost) {
+            if (!canUseLiveCamera()) {
                 startButton.disabled = false;
                 startButton.textContent = 'Avvia camera';
-                showAlert('Camera live bloccata su HTTP mobile. Apro la modalita "Scatta foto QR". Per live camera usa HTTPS.', 'error');
-                triggerImageScan();
+                showAlert('Scanner live bloccato su HTTP mobile. Apri la dashboard bagnino in HTTPS per usare la camera.', 'error');
                 return;
             }
 
@@ -519,7 +540,10 @@
                 scanner = new Html5Qrcode('reader');
             }
 
-            const onScan = (decodedText) => {
+            const onScan = async (decodedText) => {
+                if (verifyBusy || checkinBusy) {
+                    return;
+                }
                 const normalized = normalizeQrCode(decodedText);
                 const now = Date.now();
                 if (normalized === lastScanText && (now - lastScanAt) < 2500) {
@@ -529,7 +553,7 @@
                 lastScanText = normalized;
                 lastScanAt = now;
                 document.getElementById('qrInput').value = normalized;
-                verificaQR();
+                await verificaQR({ fromScanner: true, stopScannerOnSuccess: true });
             };
 
             const config = { fps: 8, qrbox: { width: 240, height: 240 }, aspectRatio: 1.2 };
@@ -539,7 +563,9 @@
                 scannerRunning = true;
                 startButton.textContent = 'Camera attiva';
                 startButton.disabled = true;
-                showAlert('Camera avviata. Inquadra il QR da leggere.');
+                if (!silent) {
+                    showAlert('Camera avviata. Inquadra il QR da leggere.');
+                }
                 return;
             } catch (_) {
                 // fallback su camera disponibile
@@ -560,7 +586,9 @@
                 scannerRunning = true;
                 startButton.textContent = 'Camera attiva';
                 startButton.disabled = true;
-                showAlert('Camera avviata. Inquadra il QR da leggere.');
+                if (!silent) {
+                    showAlert('Camera avviata. Inquadra il QR da leggere.');
+                }
             } catch (error) {
                 startButton.disabled = false;
                 startButton.textContent = 'Avvia camera';
@@ -638,10 +666,18 @@
         });
 
         loadToday();
-        ensureScannerLibraryLoaded().then((ok) => {
+        ensureScannerLibraryLoaded().then(async (ok) => {
             if (!ok) {
                 showAlert('Scanner camera non disponibile: usa il campo manuale QR.', 'error');
+                return;
             }
+
+            if (!canUseLiveCamera()) {
+                showAlert('Per scanner live su telefono apri la dashboard in HTTPS. In HTTP puoi usare solo inserimento manuale o foto.', 'error');
+                return;
+            }
+
+            await startScanner({ silent: true });
         });
         setInterval(loadToday, 30000);
 

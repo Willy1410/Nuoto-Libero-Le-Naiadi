@@ -210,39 +210,6 @@ return [
         ],
     ],
 
-    'galleria' => [
-        [
-            'key' => 'page_title',
-            'label' => 'Galleria - Titolo pagina',
-            'selector' => '.page-hero h1',
-            'field' => 'text',
-        ],
-        [
-            'key' => 'page_subtitle',
-            'label' => 'Galleria - Sottotitolo pagina',
-            'selector' => '.page-hero p',
-            'field' => 'text',
-        ],
-        [
-            'key' => 'gallery_intro',
-            'label' => 'Galleria - Testo introduttivo',
-            'selector' => '.gallery-intro p',
-            'field' => 'text',
-        ],
-        [
-            'key' => 'cta_title',
-            'label' => 'Galleria - Titolo CTA',
-            'selector' => '.cta-box h2',
-            'field' => 'text',
-        ],
-        [
-            'key' => 'cta_subtitle',
-            'label' => 'Galleria - Testo CTA',
-            'selector' => '.cta-box p',
-            'field' => 'text',
-        ],
-    ],
-
     'moduli' => [
         [
             'key' => 'page_title',
