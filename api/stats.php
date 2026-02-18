@@ -30,6 +30,12 @@ switch ($action) {
     case 'payment-breakdown':
         getPaymentBreakdown();
         break;
+    case 'export-preview':
+        getExportPreview();
+        break;
+    case 'export-custom':
+        exportCustomDataset();
+        break;
     case 'export-users':
         exportUsers();
         break;
@@ -398,6 +404,357 @@ function getPaymentBreakdown(): void
         error_log('getPaymentBreakdown error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore caricamento pagamenti']);
     }
+}
+
+function resolveExportDataset(): string
+{
+    $dataset = sanitizeText((string)($_GET['dataset'] ?? 'users'), 20);
+    if (!in_array($dataset, ['users', 'purchases', 'checkins'], true)) {
+        sendJson(400, ['success' => false, 'message' => 'Dataset export non valido']);
+    }
+
+    return $dataset;
+}
+
+function getExportPreview(): void
+{
+    $dataset = resolveExportDataset();
+    $limit = (int)($_GET['limit'] ?? 200);
+    if ($limit < 50) {
+        $limit = 50;
+    }
+    if ($limit > 500) {
+        $limit = 500;
+    }
+
+    try {
+        [$columns, $rows] = getExportDatasetData($dataset, $limit);
+        sendJson(200, [
+            'success' => true,
+            'dataset' => $dataset,
+            'columns' => $columns,
+            'rows' => $rows,
+            'count' => count($rows),
+        ]);
+    } catch (Throwable $e) {
+        error_log('getExportPreview error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento anteprima export']);
+    }
+}
+
+function exportCustomDataset(): void
+{
+    $dataset = resolveExportDataset();
+    $format = sanitizeText((string)($_GET['format'] ?? 'csv'), 10);
+    if (!in_array($format, ['csv', 'pdf'], true)) {
+        $format = 'csv';
+    }
+
+    try {
+        [$columns, $rows] = getExportDatasetData($dataset, null);
+        $columnMap = [];
+        foreach ($columns as $column) {
+            $key = (string)($column['key'] ?? '');
+            if ($key !== '') {
+                $columnMap[$key] = (string)($column['label'] ?? $key);
+            }
+        }
+
+        $rawSelected = (string)($_GET['columns'] ?? '');
+        $requested = array_filter(array_map('trim', explode(',', $rawSelected)));
+        if (!$requested) {
+            $requested = array_keys($columnMap);
+        }
+
+        $selected = [];
+        foreach ($requested as $key) {
+            if (isset($columnMap[$key])) {
+                $selected[] = $key;
+            }
+        }
+        if (!$selected) {
+            sendJson(400, ['success' => false, 'message' => 'Nessuna colonna valida selezionata']);
+        }
+
+        $header = [];
+        foreach ($selected as $key) {
+            $header[] = $columnMap[$key];
+        }
+
+        $tableRows = [];
+        foreach ($rows as $row) {
+            $line = [];
+            foreach ($selected as $key) {
+                $line[] = (string)($row[$key] ?? '');
+            }
+            $tableRows[] = $line;
+        }
+
+        $today = date('Y-m-d');
+        $filenameBase = $dataset === 'users'
+            ? 'utenti_selezione'
+            : ($dataset === 'purchases' ? 'acquisti_selezione' : 'checkins_selezione');
+
+        if ($format === 'pdf') {
+            $title = 'Export selezione ' . ($dataset === 'users' ? 'clienti' : ($dataset === 'purchases' ? 'acquisti' : 'check-in'));
+            outputPdfTable($title, $header, $tableRows, $filenameBase . '_' . $today . '.pdf');
+            return;
+        }
+
+        outputCsv($filenameBase . '_' . $today . '.csv', $header, $tableRows);
+    } catch (Throwable $e) {
+        error_log('exportCustomDataset error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore export personalizzato']);
+    }
+}
+
+function getExportDatasetData(string $dataset, ?int $limit = null): array
+{
+    if ($dataset === 'users') {
+        return getUsersExportDatasetData($limit);
+    }
+    if ($dataset === 'purchases') {
+        return getPurchasesExportDatasetData($limit);
+    }
+    return getCheckinsExportDatasetData($limit);
+}
+
+function getUsersExportDatasetData(?int $limit = null): array
+{
+    global $pdo;
+
+    $statusSelect = '"approved"';
+    try {
+        $statusColumn = $pdo->query("SHOW COLUMNS FROM profili LIKE 'stato_iscrizione'")->fetch();
+        if ($statusColumn) {
+            $statusSelect = 'COALESCE(p.stato_iscrizione, "approved")';
+        }
+    } catch (Throwable $e) {
+        $statusSelect = '"approved"';
+    }
+
+    $entryTotalExpr = 'COALESCE(pkg.num_ingressi, 0)';
+    try {
+        $entryColumn = $pdo->query("SHOW COLUMNS FROM acquisti LIKE 'ingressi_totali'")->fetch();
+        if ($entryColumn) {
+            $entryTotalExpr = 'COALESCE(NULLIF(a.ingressi_totali, 0), pkg.num_ingressi, 0)';
+        }
+    } catch (Throwable $e) {
+        $entryTotalExpr = 'COALESCE(pkg.num_ingressi, 0)';
+    }
+
+    $limitSql = '';
+    if ($limit !== null) {
+        $safeLimit = max(1, min(1000, (int)$limit));
+        $limitSql = ' LIMIT ' . $safeLimit;
+    }
+
+    $sql = 'SELECT p.id, p.nome, p.cognome, p.email, p.codice_fiscale, p.telefono, p.created_at,
+                   ' . $statusSelect . ' AS stato_iscrizione,
+                   COALESCE(ap.pacchetto_attivo, "-") AS pacchetto_attivo,
+                   COALESCE(agg.ingressi_totali, 0) AS ingressi_totali,
+                   COALESCE(agg.ingressi_utilizzati, 0) AS ingressi_utilizzati,
+                   COALESCE(agg.ingressi_rimanenti, 0) AS ingressi_rimanenti,
+                   COALESCE(agg.totale_pacchetti, 0) AS totale_pacchetti,
+                   COALESCE(agg.totale_spesa, 0) AS totale_spesa,
+                   ci.ultimo_ingresso AS ultimo_accesso_piscina,
+                   DATE(ci.ultimo_ingresso) AS data_ultimo_ingresso
+            FROM profili p
+            JOIN ruoli r ON r.id = p.ruolo_id
+            LEFT JOIN (
+                SELECT a.user_id,
+                       SUM(' . $entryTotalExpr . ') AS ingressi_totali,
+                       SUM(GREATEST(' . $entryTotalExpr . ' - COALESCE(a.ingressi_rimanenti, 0), 0)) AS ingressi_utilizzati,
+                       SUM(COALESCE(a.ingressi_rimanenti, 0)) AS ingressi_rimanenti,
+                       COUNT(*) AS totale_pacchetti,
+                       SUM(COALESCE(a.importo_pagato, 0)) AS totale_spesa
+                FROM acquisti a
+                JOIN pacchetti pkg ON pkg.id = a.pacchetto_id
+                WHERE a.stato_pagamento = "confirmed"
+                GROUP BY a.user_id
+            ) agg ON agg.user_id = p.id
+            LEFT JOIN (
+                SELECT a1.user_id, pkg1.nome AS pacchetto_attivo
+                FROM acquisti a1
+                JOIN pacchetti pkg1 ON pkg1.id = a1.pacchetto_id
+                JOIN (
+                    SELECT user_id, MAX(COALESCE(data_conferma, data_acquisto)) AS ref_date
+                    FROM acquisti
+                    WHERE stato_pagamento = "confirmed"
+                    GROUP BY user_id
+                ) latest ON latest.user_id = a1.user_id
+                        AND latest.ref_date = COALESCE(a1.data_conferma, a1.data_acquisto)
+                WHERE a1.stato_pagamento = "confirmed"
+            ) ap ON ap.user_id = p.id
+            LEFT JOIN (
+                SELECT c.user_id, MAX(c.timestamp) AS ultimo_ingresso
+                FROM check_ins c
+                GROUP BY c.user_id
+            ) ci ON ci.user_id = p.id
+            WHERE r.nome = "utente"
+            ORDER BY p.created_at DESC' . $limitSql;
+
+    $stmt = $pdo->query($sql);
+    $dbRows = $stmt->fetchAll();
+
+    $columns = [
+        ['key' => 'id', 'label' => 'ID'],
+        ['key' => 'nome', 'label' => 'Nome'],
+        ['key' => 'cognome', 'label' => 'Cognome'],
+        ['key' => 'email', 'label' => 'Email'],
+        ['key' => 'codice_fiscale', 'label' => 'Codice Fiscale'],
+        ['key' => 'telefono', 'label' => 'Telefono'],
+        ['key' => 'data_iscrizione', 'label' => 'Data Iscrizione'],
+        ['key' => 'stato_iscrizione', 'label' => 'Stato Iscrizione'],
+        ['key' => 'pacchetto_attivo', 'label' => 'Pacchetto Attivo'],
+        ['key' => 'ingressi_totali', 'label' => 'Numero Ingressi Totali'],
+        ['key' => 'ingressi_utilizzati', 'label' => 'Ingressi Utilizzati'],
+        ['key' => 'ingressi_rimanenti', 'label' => 'Ingressi Rimanenti'],
+        ['key' => 'totale_pacchetti', 'label' => 'Totale Pacchetti Acquistati'],
+        ['key' => 'totale_spesa', 'label' => 'Totale Spesa Cumulativa'],
+        ['key' => 'ultimo_accesso_piscina', 'label' => 'Ultimo Accesso Piscina'],
+        ['key' => 'data_ultimo_ingresso', 'label' => 'Data Ultimo Ingresso'],
+    ];
+
+    $rows = [];
+    foreach ($dbRows as $row) {
+        $rows[] = [
+            'id' => (string)$row['id'],
+            'nome' => (string)$row['nome'],
+            'cognome' => (string)$row['cognome'],
+            'email' => (string)$row['email'],
+            'codice_fiscale' => (string)($row['codice_fiscale'] ?? ''),
+            'telefono' => (string)($row['telefono'] ?? ''),
+            'data_iscrizione' => (string)($row['created_at'] ?? ''),
+            'stato_iscrizione' => (string)($row['stato_iscrizione'] ?? ''),
+            'pacchetto_attivo' => (string)($row['pacchetto_attivo'] ?? ''),
+            'ingressi_totali' => (string)((int)($row['ingressi_totali'] ?? 0)),
+            'ingressi_utilizzati' => (string)((int)($row['ingressi_utilizzati'] ?? 0)),
+            'ingressi_rimanenti' => (string)((int)($row['ingressi_rimanenti'] ?? 0)),
+            'totale_pacchetti' => (string)((int)($row['totale_pacchetti'] ?? 0)),
+            'totale_spesa' => number_format((float)($row['totale_spesa'] ?? 0), 2, '.', ''),
+            'ultimo_accesso_piscina' => (string)($row['ultimo_accesso_piscina'] ?? ''),
+            'data_ultimo_ingresso' => (string)($row['data_ultimo_ingresso'] ?? ''),
+        ];
+    }
+
+    return [$columns, $rows];
+}
+
+function getPurchasesExportDatasetData(?int $limit = null): array
+{
+    global $pdo;
+
+    $limitSql = '';
+    if ($limit !== null) {
+        $safeLimit = max(1, min(1000, (int)$limit));
+        $limitSql = ' LIMIT ' . $safeLimit;
+    }
+
+    $sql = 'SELECT a.id, a.data_acquisto, a.data_conferma, a.metodo_pagamento, a.stato_pagamento,
+                   a.riferimento_pagamento, a.note_pagamento, a.importo_pagato, a.ingressi_rimanenti, a.data_scadenza, a.qr_code,
+                   p.nome AS pacchetto_nome,
+                   u.nome AS user_nome, u.cognome AS user_cognome, u.email AS user_email
+            FROM acquisti a
+            JOIN pacchetti p ON p.id = a.pacchetto_id
+            JOIN profili u ON u.id = a.user_id
+            ORDER BY a.data_acquisto DESC' . $limitSql;
+
+    $stmt = $pdo->query($sql);
+    $dbRows = $stmt->fetchAll();
+
+    $columns = [
+        ['key' => 'id_acquisto', 'label' => 'ID Acquisto'],
+        ['key' => 'utente', 'label' => 'Utente'],
+        ['key' => 'email', 'label' => 'Email'],
+        ['key' => 'pacchetto', 'label' => 'Pacchetto'],
+        ['key' => 'metodo', 'label' => 'Metodo'],
+        ['key' => 'stato', 'label' => 'Stato'],
+        ['key' => 'importo', 'label' => 'Importo'],
+        ['key' => 'ingressi_rimanenti', 'label' => 'Ingressi Rimanenti'],
+        ['key' => 'qr_code', 'label' => 'QR Code'],
+        ['key' => 'riferimento', 'label' => 'Riferimento'],
+        ['key' => 'data_acquisto', 'label' => 'Data Acquisto'],
+        ['key' => 'data_conferma', 'label' => 'Data Conferma'],
+        ['key' => 'scadenza', 'label' => 'Scadenza'],
+        ['key' => 'note', 'label' => 'Note'],
+    ];
+
+    $rows = [];
+    foreach ($dbRows as $row) {
+        $rows[] = [
+            'id_acquisto' => (string)$row['id'],
+            'utente' => trim((string)$row['user_nome'] . ' ' . (string)$row['user_cognome']),
+            'email' => (string)($row['user_email'] ?? ''),
+            'pacchetto' => (string)($row['pacchetto_nome'] ?? ''),
+            'metodo' => (string)($row['metodo_pagamento'] ?? ''),
+            'stato' => (string)($row['stato_pagamento'] ?? ''),
+            'importo' => number_format((float)($row['importo_pagato'] ?? 0), 2, '.', ''),
+            'ingressi_rimanenti' => (string)((int)($row['ingressi_rimanenti'] ?? 0)),
+            'qr_code' => (string)($row['qr_code'] ?? ''),
+            'riferimento' => (string)($row['riferimento_pagamento'] ?? ''),
+            'data_acquisto' => (string)($row['data_acquisto'] ?? ''),
+            'data_conferma' => (string)($row['data_conferma'] ?? ''),
+            'scadenza' => (string)($row['data_scadenza'] ?? ''),
+            'note' => (string)($row['note_pagamento'] ?? ''),
+        ];
+    }
+
+    return [$columns, $rows];
+}
+
+function getCheckinsExportDatasetData(?int $limit = null): array
+{
+    global $pdo;
+
+    $limitSql = '';
+    if ($limit !== null) {
+        $safeLimit = max(1, min(1000, (int)$limit));
+        $limitSql = ' LIMIT ' . $safeLimit;
+    }
+
+    $sql = 'SELECT c.id, c.timestamp, c.fascia_oraria, c.note,
+                   a.qr_code, p.nome AS pacchetto_nome,
+                   u.nome AS user_nome, u.cognome AS user_cognome, u.telefono AS user_telefono,
+                   b.nome AS bagnino_nome, b.cognome AS bagnino_cognome
+            FROM check_ins c
+            JOIN acquisti a ON a.id = c.acquisto_id
+            JOIN pacchetti p ON p.id = a.pacchetto_id
+            JOIN profili u ON u.id = c.user_id
+            JOIN profili b ON b.id = c.bagnino_id
+            ORDER BY c.timestamp DESC' . $limitSql;
+
+    $stmt = $pdo->query($sql);
+    $dbRows = $stmt->fetchAll();
+
+    $columns = [
+        ['key' => 'id_checkin', 'label' => 'ID Check-in'],
+        ['key' => 'timestamp', 'label' => 'Timestamp'],
+        ['key' => 'utente', 'label' => 'Utente'],
+        ['key' => 'telefono', 'label' => 'Telefono'],
+        ['key' => 'pacchetto', 'label' => 'Pacchetto'],
+        ['key' => 'qr_code', 'label' => 'QR Code'],
+        ['key' => 'fascia', 'label' => 'Fascia'],
+        ['key' => 'bagnino', 'label' => 'Bagnino'],
+        ['key' => 'note', 'label' => 'Note'],
+    ];
+
+    $rows = [];
+    foreach ($dbRows as $row) {
+        $rows[] = [
+            'id_checkin' => (string)$row['id'],
+            'timestamp' => (string)($row['timestamp'] ?? ''),
+            'utente' => trim((string)$row['user_nome'] . ' ' . (string)$row['user_cognome']),
+            'telefono' => (string)($row['user_telefono'] ?? ''),
+            'pacchetto' => (string)($row['pacchetto_nome'] ?? ''),
+            'qr_code' => (string)($row['qr_code'] ?? ''),
+            'fascia' => (string)($row['fascia_oraria'] ?? ''),
+            'bagnino' => trim((string)$row['bagnino_nome'] . ' ' . (string)$row['bagnino_cognome']),
+            'note' => (string)($row['note'] ?? ''),
+        ];
+    }
+
+    return [$columns, $rows];
 }
 
 function exportUsers(): void

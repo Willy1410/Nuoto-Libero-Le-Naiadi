@@ -25,6 +25,12 @@
         userDetail: null,
         packages: [],
         reportDate: new Date().toISOString().slice(0, 10),
+        exportPreview: {
+            dataset: '',
+            columns: [],
+            rows: [],
+            selectedColumns: [],
+        },
     };
 
     function el(id) {
@@ -70,6 +76,13 @@
             return { cls: 'badge-danger', text: value };
         }
         return { cls: 'badge-neutral', text: value || '-' };
+    }
+
+    function getExportDatasetLabel(dataset) {
+        if (dataset === 'users') return 'Clienti';
+        if (dataset === 'purchases') return 'Acquisti';
+        if (dataset === 'checkins') return 'Check-in';
+        return 'Dataset';
     }
 
     function setStatus(message, type) {
@@ -383,7 +396,171 @@
         }
         if (state.activeTab === 'report') {
             await loadDailyReport();
+            return;
         }
+        if (state.activeTab === 'export') {
+            updateExportPreviewMeta();
+            updateExportActionButtons();
+        }
+    }
+
+    function getSelectedExportColumnsFromUi() {
+        const checks = document.querySelectorAll('#exportColumnsOptions input[type="checkbox"][data-col-key]');
+        const selected = [];
+        checks.forEach((node) => {
+            if (node.checked) {
+                selected.push(node.getAttribute('data-col-key') || '');
+            }
+        });
+        return selected.filter(Boolean);
+    }
+
+    function updateExportActionButtons() {
+        const csvBtn = el('exportSelectedCsvBtn');
+        const pdfBtn = el('exportSelectedPdfBtn');
+        if (!csvBtn || !pdfBtn) return;
+
+        const hasRows = Array.isArray(state.exportPreview.rows) && state.exportPreview.rows.length > 0;
+        const hasCols = Array.isArray(state.exportPreview.selectedColumns) && state.exportPreview.selectedColumns.length > 0;
+        const enabled = hasRows && hasCols;
+
+        csvBtn.disabled = !enabled;
+        pdfBtn.disabled = !enabled;
+    }
+
+    function updateExportPreviewMeta() {
+        const box = el('exportPreviewMeta');
+        if (!box) return;
+
+        if (!state.exportPreview.dataset) {
+            box.textContent = 'Carica l\'anteprima per vedere la griglia dati prima dell\'export.';
+            return;
+        }
+
+        const rowsCount = Array.isArray(state.exportPreview.rows) ? state.exportPreview.rows.length : 0;
+        const selectedCount = Array.isArray(state.exportPreview.selectedColumns) ? state.exportPreview.selectedColumns.length : 0;
+        box.innerHTML = `
+            <strong>Dataset:</strong> ${escapeHtml(getExportDatasetLabel(state.exportPreview.dataset))}
+            <br><strong>Righe caricate:</strong> ${escapeHtml(String(rowsCount))}
+            <br><strong>Colonne selezionate:</strong> ${escapeHtml(String(selectedCount))}
+        `;
+    }
+
+    function renderExportColumnsOptions() {
+        const wrap = el('exportColumnsOptions');
+        if (!wrap) return;
+
+        const columns = Array.isArray(state.exportPreview.columns) ? state.exportPreview.columns : [];
+        const selected = new Set(state.exportPreview.selectedColumns || []);
+
+        if (!columns.length) {
+            wrap.innerHTML = '<p style="grid-column:1/-1; color:#64748b;">Nessun campo disponibile.</p>';
+            updateExportActionButtons();
+            return;
+        }
+
+        wrap.innerHTML = columns.map((column) => `
+            <label style="display:flex; gap:8px; align-items:flex-start; border:1px solid #d1d5db; border-radius:8px; padding:8px; background:#fff;">
+                <input type="checkbox" data-col-key="${escapeHtml(column.key || '')}" ${selected.has(column.key) ? 'checked' : ''}>
+                <span>
+                    <strong>${escapeHtml(column.label || column.key || '-')}</strong>
+                    <br><small style="color:#64748b;">${escapeHtml(column.key || '')}</small>
+                </span>
+            </label>
+        `).join('');
+
+        wrap.querySelectorAll('input[type="checkbox"][data-col-key]').forEach((node) => {
+            node.addEventListener('change', () => {
+                state.exportPreview.selectedColumns = getSelectedExportColumnsFromUi();
+                renderExportPreviewTable();
+                updateExportPreviewMeta();
+                updateExportActionButtons();
+            });
+        });
+
+        updateExportActionButtons();
+    }
+
+    function renderExportPreviewTable() {
+        const head = el('exportPreviewHead');
+        const body = el('exportPreviewBody');
+        if (!head || !body) return;
+
+        const rows = Array.isArray(state.exportPreview.rows) ? state.exportPreview.rows : [];
+        const columns = Array.isArray(state.exportPreview.columns) ? state.exportPreview.columns : [];
+        const selectedSet = new Set(state.exportPreview.selectedColumns || []);
+        const visibleColumns = columns.filter((col) => selectedSet.has(col.key));
+
+        if (!rows.length) {
+            head.innerHTML = '<th>Anteprima export</th>';
+            body.innerHTML = '<tr><td>Nessun dato disponibile per l\'anteprima.</td></tr>';
+            return;
+        }
+
+        if (!visibleColumns.length) {
+            head.innerHTML = '<th>Anteprima export</th>';
+            body.innerHTML = '<tr><td>Seleziona almeno una colonna da esportare.</td></tr>';
+            return;
+        }
+
+        head.innerHTML = visibleColumns.map((col) => `<th>${escapeHtml(col.label || col.key || '')}</th>`).join('');
+        const previewRows = rows.slice(0, 100);
+        body.innerHTML = previewRows.map((row) => `
+            <tr>
+                ${visibleColumns.map((col) => `<td>${escapeHtml(row[col.key] ?? '-')}</td>`).join('')}
+            </tr>
+        `).join('');
+    }
+
+    function setAllExportColumns(enabled) {
+        const checks = document.querySelectorAll('#exportColumnsOptions input[type="checkbox"][data-col-key]');
+        checks.forEach((node) => {
+            node.checked = !!enabled;
+        });
+        state.exportPreview.selectedColumns = getSelectedExportColumnsFromUi();
+        renderExportPreviewTable();
+        updateExportPreviewMeta();
+        updateExportActionButtons();
+    }
+
+    async function loadExportPreview() {
+        const dataset = (el('exportDatasetSelect') ? el('exportDatasetSelect').value : 'users') || 'users';
+        const limitRaw = Number(el('exportPreviewLimit') ? el('exportPreviewLimit').value : 200);
+        const limit = Number.isFinite(limitRaw) ? Math.max(50, Math.min(500, limitRaw)) : 200;
+
+        const data = await apiJson(
+            `stats.php?action=export-preview&dataset=${encodeURIComponent(dataset)}&limit=${encodeURIComponent(String(limit))}`,
+            { method: 'GET' }
+        );
+
+        state.exportPreview.dataset = dataset;
+        state.exportPreview.columns = Array.isArray(data.columns) ? data.columns : [];
+        state.exportPreview.rows = Array.isArray(data.rows) ? data.rows : [];
+        state.exportPreview.selectedColumns = state.exportPreview.columns.map((col) => col.key).filter(Boolean);
+
+        renderExportColumnsOptions();
+        renderExportPreviewTable();
+        updateExportPreviewMeta();
+        updateExportActionButtons();
+    }
+
+    async function handleExportSelected(format) {
+        if (!state.exportPreview.dataset) {
+            throw new Error('Carica prima l\'anteprima dati');
+        }
+
+        const selected = Array.isArray(state.exportPreview.selectedColumns)
+            ? state.exportPreview.selectedColumns.filter(Boolean)
+            : [];
+        if (!selected.length) {
+            throw new Error('Seleziona almeno una colonna da esportare');
+        }
+
+        const safeFormat = format === 'pdf' ? 'pdf' : 'csv';
+        const path = `stats.php?action=export-custom&dataset=${encodeURIComponent(state.exportPreview.dataset)}&format=${safeFormat}&columns=${encodeURIComponent(selected.join(','))}`;
+        const fallbackName = `export_${state.exportPreview.dataset}_${state.reportDate || new Date().toISOString().slice(0, 10)}.${safeFormat}`;
+
+        await handleExport(path, fallbackName);
     }
 
     function initHeader() {
@@ -982,6 +1159,52 @@
             });
         }
 
+        if (el('loadExportPreviewBtn')) {
+            el('loadExportPreviewBtn').addEventListener('click', () => {
+                loadExportPreview()
+                    .then(() => setStatus('Anteprima export caricata', 'ok'))
+                    .catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('selectAllExportColumnsBtn')) {
+            el('selectAllExportColumnsBtn').addEventListener('click', () => {
+                setAllExportColumns(true);
+            });
+        }
+
+        if (el('clearExportColumnsBtn')) {
+            el('clearExportColumnsBtn').addEventListener('click', () => {
+                setAllExportColumns(false);
+            });
+        }
+
+        if (el('exportDatasetSelect')) {
+            el('exportDatasetSelect').addEventListener('change', () => {
+                state.exportPreview = {
+                    dataset: '',
+                    columns: [],
+                    rows: [],
+                    selectedColumns: [],
+                };
+                renderExportColumnsOptions();
+                renderExportPreviewTable();
+                updateExportPreviewMeta();
+            });
+        }
+
+        if (el('exportSelectedCsvBtn')) {
+            el('exportSelectedCsvBtn').addEventListener('click', () => {
+                handleExportSelected('csv').catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('exportSelectedPdfBtn')) {
+            el('exportSelectedPdfBtn').addEventListener('click', () => {
+                handleExportSelected('pdf').catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
         if (el('exportUsersCsvBtn')) {
             el('exportUsersCsvBtn').addEventListener('click', () => {
                 handleExport('stats.php?action=export-users', `utenti_${state.reportDate}.csv`)
@@ -1103,6 +1326,10 @@
         bindModals();
         bindStaticEvents();
         bindDynamicActions();
+        renderExportColumnsOptions();
+        renderExportPreviewTable();
+        updateExportPreviewMeta();
+        updateExportActionButtons();
         await Promise.all([loadPackages().catch(() => null), loadStats()]);
     }
 

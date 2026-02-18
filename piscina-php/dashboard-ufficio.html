@@ -470,6 +470,54 @@
             </div>
 
             <div id="tab-export" class="tab-pane">
+                <div class="detail-block">
+                    <h4>Export guidato</h4>
+                    <div class="toolbar">
+                        <select id="exportDatasetSelect">
+                            <option value="users">Clienti (utenti)</option>
+                            <option value="purchases">Acquisti</option>
+                            <option value="checkins">Check-in</option>
+                        </select>
+                        <select id="exportPreviewLimit">
+                            <option value="100">Anteprima 100 righe</option>
+                            <option value="200" selected>Anteprima 200 righe</option>
+                            <option value="300">Anteprima 300 righe</option>
+                            <option value="500">Anteprima 500 righe</option>
+                        </select>
+                        <button class="btn btn-primary" id="loadExportPreviewBtn" type="button">Carica anteprima</button>
+                        <button class="btn btn-secondary" id="selectAllExportColumnsBtn" type="button">Seleziona colonne</button>
+                        <button class="btn btn-secondary" id="clearExportColumnsBtn" type="button">Deseleziona tutto</button>
+                    </div>
+
+                    <div id="exportPreviewMeta" class="detail-block" style="margin-bottom:8px;">
+                        Carica l'anteprima per vedere la griglia dati prima dell'export.
+                    </div>
+
+                    <div class="detail-block">
+                        <h4 style="margin-bottom:6px;">Campi da esportare</h4>
+                        <div id="exportColumnsOptions" class="grid-3"></div>
+                    </div>
+
+                    <div class="table-wrap" style="margin-top:8px;">
+                        <table>
+                            <thead>
+                                <tr id="exportPreviewHead">
+                                    <th>Anteprima export</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exportPreviewBody">
+                                <tr><td>Nessuna anteprima caricata.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="toolbar" style="margin-top:10px;">
+                        <button class="btn btn-ok" id="exportSelectedCsvBtn" type="button" disabled>Esporta selezione CSV</button>
+                        <button class="btn btn-secondary" id="exportSelectedPdfBtn" type="button" disabled>Esporta selezione PDF</button>
+                    </div>
+                </div>
+
+                <h4 style="margin:8px 0;">Export rapido completo</h4>
                 <div class="toolbar">
                     <button class="btn btn-ok" id="exportUsersCsvBtn" type="button">Utenti CSV</button>
                     <button class="btn btn-secondary" id="exportUsersPdfBtn" type="button">Utenti PDF</button>
