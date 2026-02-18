@@ -534,7 +534,14 @@ function isMailConfigured(): bool
     return true;
 }
 
-function sendEmail(string $to, string $toName, string $subject, string $htmlContent, string $textContent = ''): bool
+function sendEmail(
+    string $to,
+    string $toName,
+    string $subject,
+    string $htmlContent,
+    string $textContent = '',
+    array $attachments = []
+): bool
 {
     global $MAIL_CONFIG;
 
@@ -580,6 +587,36 @@ function sendEmail(string $to, string $toName, string $subject, string $htmlCont
         $mail->isHTML(true);
         $mail->Body = $htmlContent;
         $mail->AltBody = $textContent !== '' ? $textContent : strip_tags($htmlContent);
+
+        foreach ($attachments as $attachment) {
+            if (!is_array($attachment)) {
+                continue;
+            }
+
+            $filePath = (string)($attachment['path'] ?? '');
+            $fileName = (string)($attachment['name'] ?? '');
+            $mimeType = (string)($attachment['mime'] ?? '');
+            $binaryData = $attachment['string'] ?? null;
+
+            if (is_string($binaryData) && $binaryData !== '' && $fileName !== '') {
+                if ($mimeType !== '') {
+                    $mail->addStringAttachment($binaryData, $fileName, 'base64', $mimeType);
+                } else {
+                    $mail->addStringAttachment($binaryData, $fileName);
+                }
+                continue;
+            }
+
+            if ($filePath !== '' && is_file($filePath)) {
+                if ($fileName !== '' && $mimeType !== '') {
+                    $mail->addAttachment($filePath, $fileName, 'base64', $mimeType);
+                } elseif ($fileName !== '') {
+                    $mail->addAttachment($filePath, $fileName);
+                } else {
+                    $mail->addAttachment($filePath);
+                }
+            }
+        }
 
         $mail->send();
         logMailEvent('info', 'Email sent', [
@@ -630,10 +667,11 @@ function sendBrandedEmail(
     string $title,
     string $bodyHtml,
     string $previewText = '',
-    string $textContent = ''
+    string $textContent = '',
+    array $attachments = []
 ): bool {
     $html = buildBrandedEmail($title, $bodyHtml, $previewText);
-    return sendEmail($to, $toName, $subject, $html, $textContent);
+    return sendEmail($to, $toName, $subject, $html, $textContent, $attachments);
 }
 
 function sendTemplateEmail(
@@ -643,9 +681,10 @@ function sendTemplateEmail(
     string $title,
     string $bodyHtml,
     string $previewText = '',
-    string $textContent = ''
+    string $textContent = '',
+    array $attachments = []
 ): bool {
-    return sendBrandedEmail($to, $toName, $subject, $title, $bodyHtml, $previewText, $textContent);
+    return sendBrandedEmail($to, $toName, $subject, $title, $bodyHtml, $previewText, $textContent, $attachments);
 }
 
 function localAppBaseUrl(): string
@@ -713,10 +752,65 @@ function validateCodiceFiscale(string $cf): bool
     return (bool)preg_match('/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/', strtoupper($cf));
 }
 
+function getIngressScheduleConfig(): array
+{
+    return [
+        'days' => [1, 3, 5], // Monday, Wednesday, Friday
+        'mattina' => ['start' => '06:30', 'end' => '09:00'],
+        'pomeriggio' => ['start' => '13:00', 'end' => '14:00'],
+    ];
+}
+
+function getIngressScheduleSummary(): string
+{
+    return 'Lunedi, Mercoledi, Venerdi - 06:30-09:00 e 13:00-14:00';
+}
+
+function resolveIngressFasciaForDateTime(DateTimeInterface $dateTime): ?string
+{
+    $config = getIngressScheduleConfig();
+    $isoDay = (int)$dateTime->format('N');
+    if (!in_array($isoDay, $config['days'], true)) {
+        return null;
+    }
+
+    $minutes = ((int)$dateTime->format('H') * 60) + (int)$dateTime->format('i');
+
+    $mattinaStart = 6 * 60 + 30;  // 06:30
+    $mattinaEnd = 9 * 60;         // 09:00
+    if ($minutes >= $mattinaStart && $minutes <= $mattinaEnd) {
+        return 'mattina';
+    }
+
+    $pomeriggioStart = 13 * 60;   // 13:00
+    $pomeriggioEnd = 14 * 60;     // 14:00
+    if ($minutes >= $pomeriggioStart && $minutes <= $pomeriggioEnd) {
+        return 'pomeriggio';
+    }
+
+    return null;
+}
+
+function getCurrentIngressFasciaOraria(): ?string
+{
+    return resolveIngressFasciaForDateTime(new DateTimeImmutable('now'));
+}
+
 function getFasciaOraria(string $ora): string
 {
-    $hour = (int)date('H', strtotime($ora));
-    return ($hour < 14) ? 'mattina' : 'pomeriggio';
+    $time = trim($ora);
+    if ($time === '') {
+        return 'mattina';
+    }
+
+    try {
+        $dt = new DateTimeImmutable('today ' . $time);
+    } catch (Throwable $e) {
+        return 'mattina';
+    }
+
+    $minutes = ((int)$dt->format('H') * 60) + (int)$dt->format('i');
+    return $minutes < (13 * 60) ? 'mattina' : 'pomeriggio';
 }
 
 function sanitizeInput($input)

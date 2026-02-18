@@ -393,11 +393,11 @@
             <div>
                 <div class="card">
                     <h3>Il tuo QR code</h3>
-                    <div id="qrSection" class="muted">Nessun QR disponibile. Acquista un pacchetto confermato.</div>
+                    <div id="qrSection" class="muted">Nessun QR disponibile. La segreteria attivera il pacchetto dopo approvazione iscrizione.</div>
                 </div>
 
-                <div class="card">
-                    <h3>Acquista pacchetto</h3>
+        <div class="card">
+                    <h3>Richiedi pacchetto</h3>
                     <div id="packageList" class="package-list">Caricamento pacchetti...</div>
                 </div>
             </div>
@@ -458,20 +458,12 @@
 
     <div id="purchaseOverlay" class="overlay">
         <div class="modal">
-            <h4 id="purchaseTitle">Conferma richiesta pacchetto</h4>
+            <h4 id="purchaseTitle">Finalizza iscrizione in struttura</h4>
             <p class="small" id="purchaseMeta"></p>
 
             <div class="row">
-                <label>Modalità contributo</label>
-                <div class="payment-options">
-                    <label class="payment-option"><input type="radio" name="paymentMethod" value="bonifico" checked> Bonifico</label>
-                    <label class="payment-option"><input type="radio" name="paymentMethod" value="contanti"> In struttura</label>
-                </div>
-            </div>
-
-            <div class="row">
-                <label for="paymentReference">Riferimento pagamento (consigliato)</label>
-                <input id="paymentReference" type="text" placeholder="ID transazione, CRO, note pagamento...">
+                <label>Modalita</label>
+                <p class="small">Nessun pagamento online. La finalizzazione avviene in struttura con verifica segreteria.</p>
             </div>
 
             <div class="row">
@@ -483,7 +475,7 @@
 
             <div class="modal-actions">
                 <button class="btn" type="button" onclick="closePurchaseModal()">Annulla</button>
-                <button class="btn btn-success" id="confirmPurchaseBtn" type="button" onclick="confirmPurchase()">Conferma richiesta</button>
+                <button class="btn btn-success" id="confirmPurchaseBtn" type="button" onclick="confirmPurchase()">Finalizza in struttura</button>
             </div>
         </div>
     </div>
@@ -802,7 +794,7 @@
         function renderQrSection(purchase) {
             const section = document.getElementById('qrSection');
             if (!purchase) {
-                section.innerHTML = '<p class="muted">Nessun QR disponibile. I pagamenti pending vengono attivati da segreteria.</p>';
+                section.innerHTML = '<p class="muted">Nessun QR disponibile. Le richieste vengono attivate dalla segreteria dopo verifica iscrizione.</p>';
                 document.getElementById('statScadenza').textContent = '-';
                 return;
             }
@@ -882,7 +874,7 @@
                             data-name="${encodeURIComponent(pkg.nome)}"
                             data-price="${Number(pkg.prezzo)}"
                             type="button"
-                        >Acquista</button>
+                        >Finalizza in struttura</button>
                     </div>
                 </div>
             `).join('');
@@ -1123,12 +1115,10 @@
 
         function openPurchaseModal(id, name, price) {
             selectedPackage = { id, name, price };
-            document.getElementById('purchaseTitle').textContent = `Richiesta pacchetto: ${name}`;
-            document.getElementById('purchaseMeta').textContent = `Contributo: ${formatCurrency(price)} - Seleziona la modalità di conferma.`;
-            document.getElementById('paymentReference').value = '';
+            document.getElementById('purchaseTitle').textContent = `Finalizza in struttura: ${name}`;
+            document.getElementById('purchaseMeta').textContent = `Totale ${formatCurrency(price)}. Nessun pagamento online: finalizzazione presso la segreteria.`;
             document.getElementById('paymentNote').value = '';
-            document.querySelector('input[name="paymentMethod"][value="bonifico"]').checked = true;
-            updatePaymentHint();
+            document.getElementById('paymentHint').textContent = 'Con questa richiesta verranno avviate le verifiche amministrative.';
             document.getElementById('purchaseOverlay').classList.add('open');
         }
 
@@ -1137,30 +1127,11 @@
             selectedPackage = null;
         }
 
-        function updatePaymentHint() {
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'bonifico';
-            const hint = document.getElementById('paymentHint');
-
-            if (method === 'bonifico') {
-                hint.textContent = 'Con bonifico la richiesta resta in attesa finché la segreteria conferma il pagamento.';
-                return;
-            }
-
-            hint.textContent = 'In struttura: conferma amministrativa in reception prima dell\'attivazione del pacchetto.';
-        }
-
         async function confirmPurchase() {
             if (!selectedPackage) return;
 
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'bonifico';
-            const reference = document.getElementById('paymentReference').value.trim();
             const note = document.getElementById('paymentNote').value.trim();
             const button = document.getElementById('confirmPurchaseBtn');
-
-            if (method === 'bonifico' && reference.length < 3) {
-                showAlert('Inserisci un riferimento bonifico valido.', 'error');
-                return;
-            }
 
             button.disabled = true;
             button.textContent = 'Elaborazione...';
@@ -1168,8 +1139,7 @@
             try {
                 const payload = {
                     pacchetto_id: selectedPackage.id,
-                    metodo_pagamento: method,
-                    riferimento_pagamento: reference,
+                    metodo_pagamento: 'contanti',
                     note_pagamento: note
                 };
 
@@ -1185,7 +1155,7 @@
                 showAlert(error.message, 'error');
             } finally {
                 button.disabled = false;
-                button.textContent = 'Conferma richiesta';
+                button.textContent = 'Finalizza in struttura';
             }
         }
 
@@ -1199,10 +1169,6 @@
         }
 
         document.getElementById('profileForm').addEventListener('submit', saveProfile);
-
-        document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
-            input.addEventListener('change', updatePaymentHint);
-        });
 
         document.getElementById('purchaseOverlay').addEventListener('click', (event) => {
             if (event.target.id === 'purchaseOverlay') {

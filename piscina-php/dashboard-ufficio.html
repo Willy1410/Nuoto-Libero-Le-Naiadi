@@ -294,6 +294,7 @@
             <div class="stat"><h3 id="statCheckinMonth">0</h3><p>Check-in Mese</p></div>
             <div class="stat"><h3 id="statRevenueMonth">EUR 0.00</h3><p>Incassi Mese</p></div>
             <div class="stat"><h3 id="statPendingPurchases">0</h3><p>Acquisti Pending</p></div>
+            <div class="stat"><h3 id="statPendingEnrollments">0</h3><p>Iscrizioni Pending</p></div>
             <div class="stat"><h3 id="statPendingDocs">0</h3><p>Documenti Pending</p></div>
         </div>
 
@@ -364,9 +365,45 @@
                         <tbody id="usersBody"></tbody>
                     </table>
                 </div>
+                <div class="detail-block" style="margin-top:10px;">
+                    <h4>Gestione pacchetti dinamici</h4>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Ingressi</th>
+                                    <th>Prezzo</th>
+                                    <th>Visibile</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packagesManageBody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div id="tab-purchases" class="tab-pane">
+                <h4 style="margin-bottom:8px;">Iscrizioni da approvare</h4>
+                <div class="table-wrap" style="margin-bottom:12px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Telefono</th>
+                                <th>Pacchetto</th>
+                                <th>Stato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingEnrollmentsBody"></tbody>
+                    </table>
+                </div>
+
+                <h4 style="margin-bottom:8px;">Acquisti pending</h4>
                 <div class="table-wrap">
                     <table>
                         <thead>

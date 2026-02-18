@@ -146,6 +146,34 @@
 
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
+
+                if (data.user && data.user.force_password_change) {
+                    const newPassword = prompt('Primo accesso: imposta una nuova password (minimo 8 caratteri).');
+                    if (!newPassword || newPassword.length < 8) {
+                        throw new Error('Cambio password obbligatorio: inserisci una password valida (minimo 8 caratteri).');
+                    }
+
+                    const changeResponse = await fetch(`${API_URL}/auth.php?action=change-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${data.token}`
+                        },
+                        body: JSON.stringify({
+                            old_password: password,
+                            new_password: newPassword
+                        })
+                    });
+
+                    const changeRaw = await changeResponse.text();
+                    const changeData = safeParseJson(changeRaw);
+                    if (!changeResponse.ok || !changeData.success) {
+                        throw new Error(changeData.message || 'Cambio password obbligatorio non completato');
+                    }
+
+                    data.user.force_password_change = false;
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
                 redirectByRole(data.user.ruolo);
             } catch (error) {
                 alert('Errore: ' + error.message);

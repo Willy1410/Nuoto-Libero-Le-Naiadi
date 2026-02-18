@@ -10,6 +10,12 @@ require_once __DIR__ . '/config.php';
 $staff = requireRole(3);
 $method = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
 $action = (string)($_GET['action'] ?? 'users');
+$requestPath = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+
+if ($method === 'GET' && preg_match('#/admin/users/([a-zA-Z0-9\\-]{8,64})$#', $requestPath, $matches)) {
+    $_GET['id'] = $matches[1];
+    getUserDetail();
+}
 
 if ($method === 'GET' && $action === 'users') {
     listUsers();

@@ -4,6 +4,7 @@
 - `db/CREATE_DATABASE_FROM_ZERO.sql`
 - Migrazione incrementale: `db/MIGRATION_2026_02_17_STORAGE_DB.sql`
 - Migrazione incrementale: `db/MIGRATION_2026_02_18_CMS_BUILDER_READY.sql`
+- Migrazione incrementale: `db/MIGRATION_2026_02_18_USER_PACKAGES_ENROLLMENTS.sql`
 
 Script pronto per phpMyAdmin:
 - crea database `nuoto_libero`
@@ -30,6 +31,7 @@ Script pronto per phpMyAdmin:
 4. Se parti da un DB esistente, esegui anche:
    - `db/MIGRATION_2026_02_17_STORAGE_DB.sql`
    - `db/MIGRATION_2026_02_18_CMS_BUILDER_READY.sql`
+   - `db/MIGRATION_2026_02_18_USER_PACKAGES_ENROLLMENTS.sql`
 
 ## Utenti test seed
 - admin@piscina.it / password123

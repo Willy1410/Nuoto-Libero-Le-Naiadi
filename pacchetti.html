@@ -79,89 +79,32 @@
         <div class="container">
             <h2 class="section-title">Scegli il Pacchetto Ingressi</h2>
             <p class="section-subtitle">Seleziona la formula più adatta e invia la richiesta di attivazione</p>
+            <div class="instore-info" style="margin-bottom:16px;">
+                <p><strong>Nota importante:</strong> Il pacchetto da 10 ingressi è acquistabile solo dopo compilazione del modulo di iscrizione e pagamento della quota di iscrizione e tesseramento.</p>
+                <p><strong>Promo attiva:</strong> 2 ingressi omaggio inclusi. Gli ingressi omaggio hanno validità di 60 giorni.</p>
+            </div>
 
             <div class="pricing-grid">
-                <div class="pricing-card package-card" data-package="singolo" data-price="8.00" data-name="Singolo Ingresso">
-                    <div class="pricing-header">
-                        <h3>Singolo Ingresso</h3>
-                        <div class="price">
-                            <span class="currency">EUR</span>
-                            <span class="amount">8</span>
-                            <span class="period">/ingresso</span>
-                        </div>
-                    </div>
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> 1 ingresso valido</li>
-                        <li><i class="fas fa-check"></i> Accesso nelle fasce attive</li>
-                        <li><i class="fas fa-check"></i> Armadietto incluso</li>
-                        <li><i class="fas fa-check"></i> Docce calde</li>
-                    </ul>
-                    <button class="btn btn-secondary btn-block select-package">
-                        <i class="fas fa-hand-pointer"></i> Seleziona
-                    </button>
-                </div>
-
-                <div class="pricing-card featured package-card" data-package="10-ingressi" data-price="65.00" data-name="10 Ingressi">
+                <div class="pricing-card featured package-card" data-package="10-ingressi" data-price="110.00" data-name="10 Ingressi">
                     <div class="badge-popular">PIÙ RICHIESTO</div>
                     <div class="pricing-header">
                         <h3>10 Ingressi</h3>
                         <div class="price">
                             <span class="currency">EUR</span>
-                            <span class="amount">65</span>
-                            <span class="savings">Contributo medio 6,50</span>
+                            <span class="amount">110</span>
+                            <span class="savings">Include iscrizione + tesseramento + 2 omaggio</span>
                         </div>
                     </div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> 10 ingressi validi</li>
-                        <li><i class="fas fa-check"></i> Validità 6 mesi da attivazione</li>
+                        <li><i class="fas fa-check"></i> Iscrizione e tesseramento inclusi</li>
+                        <li><i class="fas fa-check"></i> +2 ingressi omaggio (validità 60 giorni)</li>
                         <li><i class="fas fa-check"></i> Armadietto incluso</li>
                         <li><i class="fas fa-check"></i> Docce calde</li>
-                        <li><i class="fas fa-star"></i> Miglior equilibrio utilizzo/contributo</li>
+                        <li><i class="fas fa-star"></i> Attivazione in struttura dopo verifica segreteria</li>
                     </ul>
                     <button class="btn btn-primary btn-block select-package">
-                        <i class="fas fa-hand-pointer"></i> Seleziona
-                    </button>
-                </div>
-
-                <div class="pricing-card package-card" data-package="20-ingressi" data-price="120.00" data-name="20 Ingressi">
-                    <div class="pricing-header">
-                        <h3>20 Ingressi</h3>
-                        <div class="price">
-                            <span class="currency">EUR</span>
-                            <span class="amount">120</span>
-                            <span class="savings">Contributo medio 6,00</span>
-                        </div>
-                    </div>
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> 20 ingressi validi</li>
-                        <li><i class="fas fa-check"></i> Validità 6 mesi da attivazione</li>
-                        <li><i class="fas fa-check"></i> Armadietto incluso</li>
-                        <li><i class="fas fa-check"></i> Docce calde</li>
-                        <li><i class="fas fa-star"></i> Formula intensiva</li>
-                    </ul>
-                    <button class="btn btn-secondary btn-block select-package">
-                        <i class="fas fa-hand-pointer"></i> Seleziona
-                    </button>
-                </div>
-
-                <div class="pricing-card package-card" data-package="mensile" data-price="90.00" data-name="Mensile Nuoto Libero">
-                    <div class="pricing-header">
-                        <h3>Mensile Nuoto Libero</h3>
-                        <div class="price">
-                            <span class="currency">EUR</span>
-                            <span class="amount">90</span>
-                            <span class="period">/30 giorni</span>
-                        </div>
-                    </div>
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> Accessi multipli per 30 giorni</li>
-                        <li><i class="fas fa-check"></i> Validità da prima attivazione</li>
-                        <li><i class="fas fa-check"></i> Tutte le fasce disponibili</li>
-                        <li><i class="fas fa-check"></i> Armadietto riservato</li>
-                        <li><i class="fas fa-star"></i> Ideale per frequenza elevata</li>
-                    </ul>
-                    <button class="btn btn-secondary btn-block select-package">
-                        <i class="fas fa-hand-pointer"></i> Seleziona
+                        <i class="fas fa-check-circle"></i> Finalizza iscrizione in struttura
                     </button>
                 </div>
             </div>
@@ -172,14 +115,18 @@
         <div class="container">
             <div class="checkout-wrapper">
                 <div class="order-summary">
-                    <h3><i class="fas fa-receipt"></i> Riepilogo Richiesta</h3>
+                    <h3><i class="fas fa-receipt"></i> Riepilogo Iscrizione</h3>
                     <div class="summary-item">
                         <span>Pacchetto:</span>
                         <strong id="summaryPackage">-</strong>
                     </div>
                     <div class="summary-item">
-                        <span>Contributo:</span>
+                        <span>Quota:</span>
                         <strong id="summaryPrice">EUR 0,00</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Comprende:</span>
+                        <strong>Iscrizione, Tesseramento, Pacchetto 10 ingressi, +2 omaggio</strong>
                     </div>
                     <div class="summary-total">
                         <span>Totale:</span>
@@ -241,60 +188,14 @@
                         </div>
 
                         <div class="payment-method-section">
-                            <h3><i class="fas fa-file-invoice"></i> Modalità Contributo</h3>
-
-                            <div class="payment-options">
-                                <label class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="bonifico" checked>
-                                    <div class="payment-option-content">
-                                        <i class="fas fa-university"></i>
-                                        <span>Bonifico Bancario</span>
-                                    </div>
-                                </label>
-
-                                <label class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="instore">
-                                    <div class="payment-option-content">
-                                        <i class="fas fa-store"></i>
-                                        <span>Contributo in Struttura</span>
-                                    </div>
-                                </label>
+                            <h3><i class="fas fa-building"></i> Finalizzazione in Struttura</h3>
+                            <div class="instore-info">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Nessun pagamento online. Invia la richiesta e completa iscrizione/tesseramento direttamente in struttura.</p>
                             </div>
-
-                            <div id="bank-transfer-container" class="payment-container" style="display: none;">
-                                <div class="instore-info">
-                                    <i class="fas fa-university"></i>
-                                    <p><strong>Dati bonifico (esempio locale):</strong><br>
-                                    Intestatario: Associazione Sportiva Gli Squaletti<br>
-                                    IBAN: IT00X0000000000000000000000<br>
-                                    Causale: Nome Cognome - Pacchetto ingressi - Email</p>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="bonificoReference">Riferimento bonifico *</label>
-                                        <input type="text" id="bonificoReference" placeholder="CRO/TRN/ID operazione" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="bonificoDate">Data bonifico *</label>
-                                        <input type="date" id="bonificoDate" required>
-                                    </div>
-                                </div>
-
-                                <button type="submit" id="bonifico-submit" class="btn btn-primary btn-block">
-                                    <i class="fas fa-university"></i> Ho effettuato il bonifico
-                                </button>
-                            </div>
-
-                            <div id="instore-payment-container" class="payment-container" style="display: none;">
-                                <div class="instore-info">
-                                    <i class="fas fa-info-circle"></i>
-                                    <p>Invia la richiesta e completa l'iscrizione in reception con firma modulistica e verifica documenti.</p>
-                                </div>
-                                <button type="submit" id="instore-submit" class="btn btn-primary btn-block">
-                                    <i class="fas fa-check"></i> Conferma richiesta
-                                </button>
-                            </div>
+                            <button type="submit" id="instore-submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-check"></i> Finalizza iscrizione in struttura
+                            </button>
                         </div>
                     </form>
                 </div>

@@ -24,6 +24,10 @@ if ($method === 'GET' && $action === '') {
     getAllPackages();
 } elseif ($method === 'POST' && $action === 'admin-create-package') {
     createPackage();
+} elseif ($method === 'PATCH' && $action === 'admin-update-package') {
+    updatePackage();
+} elseif ($method === 'PATCH' && $action === 'admin-toggle-package') {
+    togglePackageVisibility();
 } elseif ($method === 'POST' && $action === 'admin-assign-manual') {
     assignManualPackage();
 } elseif ($method === 'GET' && $action === 'pending') {
@@ -96,29 +100,230 @@ function buildAbsoluteUrl(string $path): string
     return $scheme . '://' . $host . $scriptDir . '/' . ltrim($path, '/');
 }
 
-function getPacchetti(): void
+function packagesTableAvailable(): bool
+{
+    static $available = null;
+    if ($available !== null) {
+        return $available;
+    }
+
+    global $pdo;
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'packages'");
+        $available = (bool)$stmt->fetch();
+    } catch (Throwable $e) {
+        $available = false;
+    }
+
+    return $available;
+}
+
+function defaultPackageValidityDays(): int
+{
+    return 365;
+}
+
+function acquistiHasIngressiTotaliColumn(): bool
+{
+    static $available = null;
+    if ($available !== null) {
+        return $available;
+    }
+
+    global $pdo;
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM acquisti LIKE 'ingressi_totali'");
+        $available = (bool)$stmt->fetch();
+    } catch (Throwable $e) {
+        $available = false;
+    }
+
+    return $available;
+}
+
+function ingressiTotaliSelectSql(string $acquistiAlias = 'a', string $pacchettiAlias = 'p'): string
+{
+    if (acquistiHasIngressiTotaliColumn()) {
+        return 'COALESCE(NULLIF(' . $acquistiAlias . '.ingressi_totali, 0), ' . $pacchettiAlias . '.num_ingressi)';
+    }
+
+    return $pacchettiAlias . '.num_ingressi';
+}
+
+function normalizeManagedPackageRow(array $row): array
+{
+    return [
+        'id' => (int)$row['id'],
+        'nome' => (string)$row['name'],
+        'descrizione' => (string)($row['description'] ?? ''),
+        'num_ingressi' => (int)$row['entries_count'],
+        'prezzo' => (float)$row['price'],
+        'attivo' => (int)$row['visible'],
+        'validita_giorni' => isset($row['validita_giorni']) ? (int)$row['validita_giorni'] : defaultPackageValidityDays(),
+        'legacy_pacchetto_id' => isset($row['legacy_pacchetto_id']) ? (int)$row['legacy_pacchetto_id'] : 0,
+        'created_at' => $row['created_at'] ?? null,
+        'updated_at' => $row['updated_at'] ?? null,
+    ];
+}
+
+function fetchManagedPackages(bool $onlyVisible): array
 {
     global $pdo;
 
-    $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE attivo = TRUE ORDER BY ordine ASC, prezzo ASC');
-    $stmt->execute();
+    if (!packagesTableAvailable()) {
+        $sql = 'SELECT id, nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, created_at, updated_at
+                FROM pacchetti';
+        if ($onlyVisible) {
+            $sql .= ' WHERE attivo = 1';
+        }
+        $sql .= ' ORDER BY ordine ASC, prezzo ASC';
 
-    respond(200, ['success' => true, 'pacchetti' => $stmt->fetchAll()]);
+        $stmt = $pdo->query($sql);
+        $rows = [];
+        foreach ($stmt->fetchAll() as $legacy) {
+            $rows[] = [
+                'id' => (int)$legacy['id'],
+                'nome' => (string)$legacy['nome'],
+                'descrizione' => (string)($legacy['descrizione'] ?? ''),
+                'num_ingressi' => (int)$legacy['num_ingressi'],
+                'prezzo' => (float)$legacy['prezzo'],
+                'attivo' => (int)$legacy['attivo'],
+                'validita_giorni' => (int)$legacy['validita_giorni'],
+                'legacy_pacchetto_id' => (int)$legacy['id'],
+                'created_at' => $legacy['created_at'] ?? null,
+                'updated_at' => $legacy['updated_at'] ?? null,
+            ];
+        }
+        return $rows;
+    }
+
+    $sql = 'SELECT pkg.id, pkg.name, pkg.description, pkg.entries_count, pkg.price, pkg.visible,
+                   pkg.legacy_pacchetto_id, pkg.created_at, pkg.updated_at,
+                   COALESCE(lp.validita_giorni, ?) AS validita_giorni
+            FROM packages pkg
+            LEFT JOIN pacchetti lp ON lp.id = pkg.legacy_pacchetto_id';
+    if ($onlyVisible) {
+        $sql .= ' WHERE pkg.visible = 1';
+    }
+    $sql .= ' ORDER BY pkg.visible DESC, pkg.created_at DESC';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([defaultPackageValidityDays()]);
+
+    $rows = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $rows[] = normalizeManagedPackageRow($row);
+    }
+
+    return $rows;
+}
+
+function fetchManagedPackageById(int $packageId): ?array
+{
+    global $pdo;
+
+    if ($packageId <= 0) {
+        return null;
+    }
+
+    if (!packagesTableAvailable()) {
+        $stmt = $pdo->prepare(
+            'SELECT id, nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, created_at, updated_at
+             FROM pacchetti
+             WHERE id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$packageId]);
+        $legacy = $stmt->fetch();
+        if (!$legacy) {
+            return null;
+        }
+        return [
+            'id' => (int)$legacy['id'],
+            'nome' => (string)$legacy['nome'],
+            'descrizione' => (string)($legacy['descrizione'] ?? ''),
+            'num_ingressi' => (int)$legacy['num_ingressi'],
+            'prezzo' => (float)$legacy['prezzo'],
+            'attivo' => (int)$legacy['attivo'],
+            'validita_giorni' => (int)$legacy['validita_giorni'],
+            'legacy_pacchetto_id' => (int)$legacy['id'],
+            'created_at' => $legacy['created_at'] ?? null,
+            'updated_at' => $legacy['updated_at'] ?? null,
+        ];
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT pkg.id, pkg.name, pkg.description, pkg.entries_count, pkg.price, pkg.visible,
+                pkg.legacy_pacchetto_id, pkg.created_at, pkg.updated_at,
+                COALESCE(lp.validita_giorni, ?) AS validita_giorni
+         FROM packages pkg
+         LEFT JOIN pacchetti lp ON lp.id = pkg.legacy_pacchetto_id
+         WHERE pkg.id = ?
+         LIMIT 1'
+    );
+    $stmt->execute([defaultPackageValidityDays(), $packageId]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return null;
+    }
+
+    return normalizeManagedPackageRow($row);
+}
+
+function ensureLegacyPackage(array $managedPackage): array
+{
+    global $pdo;
+
+    $legacyId = (int)($managedPackage['legacy_pacchetto_id'] ?? 0);
+    if ($legacyId > 0) {
+        $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? LIMIT 1');
+        $stmt->execute([$legacyId]);
+        $legacy = $stmt->fetch();
+        if ($legacy) {
+            return $legacy;
+        }
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO pacchetti (nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, ordine)
+         VALUES (?, NULLIF(?, ""), ?, ?, ?, ?, 1)'
+    );
+    $stmt->execute([
+        (string)$managedPackage['nome'],
+        (string)($managedPackage['descrizione'] ?? ''),
+        (int)$managedPackage['num_ingressi'],
+        (float)$managedPackage['prezzo'],
+        max(1, (int)($managedPackage['validita_giorni'] ?? defaultPackageValidityDays())),
+        (int)$managedPackage['attivo'] === 1 ? 1 : 0,
+    ]);
+
+    $legacyId = (int)$pdo->lastInsertId();
+    if (packagesTableAvailable() && (int)($managedPackage['id'] ?? 0) > 0) {
+        $stmt = $pdo->prepare('UPDATE packages SET legacy_pacchetto_id = ? WHERE id = ?');
+        $stmt->execute([$legacyId, (int)$managedPackage['id']]);
+    }
+
+    $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? LIMIT 1');
+    $stmt->execute([$legacyId]);
+    $legacy = $stmt->fetch();
+    if (!$legacy) {
+        throw new RuntimeException('Pacchetto legacy non disponibile');
+    }
+
+    return $legacy;
+}
+
+function getPacchetti(): void
+{
+    $packages = fetchManagedPackages(true);
+    respond(200, ['success' => true, 'pacchetti' => $packages]);
 }
 
 function getAllPackages(): void
 {
-    global $pdo;
-
     requireRole(3);
-
-    $stmt = $pdo->query(
-        'SELECT id, nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, ordine, created_at, updated_at
-         FROM pacchetti
-         ORDER BY attivo DESC, ordine ASC, created_at DESC'
-    );
-
-    respond(200, ['success' => true, 'pacchetti' => $stmt->fetchAll()]);
+    $packages = fetchManagedPackages(false);
+    respond(200, ['success' => true, 'pacchetti' => $packages]);
 }
 
 function createPackage(): void
@@ -128,46 +333,169 @@ function createPackage(): void
     $staff = requireRole(3);
     $data = getJsonInput();
 
-    $nome = sanitizeText((string)($data['nome'] ?? ''), 120);
-    $descrizione = sanitizeText((string)($data['descrizione'] ?? ''), 500);
+    $nome = sanitizeText((string)($data['nome'] ?? ''), 100);
+    $descrizione = sanitizeText((string)($data['descrizione'] ?? ''), 1000);
     $numIngressi = (int)($data['num_ingressi'] ?? 0);
     $prezzo = (float)($data['prezzo'] ?? 0);
-    $validita = (int)($data['validita_giorni'] ?? 0);
-    $attivo = array_key_exists('attivo', $data) ? (int)((bool)$data['attivo']) : 1;
-    $ordine = max(0, (int)($data['ordine'] ?? 0));
+    $visible = array_key_exists('attivo', $data) ? ((bool)$data['attivo'] ? 1 : 0) : 1;
+    $validita = max(1, (int)($data['validita_giorni'] ?? defaultPackageValidityDays()));
 
-    if ($nome === '' || $numIngressi <= 0 || $validita <= 0 || $prezzo < 0) {
+    if ($nome === '' || $numIngressi <= 0 || $prezzo < 0) {
         respond(400, ['success' => false, 'message' => 'Dati pacchetto non validi']);
     }
 
     try {
+        $pdo->beginTransaction();
+
         $stmt = $pdo->prepare(
             'INSERT INTO pacchetti (nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, ordine)
-             VALUES (?, NULLIF(?, ""), ?, ?, ?, ?, ?)'
+             VALUES (?, NULLIF(?, ""), ?, ?, ?, ?, 1)'
         );
-        $stmt->execute([$nome, $descrizione, $numIngressi, $prezzo, $validita, $attivo, $ordine]);
+        $stmt->execute([$nome, $descrizione, $numIngressi, $prezzo, $validita, $visible]);
+        $legacyId = (int)$pdo->lastInsertId();
 
-        $packageId = (int)$pdo->lastInsertId();
+        if (packagesTableAvailable()) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO packages (name, description, entries_count, price, visible, legacy_pacchetto_id)
+                 VALUES (?, NULLIF(?, ""), ?, ?, ?, ?)'
+            );
+            $stmt->execute([$nome, $descrizione, $numIngressi, $prezzo, $visible, $legacyId]);
+            $packageId = (int)$pdo->lastInsertId();
+        } else {
+            $packageId = $legacyId;
+        }
+
+        $pdo->commit();
 
         logActivity(
             (string)$staff['user_id'],
             'crea_pacchetto',
             'Creato pacchetto: ' . $nome,
-            'pacchetti',
+            packagesTableAvailable() ? 'packages' : 'pacchetti',
             (string)$packageId
         );
 
-        $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? LIMIT 1');
-        $stmt->execute([$packageId]);
+        $created = fetchManagedPackageById($packageId);
 
         respond(201, [
             'success' => true,
             'message' => 'Pacchetto creato',
-            'pacchetto' => $stmt->fetch(),
+            'pacchetto' => $created,
         ]);
     } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log('createPackage error: ' . $e->getMessage());
         respond(500, ['success' => false, 'message' => 'Errore creazione pacchetto']);
+    }
+}
+
+function updatePackage(): void
+{
+    global $pdo;
+
+    $staff = requireRole(3);
+    $packageId = (int)($_GET['id'] ?? 0);
+    if ($packageId <= 0) {
+        respond(400, ['success' => false, 'message' => 'ID pacchetto non valido']);
+    }
+
+    $managed = fetchManagedPackageById($packageId);
+    if (!$managed) {
+        respond(404, ['success' => false, 'message' => 'Pacchetto non trovato']);
+    }
+
+    $data = getJsonInput();
+    $nome = array_key_exists('nome', $data) ? sanitizeText((string)$data['nome'], 100) : (string)$managed['nome'];
+    $descrizione = array_key_exists('descrizione', $data) ? sanitizeText((string)$data['descrizione'], 1000) : (string)$managed['descrizione'];
+    $numIngressi = array_key_exists('num_ingressi', $data) ? (int)$data['num_ingressi'] : (int)$managed['num_ingressi'];
+    $prezzo = array_key_exists('prezzo', $data) ? (float)$data['prezzo'] : (float)$managed['prezzo'];
+    $visible = array_key_exists('attivo', $data) ? ((bool)$data['attivo'] ? 1 : 0) : (int)$managed['attivo'];
+    $validita = array_key_exists('validita_giorni', $data)
+        ? max(1, (int)$data['validita_giorni'])
+        : max(1, (int)$managed['validita_giorni']);
+
+    if ($nome === '' || $numIngressi <= 0 || $prezzo < 0) {
+        respond(400, ['success' => false, 'message' => 'Dati pacchetto non validi']);
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        if (packagesTableAvailable()) {
+            $stmt = $pdo->prepare(
+                'UPDATE packages
+                 SET name = ?, description = NULLIF(?, ""), entries_count = ?, price = ?, visible = ?
+                 WHERE id = ?'
+            );
+            $stmt->execute([$nome, $descrizione, $numIngressi, $prezzo, $visible, $packageId]);
+        }
+
+        $legacy = ensureLegacyPackage($managed);
+        $stmt = $pdo->prepare(
+            'UPDATE pacchetti
+             SET nome = ?, descrizione = NULLIF(?, ""), num_ingressi = ?, prezzo = ?, validita_giorni = ?, attivo = ?
+             WHERE id = ?'
+        );
+        $stmt->execute([$nome, $descrizione, $numIngressi, $prezzo, $validita, $visible, $legacy['id']]);
+
+        $pdo->commit();
+
+        logActivity((string)$staff['user_id'], 'modifica_pacchetto', 'Modifica pacchetto ID ' . $packageId, 'packages', (string)$packageId);
+        respond(200, ['success' => true, 'message' => 'Pacchetto aggiornato', 'pacchetto' => fetchManagedPackageById($packageId)]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('updatePackage error: ' . $e->getMessage());
+        respond(500, ['success' => false, 'message' => 'Errore aggiornamento pacchetto']);
+    }
+}
+
+function togglePackageVisibility(): void
+{
+    global $pdo;
+
+    $staff = requireRole(3);
+    $packageId = (int)($_GET['id'] ?? 0);
+    if ($packageId <= 0) {
+        respond(400, ['success' => false, 'message' => 'ID pacchetto non valido']);
+    }
+
+    $managed = fetchManagedPackageById($packageId);
+    if (!$managed) {
+        respond(404, ['success' => false, 'message' => 'Pacchetto non trovato']);
+    }
+
+    $newVisible = (int)$managed['attivo'] === 1 ? 0 : 1;
+
+    try {
+        $pdo->beginTransaction();
+
+        if (packagesTableAvailable()) {
+            $stmt = $pdo->prepare('UPDATE packages SET visible = ? WHERE id = ?');
+            $stmt->execute([$newVisible, $packageId]);
+        }
+
+        $legacy = ensureLegacyPackage($managed);
+        $stmt = $pdo->prepare('UPDATE pacchetti SET attivo = ? WHERE id = ?');
+        $stmt->execute([$newVisible, $legacy['id']]);
+
+        $pdo->commit();
+
+        logActivity((string)$staff['user_id'], 'toggle_visibilita_pacchetto', 'Toggle visibilita pacchetto ID ' . $packageId, 'packages', (string)$packageId);
+        respond(200, [
+            'success' => true,
+            'message' => $newVisible === 1 ? 'Pacchetto reso visibile' : 'Pacchetto nascosto',
+            'pacchetto' => fetchManagedPackageById($packageId),
+        ]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('togglePackageVisibility error: ' . $e->getMessage());
+        respond(500, ['success' => false, 'message' => 'Errore aggiornamento visibilita pacchetto']);
     }
 }
 
@@ -224,13 +552,19 @@ function assignManualPackage(): void
                 respond(400, ['success' => false, 'message' => 'Pacchetto non specificato']);
             }
 
-            $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? LIMIT 1');
-            $stmt->execute([$packageId]);
-            $pacchetto = $stmt->fetch();
-            if (!$pacchetto) {
+            $managed = fetchManagedPackageById($packageId);
+            if (!$managed) {
                 $pdo->rollBack();
                 respond(404, ['success' => false, 'message' => 'Pacchetto non trovato']);
             }
+
+            $legacy = ensureLegacyPackage($managed);
+            $pacchetto = $legacy;
+            $pacchetto['nome'] = $managed['nome'];
+            $pacchetto['descrizione'] = $managed['descrizione'];
+            $pacchetto['num_ingressi'] = $managed['num_ingressi'];
+            $pacchetto['prezzo'] = $managed['prezzo'];
+            $pacchetto['validita_giorni'] = $managed['validita_giorni'];
         } else {
             $custom = is_array($data['custom_package'] ?? null) ? $data['custom_package'] : [];
 
@@ -279,26 +613,50 @@ function assignManualPackage(): void
         $importoPagato = $importoManuale !== null ? $importoManuale : (float)$pacchetto['prezzo'];
         $ingressiRimanenti = (int)$pacchetto['num_ingressi'];
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO acquisti
-             (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, qr_code, ingressi_rimanenti, data_scadenza, confermato_da, data_conferma, importo_pagato)
-             VALUES (?, ?, ?, ?, ?, NULLIF(?, ""), NULLIF(?, ""), ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            $acquistoId,
-            $userId,
-            $pacchetto['id'],
-            $metodoPagamento,
-            $statoPagamento,
-            $riferimentoPagamento,
-            $notePagamento,
-            $qrCode,
-            $ingressiRimanenti,
-            $dataScadenza,
-            $isConfirmed ? $staff['user_id'] : null,
-            $isConfirmed ? date('Y-m-d H:i:s') : null,
-            $importoPagato,
-        ]);
+        if (acquistiHasIngressiTotaliColumn()) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO acquisti
+                 (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, qr_code, ingressi_rimanenti, ingressi_totali, data_scadenza, confermato_da, data_conferma, importo_pagato)
+                 VALUES (?, ?, ?, ?, ?, NULLIF(?, ""), NULLIF(?, ""), ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $acquistoId,
+                $userId,
+                $pacchetto['id'],
+                $metodoPagamento,
+                $statoPagamento,
+                $riferimentoPagamento,
+                $notePagamento,
+                $qrCode,
+                $ingressiRimanenti,
+                $ingressiRimanenti,
+                $dataScadenza,
+                $isConfirmed ? $staff['user_id'] : null,
+                $isConfirmed ? date('Y-m-d H:i:s') : null,
+                $importoPagato,
+            ]);
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO acquisti
+                 (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, qr_code, ingressi_rimanenti, data_scadenza, confermato_da, data_conferma, importo_pagato)
+                 VALUES (?, ?, ?, ?, ?, NULLIF(?, ""), NULLIF(?, ""), ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $acquistoId,
+                $userId,
+                $pacchetto['id'],
+                $metodoPagamento,
+                $statoPagamento,
+                $riferimentoPagamento,
+                $notePagamento,
+                $qrCode,
+                $ingressiRimanenti,
+                $dataScadenza,
+                $isConfirmed ? $staff['user_id'] : null,
+                $isConfirmed ? date('Y-m-d H:i:s') : null,
+                $importoPagato,
+            ]);
+        }
 
         $pdo->commit();
 
@@ -368,26 +726,25 @@ function acquistaPacchetto(): void
     }
 
     $pacchettoId = (int)($data['pacchetto_id'] ?? 0);
-    $metodoPagamento = normalizePaymentMethod((string)($data['metodo_pagamento'] ?? 'bonifico'));
+    $metodoPagamento = normalizePaymentMethod((string)($data['metodo_pagamento'] ?? 'contanti'));
     $riferimentoPagamento = sanitizeInput($data['riferimento_pagamento'] ?? '');
     $notePagamento = sanitizeInput($data['note_pagamento'] ?? '');
 
-    $allowedMethods = ['bonifico', 'contanti'];
+    // Flusso pubblico: finalizzazione iscrizione in struttura (nessun pagamento online).
+    $allowedMethods = ['contanti'];
     if (!in_array($metodoPagamento, $allowedMethods, true)) {
-        respond(400, ['success' => false, 'message' => 'Metodo pagamento non supportato']);
+        respond(400, ['success' => false, 'message' => 'Pagamento online non attivo. Usa finalizzazione in struttura.']);
     }
 
     if ($pacchettoId <= 0) {
         respond(400, ['success' => false, 'message' => 'Pacchetto non specificato']);
     }
 
-    $stmt = $pdo->prepare('SELECT * FROM pacchetti WHERE id = ? AND attivo = TRUE LIMIT 1');
-    $stmt->execute([$pacchettoId]);
-    $pacchetto = $stmt->fetch();
-
-    if (!$pacchetto) {
+    $managed = fetchManagedPackageById($pacchettoId);
+    if (!$managed || (int)$managed['attivo'] !== 1) {
         respond(404, ['success' => false, 'message' => 'Pacchetto non trovato']);
     }
+    $pacchetto = ensureLegacyPackage($managed);
 
     $isImmediate = isImmediatePaymentMethod($metodoPagamento);
     $statoPagamento = $isImmediate ? 'confirmed' : 'pending';
@@ -399,29 +756,55 @@ function acquistaPacchetto(): void
             ? date('Y-m-d', strtotime('+' . (int)$pacchetto['validita_giorni'] . ' days'))
             : null;
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO acquisti
-             (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, qr_code, ingressi_rimanenti, data_scadenza, confermato_da, data_conferma, importo_pagato)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            $acquistoId,
-            $currentUser['user_id'],
-            $pacchettoId,
-            $metodoPagamento,
-            $statoPagamento,
-            $riferimentoPagamento,
-            $notePagamento,
-            $qrCode,
-            (int)$pacchetto['num_ingressi'],
-            $dataScadenza,
-            $isImmediate ? $currentUser['user_id'] : null,
-            $isImmediate ? date('Y-m-d H:i:s') : null,
-            (float)$pacchetto['prezzo'],
-        ]);
+        if (acquistiHasIngressiTotaliColumn()) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO acquisti
+                 (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, qr_code, ingressi_rimanenti, ingressi_totali, data_scadenza, confermato_da, data_conferma, importo_pagato)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $acquistoId,
+                $currentUser['user_id'],
+                $pacchetto['id'],
+                $metodoPagamento,
+                $statoPagamento,
+                $riferimentoPagamento,
+                $notePagamento,
+                $qrCode,
+                (int)$managed['num_ingressi'],
+                (int)$managed['num_ingressi'],
+                $dataScadenza,
+                $isImmediate ? $currentUser['user_id'] : null,
+                $isImmediate ? date('Y-m-d H:i:s') : null,
+                (float)$managed['prezzo'],
+            ]);
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO acquisti
+                 (id, user_id, pacchetto_id, metodo_pagamento, stato_pagamento, riferimento_pagamento, note_pagamento, qr_code, ingressi_rimanenti, data_scadenza, confermato_da, data_conferma, importo_pagato)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $acquistoId,
+                $currentUser['user_id'],
+                $pacchetto['id'],
+                $metodoPagamento,
+                $statoPagamento,
+                $riferimentoPagamento,
+                $notePagamento,
+                $qrCode,
+                (int)$managed['num_ingressi'],
+                $dataScadenza,
+                $isImmediate ? $currentUser['user_id'] : null,
+                $isImmediate ? date('Y-m-d H:i:s') : null,
+                (float)$managed['prezzo'],
+            ]);
+        }
 
+        $ingressiTotaliExpr = ingressiTotaliSelectSql('a', 'p');
         $stmt = $pdo->prepare(
-            'SELECT a.*, p.nome AS pacchetto_nome, p.descrizione AS pacchetto_descrizione, p.num_ingressi, p.validita_giorni
+            'SELECT a.*, p.nome AS pacchetto_nome, p.descrizione AS pacchetto_descrizione, p.num_ingressi, p.validita_giorni,
+                    ' . $ingressiTotaliExpr . ' AS ingressi_totali
              FROM acquisti a
              JOIN pacchetti p ON a.pacchetto_id = p.id
              WHERE a.id = ?
@@ -452,8 +835,8 @@ function acquistaPacchetto(): void
                 $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
                     . '<p>il tuo acquisto e stato confermato e il QR code e gia disponibile.</p>'
                     . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$pacchetto['nome'], ENT_QUOTES, 'UTF-8') . '<br>'
-                    . '<strong>Importo:</strong> EUR ' . number_format((float)$pacchetto['prezzo'], 2, ',', '.') . '<br>'
-                    . '<strong>Ingressi inclusi:</strong> ' . (int)$pacchetto['num_ingressi'] . '<br>'
+                    . '<strong>Importo:</strong> EUR ' . number_format((float)$managed['prezzo'], 2, ',', '.') . '<br>'
+                    . '<strong>Ingressi inclusi:</strong> ' . (int)$managed['num_ingressi'] . '<br>'
                     . '<strong>Metodo di pagamento:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Codice QR:</strong> <code>' . htmlspecialchars((string)$qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
                     . '<strong>Scadenza:</strong> ' . htmlspecialchars((string)$dataScadenza, ENT_QUOTES, 'UTF-8') . '</p>'
@@ -471,7 +854,7 @@ function acquistaPacchetto(): void
                 $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
                     . '<p>abbiamo ricevuto la tua richiesta di attivazione pacchetto ingressi.</p>'
                     . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$pacchetto['nome'], ENT_QUOTES, 'UTF-8') . '<br>'
-                    . '<strong>Importo:</strong> EUR ' . number_format((float)$pacchetto['prezzo'], 2, ',', '.') . '<br>'
+                    . '<strong>Importo:</strong> EUR ' . number_format((float)$managed['prezzo'], 2, ',', '.') . '<br>'
                     . '<strong>Metodo di pagamento:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Riferimento pratica:</strong> <code>' . htmlspecialchars((string)$acquistoId, ENT_QUOTES, 'UTF-8') . '</code></p>'
                     . '<p>Il pacchetto risulta in <strong>attesa di conferma</strong>. Riceverai un aggiornamento appena il pagamento sara verificato.</p>';
@@ -515,8 +898,10 @@ function getMyPurchases(): void
 
     $currentUser = requireAuth();
 
+    $ingressiTotaliExpr = ingressiTotaliSelectSql('a', 'p');
     $stmt = $pdo->prepare(
-        'SELECT a.*, p.nome AS pacchetto_nome, p.descrizione AS pacchetto_descrizione, p.validita_giorni, p.num_ingressi
+        'SELECT a.*, p.nome AS pacchetto_nome, p.descrizione AS pacchetto_descrizione, p.validita_giorni, p.num_ingressi,
+                ' . $ingressiTotaliExpr . ' AS ingressi_totali
          FROM acquisti a
          JOIN pacchetti p ON a.pacchetto_id = p.id
          WHERE a.user_id = ?
@@ -564,8 +949,10 @@ function confirmPayment(): void
     try {
         $pdo->beginTransaction();
 
+        $ingressiTotaliExpr = ingressiTotaliSelectSql('a', 'p');
         $stmt = $pdo->prepare(
-            'SELECT a.*, p.validita_giorni, p.nome AS pacchetto_nome, p.num_ingressi
+            'SELECT a.*, p.validita_giorni, p.nome AS pacchetto_nome, p.num_ingressi,
+                    ' . $ingressiTotaliExpr . ' AS ingressi_totali
              FROM acquisti a
              JOIN pacchetti p ON a.pacchetto_id = p.id
              WHERE a.id = ?

@@ -83,6 +83,15 @@ function getDashboardStats(): void
 
         $acquistiPending = (int)$pdo->query('SELECT COUNT(*) AS total FROM acquisti WHERE stato_pagamento = "pending"')->fetch()['total'];
         $documentiPending = (int)$pdo->query('SELECT COUNT(*) AS total FROM documenti_utente WHERE stato = "pending"')->fetch()['total'];
+        $iscrizioniPending = 0;
+        try {
+            $iscrizioniTable = $pdo->query("SHOW TABLES LIKE 'iscrizioni'")->fetch();
+            if ($iscrizioniTable) {
+                $iscrizioniPending = (int)$pdo->query('SELECT COUNT(*) AS total FROM iscrizioni WHERE stato = "pending"')->fetch()['total'];
+            }
+        } catch (Throwable $e) {
+            $iscrizioniPending = 0;
+        }
 
         $pacchettiInScadenza = (int)$pdo->query(
             'SELECT COUNT(*) AS total
@@ -113,6 +122,7 @@ function getDashboardStats(): void
                 'checkin_mese' => $checkinMese,
                 'incassi_mese' => $incassiMese,
                 'acquisti_pending' => $acquistiPending,
+                'iscrizioni_pending' => $iscrizioniPending,
                 'documenti_pending' => $documentiPending,
                 'pacchetti_in_scadenza' => $pacchettiInScadenza,
             ],
@@ -395,42 +405,116 @@ function exportUsers(): void
     global $pdo;
 
     try {
-        $stmt = $pdo->query(
-            'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita,
-                    p.citta, p.cap, p.codice_fiscale, p.attivo, p.email_verificata,
-                    p.created_at, r.nome AS ruolo,
-                    COALESCE((SELECT SUM(a.ingressi_rimanenti) FROM acquisti a WHERE a.user_id = p.id AND a.stato_pagamento = "confirmed"), 0) AS ingressi_rimanenti,
-                    COALESCE((SELECT COUNT(*) FROM check_ins c WHERE c.user_id = p.id), 0) AS totale_checkin
-             FROM profili p
-             JOIN ruoli r ON r.id = p.ruolo_id
-             ORDER BY p.created_at DESC'
-        );
+        $statusSelect = '"approved"';
+        try {
+            $statusColumn = $pdo->query("SHOW COLUMNS FROM profili LIKE 'stato_iscrizione'")->fetch();
+            if ($statusColumn) {
+                $statusSelect = 'COALESCE(p.stato_iscrizione, "approved")';
+            }
+        } catch (Throwable $e) {
+            $statusSelect = '"approved"';
+        }
+
+        $entryTotalExpr = 'COALESCE(pkg.num_ingressi, 0)';
+        try {
+            $entryColumn = $pdo->query("SHOW COLUMNS FROM acquisti LIKE 'ingressi_totali'")->fetch();
+            if ($entryColumn) {
+                $entryTotalExpr = 'COALESCE(NULLIF(a.ingressi_totali, 0), pkg.num_ingressi, 0)';
+            }
+        } catch (Throwable $e) {
+            $entryTotalExpr = 'COALESCE(pkg.num_ingressi, 0)';
+        }
+
+        $sql = 'SELECT p.id, p.nome, p.cognome, p.email, p.codice_fiscale, p.telefono, p.created_at,
+                       ' . $statusSelect . ' AS stato_iscrizione,
+                       COALESCE(ap.pacchetto_attivo, "-") AS pacchetto_attivo,
+                       COALESCE(agg.ingressi_totali, 0) AS ingressi_totali,
+                       COALESCE(agg.ingressi_utilizzati, 0) AS ingressi_utilizzati,
+                       COALESCE(agg.ingressi_rimanenti, 0) AS ingressi_rimanenti,
+                       COALESCE(agg.totale_pacchetti, 0) AS totale_pacchetti,
+                       COALESCE(agg.totale_spesa, 0) AS totale_spesa,
+                       ci.ultimo_ingresso AS ultimo_accesso_piscina,
+                       DATE(ci.ultimo_ingresso) AS data_ultimo_ingresso
+                FROM profili p
+                JOIN ruoli r ON r.id = p.ruolo_id
+                LEFT JOIN (
+                    SELECT a.user_id,
+                           SUM(' . $entryTotalExpr . ') AS ingressi_totali,
+                           SUM(GREATEST(' . $entryTotalExpr . ' - COALESCE(a.ingressi_rimanenti, 0), 0)) AS ingressi_utilizzati,
+                           SUM(COALESCE(a.ingressi_rimanenti, 0)) AS ingressi_rimanenti,
+                           COUNT(*) AS totale_pacchetti,
+                           SUM(COALESCE(a.importo_pagato, 0)) AS totale_spesa
+                    FROM acquisti a
+                    JOIN pacchetti pkg ON pkg.id = a.pacchetto_id
+                    WHERE a.stato_pagamento = "confirmed"
+                    GROUP BY a.user_id
+                ) agg ON agg.user_id = p.id
+                LEFT JOIN (
+                    SELECT a1.user_id, pkg1.nome AS pacchetto_attivo
+                    FROM acquisti a1
+                    JOIN pacchetti pkg1 ON pkg1.id = a1.pacchetto_id
+                    JOIN (
+                        SELECT user_id, MAX(COALESCE(data_conferma, data_acquisto)) AS ref_date
+                        FROM acquisti
+                        WHERE stato_pagamento = "confirmed"
+                        GROUP BY user_id
+                    ) latest ON latest.user_id = a1.user_id
+                            AND latest.ref_date = COALESCE(a1.data_conferma, a1.data_acquisto)
+                    WHERE a1.stato_pagamento = "confirmed"
+                ) ap ON ap.user_id = p.id
+                LEFT JOIN (
+                    SELECT c.user_id, MAX(c.timestamp) AS ultimo_ingresso
+                    FROM check_ins c
+                    GROUP BY c.user_id
+                ) ci ON ci.user_id = p.id
+                WHERE r.nome = "utente"
+                ORDER BY p.created_at DESC';
+
+        $stmt = $pdo->query($sql);
         $users = $stmt->fetchAll();
 
         $rows = [];
         foreach ($users as $user) {
             $rows[] = [
                 $user['id'],
-                $user['email'],
                 $user['nome'],
                 $user['cognome'],
-                $user['telefono'],
-                $user['data_nascita'],
-                $user['citta'],
-                $user['cap'],
+                $user['email'],
                 $user['codice_fiscale'],
-                $user['ruolo'],
-                (int)$user['attivo'] === 1 ? 'Si' : 'No',
-                (int)$user['email_verificata'] === 1 ? 'Si' : 'No',
-                $user['ingressi_rimanenti'],
-                $user['totale_checkin'],
+                $user['telefono'],
                 $user['created_at'],
+                $user['stato_iscrizione'],
+                $user['pacchetto_attivo'],
+                (int)$user['ingressi_totali'],
+                (int)$user['ingressi_utilizzati'],
+                (int)$user['ingressi_rimanenti'],
+                (int)$user['totale_pacchetti'],
+                number_format((float)$user['totale_spesa'], 2, '.', ''),
+                (string)($user['ultimo_accesso_piscina'] ?? ''),
+                (string)($user['data_ultimo_ingresso'] ?? ''),
             ];
         }
 
         outputCsv(
-            'utenti_' . date('Y-m-d') . '.csv',
-            ['ID', 'Email', 'Nome', 'Cognome', 'Telefono', 'Data Nascita', 'Citta', 'CAP', 'Codice Fiscale', 'Ruolo', 'Attivo', 'Email Verificata', 'Ingressi Rimanenti', 'Totale Check-in', 'Data Registrazione'],
+            'utenti_completo_' . date('Y-m-d') . '.csv',
+            [
+                'ID',
+                'Nome',
+                'Cognome',
+                'Email',
+                'Codice Fiscale',
+                'Telefono',
+                'Data Iscrizione',
+                'Stato Iscrizione',
+                'Pacchetto Attivo',
+                'Numero Ingressi Totali',
+                'Ingressi Utilizzati',
+                'Ingressi Rimanenti',
+                'Totale Pacchetti Acquistati',
+                'Totale Spesa Cumulativa',
+                'Ultimo Accesso Piscina',
+                'Data Ultimo Ingresso',
+            ],
             $rows
         );
     } catch (Throwable $e) {

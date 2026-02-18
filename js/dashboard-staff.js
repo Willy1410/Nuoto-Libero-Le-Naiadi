@@ -187,6 +187,9 @@
         el('statCheckinMonth').textContent = String(stats.checkin_mese || 0);
         el('statRevenueMonth').textContent = formatCurrency(stats.incassi_mese || 0);
         el('statPendingPurchases').textContent = String(stats.acquisti_pending || 0);
+        if (el('statPendingEnrollments')) {
+            el('statPendingEnrollments').textContent = String(stats.iscrizioni_pending || 0);
+        }
         el('statPendingDocs').textContent = String(stats.documenti_pending || 0);
 
         const rows = Array.isArray(data.ultimi_checkin) ? data.ultimi_checkin : [];
@@ -271,6 +274,38 @@
         `).join('');
     }
 
+    async function loadPendingEnrollments() {
+        const body = el('pendingEnrollmentsBody');
+        if (!body) return;
+
+        try {
+            const data = await apiJson('iscrizioni.php?action=list&status=pending', { method: 'GET' });
+            const rows = Array.isArray(data.iscrizioni) ? data.iscrizioni : [];
+
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="7">Nessuna iscrizione pending</td></tr>';
+                return;
+            }
+
+            body.innerHTML = rows.map((row) => `
+                <tr>
+                    <td>${escapeHtml(formatDate(row.submitted_at))}</td>
+                    <td>${escapeHtml(`${row.nome || ''} ${row.cognome || ''}`.trim())}</td>
+                    <td>${escapeHtml(row.email || '-')}</td>
+                    <td>${escapeHtml(row.telefono || '-')}</td>
+                    <td>${escapeHtml(row.package_name || '10 Ingressi')}</td>
+                    <td><span class="badge badge-warn">pending</span></td>
+                    <td>
+                        <button class="btn btn-ok" data-action="approve-enrollment" data-id="${escapeHtml(row.id)}" type="button">Approva</button>
+                        <button class="btn btn-danger" data-action="reject-enrollment" data-id="${escapeHtml(row.id)}" type="button">Rifiuta</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            body.innerHTML = '<tr><td colspan="7">Errore caricamento iscrizioni</td></tr>';
+        }
+    }
+
     async function loadPendingDocuments() {
         const data = await apiJson('documenti.php?action=pending', { method: 'GET' });
         const rows = Array.isArray(data.documenti) ? data.documenti : [];
@@ -339,7 +374,7 @@
             return;
         }
         if (state.activeTab === 'purchases') {
-            await loadPendingPurchases();
+            await Promise.all([loadPendingEnrollments(), loadPendingPurchases()]);
             return;
         }
         if (state.activeTab === 'documents') {
@@ -383,18 +418,49 @@
 
     function renderPackageOptions() {
         const select = el('apExistingPackage');
-        if (!select) return;
+        if (select) {
+            if (!state.packages.length) {
+                select.innerHTML = '<option value="">Nessun pacchetto disponibile</option>';
+            } else {
+                select.innerHTML = state.packages.map((pkg) => `
+                    <option value="${escapeHtml(String(pkg.id))}">
+                        ${escapeHtml(pkg.nome || 'Pacchetto')} - ${escapeHtml(String(pkg.num_ingressi || 0))} ingressi - ${escapeHtml(formatCurrency(pkg.prezzo || 0))}${Number(pkg.attivo) === 1 ? '' : ' [non visibile]'}
+                    </option>
+                `).join('');
+            }
+        }
+
+        renderPackagesManagement();
+    }
+
+    function renderPackagesManagement() {
+        const body = el('packagesManageBody');
+        if (!body) return;
 
         if (!state.packages.length) {
-            select.innerHTML = '<option value="">Nessun pacchetto disponibile</option>';
+            body.innerHTML = '<tr><td colspan="5">Nessun pacchetto configurato</td></tr>';
             return;
         }
 
-        select.innerHTML = state.packages.map((pkg) => `
-            <option value="${escapeHtml(String(pkg.id))}">
-                ${escapeHtml(pkg.nome || 'Pacchetto')} - ${escapeHtml(String(pkg.num_ingressi || 0))} ingressi - ${escapeHtml(formatCurrency(pkg.prezzo || 0))}${Number(pkg.attivo) === 1 ? '' : ' [non visibile]'}
-            </option>
-        `).join('');
+        body.innerHTML = state.packages.map((pkg) => {
+            const visible = Number(pkg.attivo) === 1
+                ? '<span class="badge badge-ok">visibile</span>'
+                : '<span class="badge badge-neutral">nascosto</span>';
+            return `
+                <tr>
+                    <td>${escapeHtml(pkg.nome || '-')}</td>
+                    <td>${escapeHtml(String(pkg.num_ingressi || 0))}</td>
+                    <td>${escapeHtml(formatCurrency(pkg.prezzo || 0))}</td>
+                    <td>${visible}</td>
+                    <td>
+                        <button class="btn btn-secondary" data-action="edit-package" data-id="${escapeHtml(String(pkg.id))}" type="button">Modifica</button>
+                        <button class="btn ${Number(pkg.attivo) === 1 ? 'btn-warn' : 'btn-ok'}" data-action="toggle-package" data-id="${escapeHtml(String(pkg.id))}" type="button">
+                            ${Number(pkg.attivo) === 1 ? 'Nascondi' : 'Mostra'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderUserDetail(detail) {
@@ -629,7 +695,7 @@
         setAssignModeUI();
         closeModal('assignPackageModal');
 
-        await Promise.all([loadStats(), loadPackages(true), loadPendingPurchases()]);
+        await Promise.all([loadStats(), loadPackages(true), loadPendingPurchases(), loadPendingEnrollments()]);
         await openUserDetail(userId);
     }
 
@@ -656,10 +722,76 @@
         });
 
         setStatus(`${data.message || 'Pagamento confermato'}${data.qr_code ? ` | QR: ${data.qr_code}` : ''}`, 'ok');
-        await Promise.all([loadStats(), loadPendingPurchases()]);
+        await Promise.all([loadStats(), loadPendingPurchases(), loadPendingEnrollments()]);
         if (state.selectedUserId) {
             await openUserDetail(state.selectedUserId);
         }
+    }
+
+    async function handleReviewEnrollment(enrollmentId, approve) {
+        if (!enrollmentId) return;
+        let note = '';
+        if (!approve) {
+            note = window.prompt('Motivo rifiuto iscrizione (facoltativo):', '') || '';
+        }
+
+        const data = await apiJson(`iscrizioni.php?action=review&id=${encodeURIComponent(enrollmentId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                stato: approve ? 'approved' : 'rejected',
+                note_revisione: note,
+            }),
+        });
+
+        setStatus(data.message || 'Iscrizione aggiornata', 'ok');
+        await Promise.all([loadStats(), loadPendingEnrollments(), loadPendingPurchases(), loadUsers()]);
+    }
+
+    async function handleTogglePackage(packageId) {
+        if (!packageId) return;
+        const data = await apiJson(`pacchetti.php?action=admin-toggle-package&id=${encodeURIComponent(packageId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({}),
+        });
+        setStatus(data.message || 'Visibilita pacchetto aggiornata', 'ok');
+        await loadPackages(true);
+    }
+
+    async function handleEditPackage(packageId) {
+        if (!packageId) return;
+        const pkg = state.packages.find((item) => String(item.id) === String(packageId));
+        if (!pkg) {
+            throw new Error('Pacchetto non trovato');
+        }
+
+        const nome = window.prompt('Nome pacchetto', pkg.nome || '');
+        if (!nome || !nome.trim()) {
+            return;
+        }
+        const entriesRaw = window.prompt('Numero ingressi', String(pkg.num_ingressi || 0));
+        const priceRaw = window.prompt('Prezzo EUR', String(pkg.prezzo || 0));
+
+        const numIngressi = Number(entriesRaw);
+        const prezzo = Number(priceRaw);
+        if (!Number.isFinite(numIngressi) || numIngressi <= 0 || !Number.isFinite(prezzo) || prezzo < 0) {
+            throw new Error('Valori pacchetto non validi');
+        }
+
+        const payload = {
+            nome: nome.trim(),
+            descrizione: pkg.descrizione || '',
+            num_ingressi: numIngressi,
+            prezzo: prezzo,
+            attivo: Number(pkg.attivo) === 1,
+        };
+
+        const data = await apiJson(`pacchetti.php?action=admin-update-package&id=${encodeURIComponent(packageId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+
+        setStatus(data.message || 'Pacchetto aggiornato', 'ok');
+        await loadPackages(true);
     }
 
     async function handleReviewDocument(documentId, approve) {
@@ -925,6 +1057,16 @@
                 return;
             }
 
+            if (action === 'approve-enrollment') {
+                handleReviewEnrollment(id, true).catch((error) => setStatus(error.message, 'error'));
+                return;
+            }
+
+            if (action === 'reject-enrollment') {
+                handleReviewEnrollment(id, false).catch((error) => setStatus(error.message, 'error'));
+                return;
+            }
+
             if (action === 'approve-doc') {
                 handleReviewDocument(id, true).catch((error) => setStatus(error.message, 'error'));
                 return;
@@ -942,6 +1084,16 @@
 
             if (action === 'download-qr') {
                 handleDownloadQr(acquistoId || id).catch((error) => setStatus(error.message, 'error'));
+                return;
+            }
+
+            if (action === 'toggle-package') {
+                handleTogglePackage(id).catch((error) => setStatus(error.message, 'error'));
+                return;
+            }
+
+            if (action === 'edit-package') {
+                handleEditPackage(id).catch((error) => setStatus(error.message, 'error'));
             }
         });
     }

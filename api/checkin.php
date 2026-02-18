@@ -85,7 +85,15 @@ function verificaQR(): void
             return;
         }
 
-        $fasciaCorrente = getFasciaOraria(date('H:i:s'));
+        $fasciaCorrente = getCurrentIngressFasciaOraria();
+        if ($fasciaCorrente === null) {
+            echo json_encode([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Ingresso consentito solo in fascia attiva: ' . getIngressScheduleSummary(),
+            ]);
+            return;
+        }
 
         $stmt = $pdo->prepare(
             'SELECT COUNT(*) AS count
@@ -150,7 +158,15 @@ function registraCheckIn(): void
         return;
     }
 
-    $fasciaCorrente = getFasciaOraria(date('H:i:s'));
+    $fasciaCorrente = getCurrentIngressFasciaOraria();
+    if ($fasciaCorrente === null) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Check-in non consentito fuori orario. Fasce attive: ' . getIngressScheduleSummary(),
+        ]);
+        return;
+    }
 
     try {
         $pdo->beginTransaction();

@@ -1,6 +1,5 @@
 ﻿/**
- * Gli Squaletti - Richiesta pacchetti ingressi
- * Flusso pubblico non e-commerce: richiesta + verifica segreteria.
+ * Gli Squaletti - Flusso iscrizione in struttura (no pagamento online)
  */
 
 const paymentState = {
@@ -14,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     initPackageSelection();
     initCheckoutForm();
-    initPaymentMethods();
 });
 
 function initPackageSelection() {
@@ -27,11 +25,10 @@ function initPackageSelection() {
         if (!selectButton) return;
 
         selectButton.addEventListener('click', function () {
-            const packageId = card.dataset.package;
-            const packagePrice = parseFloat(card.dataset.price);
-            const packageName = card.dataset.name;
+            const packagePrice = parseFloat(card.dataset.price || '0');
+            const packageName = card.dataset.name || '10 Ingressi';
 
-            paymentState.selectedPackage = packageId;
+            paymentState.selectedPackage = card.dataset.package || '10-ingressi';
             paymentState.packagePrice = packagePrice;
             paymentState.packageName = packageName;
 
@@ -90,48 +87,58 @@ function initCheckoutForm() {
         }
 
         if (!paymentState.selectedPackage) {
-            showNotification('Seleziona prima un pacchetto.', 'error');
+            showNotification('Seleziona prima il pacchetto da 10 ingressi.', 'error');
             return;
         }
 
-        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+        const submitButton = document.getElementById('instore-submit');
+        const original = submitButton ? submitButton.innerHTML : '';
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio richiesta...';
+        }
 
         try {
-            if (paymentMethod === 'bonifico') {
-                await handleBankTransferNotice(formData);
-                return;
+            const payload = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                note: formData.notes,
+                termsAccept: formData.termsAccept,
+                privacyAccept: formData.privacyAccept,
+                package_name: paymentState.packageName,
+                package_price: paymentState.packagePrice,
+                terms_accept: formData.termsAccept,
+                privacy_accept: formData.privacyAccept
+            };
+
+            const response = await fetch('api/iscrizioni.php?action=submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Errore invio iscrizione');
             }
 
-            await handleInStoreRequest(formData);
+            redirectToConfirmation(result.iscrizione_id || ('ISCR-' + Date.now()), {
+                package: paymentState.packageName,
+                price: paymentState.packagePrice,
+                email: formData.email,
+                message: result.message || 'Richiesta inviata correttamente'
+            });
         } catch (error) {
-            showNotification(error.message || 'Errore durante l\'invio richiesta.', 'error');
+            showNotification(error.message || 'Errore durante l\'invio della richiesta.', 'error');
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = original;
+            }
         }
     });
-}
-
-function initPaymentMethods() {
-    const paymentOptions = document.querySelectorAll('input[name="paymentMethod"]');
-    const bankTransferContainer = document.getElementById('bank-transfer-container');
-    const instoreContainer = document.getElementById('instore-payment-container');
-
-    paymentOptions.forEach(option => {
-        option.addEventListener('change', function () {
-            if (bankTransferContainer) bankTransferContainer.style.display = 'none';
-            if (instoreContainer) instoreContainer.style.display = 'none';
-
-            const selectedMethod = this.value;
-            if (selectedMethod === 'bonifico') {
-                if (bankTransferContainer) bankTransferContainer.style.display = 'block';
-                return;
-            }
-            if (instoreContainer) instoreContainer.style.display = 'block';
-        });
-    });
-
-    const selectedOption = document.querySelector('input[name="paymentMethod"]:checked');
-    if (selectedOption) {
-        selectedOption.dispatchEvent(new Event('change'));
-    }
 }
 
 function getFormData() {
@@ -189,131 +196,19 @@ function validateFormData(data) {
     return true;
 }
 
-async function handleInStoreRequest(formData) {
-    const submitButton = document.getElementById('instore-submit');
-    const original = submitButton ? submitButton.innerHTML : '';
-
-    if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio richiesta...';
-    }
-
-    try {
-        const orderId = window.GliSqualetti && typeof window.GliSqualetti.generateOrderId === 'function'
-            ? window.GliSqualetti.generateOrderId()
-            : ('GLI-' + Date.now());
-
-        const orderData = {
-            orderId,
-            ...formData,
-            package: paymentState.packageName,
-            price: paymentState.packagePrice,
-            paymentMethod: 'instore',
-            status: 'pending',
-            createdAt: new Date().toISOString()
-        };
-
-        await notifyOrderConfirmationEmail(orderData);
-        redirectToConfirmation(orderId, 'instore', orderData);
-    } finally {
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.innerHTML = original;
-        }
-    }
-}
-
-async function handleBankTransferNotice(formData) {
-    const transferReference = document.getElementById('bonificoReference')?.value.trim();
-    const transferDate = document.getElementById('bonificoDate')?.value;
-    const submitButton = document.getElementById('bonifico-submit');
-    const original = submitButton ? submitButton.innerHTML : '';
-
-    if (!transferReference || !transferDate) {
-        throw new Error('Inserisci riferimento e data bonifico.');
-    }
-
-    if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio notifica...';
-    }
-
-    try {
-        const response = await fetch('api/bonifico-notify.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ...formData,
-                package: paymentState.packageName,
-                amount: paymentState.packagePrice,
-                transferReference,
-                transferDate
-            })
-        });
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'Invio notifica bonifico non riuscito.');
-        }
-
-        const orderId = result.orderId || (window.GliSqualetti?.generateOrderId?.() || ('GLI-' + Date.now()));
-        const orderData = {
-            orderId,
-            ...formData,
-            package: paymentState.packageName,
-            price: paymentState.packagePrice,
-            paymentMethod: 'bonifico',
-            transferReference,
-            transferDate,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-        };
-
-        redirectToConfirmation(orderId, 'bonifico', orderData);
-    } finally {
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.innerHTML = original;
-        }
-    }
-}
-
-async function notifyOrderConfirmationEmail(orderData) {
-    const response = await fetch('api/order-confirmation.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(orderData)
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Invio email conferma non riuscito.');
-    }
-
-    return true;
-}
-
-function redirectToConfirmation(orderId, method, orderData) {
-    const message = method === 'bonifico'
-        ? 'Abbiamo ricevuto la notifica bonifico. La segreteria confermerà l\'attivazione.'
-        : 'Richiesta registrata. Completa iscrizione e contributo in reception.';
-
+function redirectToConfirmation(enrollmentId, orderData) {
     const confirmationHTML = `
         <!DOCTYPE html>
         <html lang="it">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Richiesta Registrata - Gli Squaletti</title>
+            <title>Richiesta Iscrizione Registrata - Gli Squaletti</title>
             <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
             <style>
                 body { margin:0; font-family:Poppins, sans-serif; background:linear-gradient(135deg,#00a8e8,#0077b6); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
-                .card { background:#fff; max-width:640px; width:100%; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,.2); padding:28px; }
+                .card { background:#fff; max-width:680px; width:100%; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,.2); padding:28px; }
                 .ok { width:72px; height:72px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:34px; margin:0 auto 18px; }
                 h1 { margin:0 0 8px; text-align:center; color:#0077b6; }
                 p { color:#334155; }
@@ -329,12 +224,13 @@ function redirectToConfirmation(orderId, method, orderData) {
         <body>
             <div class="card">
                 <div class="ok">✓</div>
-                <h1>Richiesta Registrata</h1>
-                <p style="text-align:center;">${message}</p>
+                <h1>Richiesta Iscrizione Registrata</h1>
+                <p style="text-align:center;">${orderData.message}. Nessun pagamento online: finalizzazione in struttura.</p>
                 <div class="box">
-                    <div class="row"><strong>Codice richiesta</strong><span>${orderId}</span></div>
+                    <div class="row"><strong>Codice richiesta</strong><span>${enrollmentId}</span></div>
                     <div class="row"><strong>Pacchetto</strong><span>${orderData.package}</span></div>
-                    <div class="row"><strong>Contributo</strong><span>${formatCurrency(orderData.price)}</span></div>
+                    <div class="row"><strong>Totale</strong><span>${formatCurrency(orderData.price)}</span></div>
+                    <div class="row"><strong>Comprende</strong><span>Iscrizione, Tesseramento, 10 ingressi + 2 omaggio</span></div>
                     <div class="row"><strong>Email</strong><span>${orderData.email}</span></div>
                 </div>
                 <div class="actions">

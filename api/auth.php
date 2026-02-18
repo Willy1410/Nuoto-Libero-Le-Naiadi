@@ -188,7 +188,7 @@ function handleLogin(): void
 
     try {
         $stmt = $pdo->prepare(
-            'SELECT p.id, p.email, p.password_hash, p.nome, p.cognome, p.attivo, p.email_verificata,
+            'SELECT p.id, p.email, p.password_hash, p.nome, p.cognome, p.attivo, p.email_verificata, p.force_password_change,
                     r.nome AS ruolo_nome, r.livello AS ruolo_livello
              FROM profili p
              JOIN ruoli r ON p.ruolo_id = r.id
@@ -241,6 +241,7 @@ function handleLogin(): void
                 'ruolo' => $user['ruolo_nome'],
                 'livello' => (int)$user['ruolo_livello'],
                 'email_verificata' => (bool)$user['email_verificata'],
+                'force_password_change' => (bool)($user['force_password_change'] ?? false),
             ],
         ]);
     } catch (Throwable $e) {
@@ -264,7 +265,7 @@ function handleMe(): void
     try {
         $stmt = $pdo->prepare(
             'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
-                    p.codice_fiscale, p.attivo, p.email_verificata, p.ultimo_accesso,
+                    p.codice_fiscale, p.attivo, p.email_verificata, p.force_password_change, p.ultimo_accesso,
                     r.nome AS ruolo_nome, r.livello AS ruolo_livello
              FROM profili p
              JOIN ruoli r ON p.ruolo_id = r.id
@@ -457,7 +458,7 @@ function handleChangePassword(): void
         }
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare('UPDATE profili SET password_hash = ? WHERE id = ?');
+        $stmt = $pdo->prepare('UPDATE profili SET password_hash = ?, force_password_change = 0 WHERE id = ?');
         $stmt->execute([$newHash, $currentUser['user_id']]);
 
         logActivity((string)$currentUser['user_id'], 'cambio_password', 'Password aggiornata', 'profili', (string)$currentUser['user_id']);
@@ -633,7 +634,7 @@ function handleResetPassword(): void
         }
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $pdo->prepare('UPDATE profili SET password_hash = ? WHERE id = ?')->execute([$newHash, $row['user_id']]);
+        $pdo->prepare('UPDATE profili SET password_hash = ?, force_password_change = 0 WHERE id = ?')->execute([$newHash, $row['user_id']]);
 
         $pdo->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?')->execute([$row['id']]);
 
