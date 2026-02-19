@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Chi siamo: associazione sportiva dedicata al nuoto libero non agonistico, attivitÃƒÂ  in piscina coperta e 50 metri all'aperto in estate.">
+    <meta name="description" content="Chi siamo: associazione sportiva dedicata al nuoto libero non agonistico, attivit&agrave; in piscina coperta e 50 metri all'aperto in estate.">
     <meta name="keywords" content="chi siamo nuoto libero, associazione sportiva nuoto, piscina non agonistica, staff piscina">
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="/chi-siamo.php">
@@ -68,11 +68,11 @@
             <div class="about-content">
                 <div class="about-text">
                     <h2>CLADAM GROUP</h2>
-                    <p class="lead">La SocietÃƒÂ  Sportiva <strong>CLADAM GROUP</strong>, proprietaria dei marchi <strong>"Le SqualOtte"</strong> e <strong>"Gli Squaletti"</strong>, ÃƒÂ¨ altamente specializzata e con anni di esperienza nel settore, promuove e segue le attivitÃƒÂ  di acquaticitÃƒÂ  pre e post natale e nuoto libero.</p>
+                    <p class="lead">La Societ&agrave; Sportiva <strong>CLADAM GROUP</strong>, proprietaria dei marchi <strong>"Le SqualOtte"</strong> e <strong>"Gli Squaletti"</strong>, &egrave; altamente specializzata e con anni di esperienza nel settore, promuove e segue le attivit&agrave; di acquaticit&agrave; pre e post natale e nuoto libero.</p>
                     
                     <div class="mission-box">
                         <h3><i class="fas fa-bullseye"></i> La Nostra Missione</h3>
-                        <p>Promuovere la cultura dell'acquaticitÃƒÂ  a tutte le etÃƒÂ , dall'infanzia all'etÃƒÂ  adulta, attraverso programmi personalizzati e strutture all'avanguardia.</p>
+                        <p>Promuovere la cultura dell'acquaticit&agrave; a tutte le et&agrave;, dall'infanzia all'et&agrave; adulta, attraverso programmi personalizzati e strutture all'avanguardia.</p>
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
                         <i class="fas fa-baby" style="font-size: 4rem; color: var(--primary-color);"></i>
                     </div>
                     <h3>Le SqualOtte</h3>
-                    <p>Programmi di <strong>acquaticitÃƒÂ  pre e post natale</strong>. Corsi per gestanti, neonati e bambini in un ambiente sicuro e accogliente.</p>
+                    <p>Programmi di <strong>acquaticit&agrave; pre e post natale</strong>. Corsi per gestanti, neonati e bambini in un ambiente sicuro e accogliente.</p>
                     <a href="contatti.php" class="btn btn-secondary">Informazioni</a>
                 </div>
             </div>
@@ -145,7 +145,7 @@
                         <i class="fas fa-medal"></i>
                     </div>
                     <h3 class="stat-number">100%</h3>
-                    <p>QualitÃƒÂ  Certificata</p>
+                    <p>Qualit&agrave; Certificata</p>
                 </div>
             </div>
         </div>
@@ -199,7 +199,7 @@
                         <i class="fas fa-wheelchair"></i>
                         <div>
                             <h4>Accessibile</h4>
-                            <p>Struttura completamente accessibile a persone con disabilitÃƒÂ </p>
+                            <p>Struttura completamente accessibile a persone con disabilit&agrave;</p>
                         </div>
                     </div>
 
@@ -229,19 +229,19 @@
 
                 <div class="value-card">
                     <i class="fas fa-star"></i>
-                    <h3>ProfessionalitÃƒÂ </h3>
+                    <h3>Professionalit&agrave;</h3>
                     <p>Staff qualificato e in continuo aggiornamento</p>
                 </div>
 
                 <div class="value-card">
                     <i class="fas fa-handshake"></i>
                     <h3>Attenzione</h3>
-                    <p>Ogni cliente ÃƒÂ¨ importante e seguito personalmente</p>
+                    <p>Ogni cliente &egrave; importante e seguito personalmente</p>
                 </div>
 
                 <div class="value-card">
                     <i class="fas fa-leaf"></i>
-                    <h3>SostenibilitÃƒÂ </h3>
+                    <h3>Sostenibilit&agrave;</h3>
                     <p>Rispetto per l'ambiente e gestione responsabile</p>
                 </div>
             </div>
@@ -323,9 +323,3 @@
     <script src="js/main.js"></script>
 </body>
 </html>
-
-
-
-
-
-

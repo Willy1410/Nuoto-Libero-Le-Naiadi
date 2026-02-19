@@ -1,33 +1,30 @@
 <?php
-/**
- * SMTP Gmail configuration (local test/XAMPP).
- *
- * NOTE:
- * - Use ONLY local/test credentials.
- * - You can override values with environment variables:
- *   GMAIL_SMTP_USER, GMAIL_SMTP_APP_PASSWORD, MAIL_ENABLED
- */
+declare(strict_types=1);
 
-$gmailUser = trim((string)(getenv('GMAIL_SMTP_USER') ?: 'info@glisqualetti.it'));
-$gmailAppPasswordRaw = (string)(getenv('GMAIL_SMTP_APP_PASSWORD') ?: 'yyvb ckzs zvpi rwdb');
-$gmailAppPassword = preg_replace('/\s+/', '', $gmailAppPasswordRaw) ?: '';
-$mailEnabledEnv = getenv('MAIL_ENABLED');
-$mailEnabled = $mailEnabledEnv === false ? true : filter_var($mailEnabledEnv, FILTER_VALIDATE_BOOLEAN);
+require_once __DIR__ . '/env.php';
+appLoadEnvFile(dirname(__DIR__) . '/.env');
+
+$mailEnabled = appEnvBool('MAIL_ENABLED', false);
+$mailFromEmail = appEnv('MAIL_FROM_EMAIL', 'noreply@nuotolibero.local');
+$mailFromName = appEnv('MAIL_FROM_NAME', 'Gli Squaletti');
+$mailAdminEmail = appEnv('MAIL_ADMIN_EMAIL', $mailFromEmail);
+$mailAdminName = appEnv('MAIL_ADMIN_NAME', 'Segreteria Gli Squaletti');
+$mailCopyToSender = appEnvBool('MAIL_SEND_COPY_TO_SENDER', false);
 
 return [
     'enabled' => $mailEnabled,
-    'from_email' => $gmailUser,
-    'from_name' => 'Gli Squaletti',
-    'admin_email' => $gmailUser,
-    'admin_name' => 'Segreteria Gli Squaletti',
-    'send_copy_to_sender' => false,
+    'from_email' => $mailFromEmail,
+    'from_name' => $mailFromName,
+    'admin_email' => $mailAdminEmail,
+    'admin_name' => $mailAdminName,
+    'send_copy_to_sender' => $mailCopyToSender,
     'smtp' => [
-        'host' => 'smtp.gmail.com',
-        'port' => 587,
-        'username' => $gmailUser,
-        'password' => $gmailAppPassword,
-        'encryption' => 'tls',
-        'auth' => true,
-        'timeout' => 15,
+        'host' => appEnv('MAIL_SMTP_HOST', ''),
+        'port' => (int)appEnv('MAIL_SMTP_PORT', '587'),
+        'username' => appEnv('MAIL_SMTP_USER', ''),
+        'password' => preg_replace('/\s+/', '', appEnv('MAIL_SMTP_PASS', '')) ?: '',
+        'encryption' => appEnv('MAIL_SMTP_ENCRYPTION', 'tls'),
+        'auth' => appEnvBool('MAIL_SMTP_AUTH', true),
+        'timeout' => (int)appEnv('MAIL_SMTP_TIMEOUT', '15'),
     ],
 ];

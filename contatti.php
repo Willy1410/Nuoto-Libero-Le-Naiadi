@@ -128,8 +128,8 @@
                 </div>
 
                 <form id="contactForm" class="contact-form">
-                    <!-- Honeypot for spam prevention -->
-                    <input type="text" name="website" style="display: none;" tabindex="-1" autocomplete="off">
+                    <!-- Honeypot anti-spam: deve restare vuoto -->
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
 
                     <div class="form-row">
                         <div class="form-group">
@@ -229,7 +229,7 @@
                 <div class="hours-card">
                     <h3>Giorni Feriali</h3>
                     <div class="hours-item">
-                        <span>LunedÃƒÂ¬ - VenerdÃƒÂ¬</span>
+                        <span>Luned&igrave; - Venerd&igrave;</span>
                         <strong>07:00 - 22:00</strong>
                     </div>
                     <p class="hours-note">Reception sempre disponibile durante l'orario di apertura</p>
@@ -262,13 +262,13 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Certo! Vieni durante gli orari di apertura e chiedi alla reception una visita guidata. ÃƒË† completamente gratuita e senza impegno.</p>
+                        <p>Certo! Vieni durante gli orari di apertura e chiedi alla reception una visita guidata. &Egrave; completamente gratuita e senza impegno.</p>
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>C'ÃƒÂ¨ un numero per emergenze?</span>
+                        <span>C'&egrave; un numero per emergenze?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
@@ -357,9 +357,3 @@
     <script src="js/main.js"></script>
 </body>
 </html>
-
-
-
-
-
-

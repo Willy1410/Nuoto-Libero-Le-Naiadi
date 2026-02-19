@@ -1,28 +1,27 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Configurazione pagamenti (solo test locale)
- */
+require_once __DIR__ . '/env.php';
+appLoadEnvFile(dirname(__DIR__) . '/.env');
 
 return [
     'stripe' => [
-        'publishable_key' => 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY',
-        'secret_key' => 'sk_test_YOUR_STRIPE_SECRET_KEY',
-        'webhook_secret' => 'whsec_YOUR_STRIPE_WEBHOOK_SECRET',
-        'mode' => 'test',
+        'publishable_key' => appEnv('STRIPE_PUBLISHABLE_KEY', ''),
+        'secret_key' => appEnv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret' => appEnv('STRIPE_WEBHOOK_SECRET', ''),
+        'mode' => appEnv('STRIPE_MODE', 'test'),
     ],
     'paypal' => [
-        'client_id' => 'YOUR_PAYPAL_SANDBOX_CLIENT_ID',
-        'client_secret' => 'YOUR_PAYPAL_SANDBOX_CLIENT_SECRET',
-        'mode' => 'sandbox',
-        'webhook_id' => 'YOUR_PAYPAL_SANDBOX_WEBHOOK_ID',
+        'client_id' => appEnv('PAYPAL_CLIENT_ID', ''),
+        'client_secret' => appEnv('PAYPAL_CLIENT_SECRET', ''),
+        'mode' => appEnv('PAYPAL_MODE', 'sandbox'),
+        'webhook_id' => appEnv('PAYPAL_WEBHOOK_ID', ''),
     ],
     'bonifico' => [
-        'intestatario' => 'Nuoto Libero SSD',
-        'iban' => 'IT00X0000000000000000000000',
-        'banca' => 'Banca di Test Locale',
-        'causale_template' => 'Nome Cognome - Pacchetto - Email',
-        'email_conferma' => 'inserisci-la-tua-gmail@gmail.com',
+        'intestatario' => appEnv('BONIFICO_INTESTATARIO', 'Nuoto Libero SSD'),
+        'iban' => appEnv('BONIFICO_IBAN', ''),
+        'banca' => appEnv('BONIFICO_BANCA', ''),
+        'causale_template' => appEnv('BONIFICO_CAUSALE_TEMPLATE', 'Nome Cognome - Pacchetto - Email'),
+        'email_conferma' => appEnv('BONIFICO_EMAIL_CONFERMA', ''),
     ],
 ];

@@ -1,4 +1,7 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
+Disallow: /grazie-iscrizione.php
+Disallow: /grazie-contatto.php
+Disallow: /landing.php
 
 Sitemap: /sitemap.xml

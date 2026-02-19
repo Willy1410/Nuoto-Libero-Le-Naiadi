@@ -15,6 +15,15 @@ date_default_timezone_set('Europe/Rome');
 mb_internal_encoding('UTF-8');
 
 define('PROJECT_ROOT', realpath(__DIR__ . '/..') ?: (__DIR__ . '/..'));
+
+$envLoaderPath = PROJECT_ROOT . '/config/env.php';
+if (file_exists($envLoaderPath)) {
+    require_once $envLoaderPath;
+    if (function_exists('appLoadEnvFile')) {
+        appLoadEnvFile(PROJECT_ROOT . '/.env');
+    }
+}
+
 define('LOG_DIR', PROJECT_ROOT . '/logs');
 define('ERROR_LOG_PATH', LOG_DIR . '/error.log');
 define('RATE_LIMIT_DIR', LOG_DIR . '/ratelimit');
@@ -39,16 +48,13 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-$allowedOrigins = [
-    'http://localhost',
-    'http://127.0.0.1',
-    'http://localhost:8080',
-];
+$allowedOriginsRaw = trim((string)(getenv('CORS_ALLOWED_ORIGINS') ?: 'http://localhost,http://127.0.0.1,http://localhost:8080'));
+$allowedOrigins = array_values(array_filter(array_map('trim', explode(',', $allowedOriginsRaw))));
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if ($requestOrigin && in_array($requestOrigin, $allowedOrigins, true)) {
     header('Access-Control-Allow-Origin: ' . $requestOrigin);
-} elseif (!$requestOrigin) {
-    header('Access-Control-Allow-Origin: http://localhost');
+} elseif (!$requestOrigin && !empty($allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $allowedOrigins[0]);
 }
 
 header('Vary: Origin');
@@ -86,18 +92,23 @@ function getAppBaseUrl(): string
     return rtrim($scheme . '://' . $host . $basePath, '/');
 }
 
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_PORT', getenv('DB_PORT') ?: '3306');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_NAME', getenv('DB_NAME') ?: 'nuoto_libero');
 define('DB_CHARSET', 'utf8mb4');
 
-define('JWT_SECRET', getenv('JWT_SECRET_LOCAL') ?: 'LOCAL_TEST_SECRET_CHANGE_ME_2026');
+$jwtSecret = trim((string)(getenv('JWT_SECRET') ?: getenv('JWT_SECRET_LOCAL') ?: ''));
+if ($jwtSecret === '') {
+    $jwtSecret = 'LOCAL_DEV_ONLY_CHANGE_ME';
+}
+define('JWT_SECRET', $jwtSecret);
 define('JWT_EXPIRATION', 86400);
 
 $currentHost = strtolower((string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
-if (JWT_SECRET === 'LOCAL_TEST_SECRET_CHANGE_ME_2026' && !in_array($currentHost, ['localhost', '127.0.0.1'], true)) {
-    error_log('SECURITY WARNING: JWT_SECRET default value in uso su host non locale');
+if (JWT_SECRET === 'LOCAL_DEV_ONLY_CHANGE_ME' && !in_array($currentHost, ['localhost', '127.0.0.1'], true)) {
+    error_log('SECURITY WARNING: JWT_SECRET non configurato su host non locale');
 }
 
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);
@@ -122,21 +133,21 @@ if (file_exists($autoloadPath)) {
 
 $mailConfigPath = __DIR__ . '/../config/mail.php';
 $MAIL_CONFIG = [
-    'enabled' => false,
+    'enabled' => filter_var(getenv('MAIL_ENABLED') ?: '0', FILTER_VALIDATE_BOOLEAN),
     'queue_fallback_on_error' => true,
-    'from_email' => 'noreply@nuotolibero.local',
-    'from_name' => 'Nuoto Libero (Local)',
-    'admin_email' => 'admin@nuotolibero.local',
-    'admin_name' => 'Admin',
-    'send_copy_to_sender' => false,
+    'from_email' => (string)(getenv('MAIL_FROM_EMAIL') ?: 'noreply@nuotolibero.local'),
+    'from_name' => (string)(getenv('MAIL_FROM_NAME') ?: 'Nuoto Libero'),
+    'admin_email' => (string)(getenv('MAIL_ADMIN_EMAIL') ?: 'admin@nuotolibero.local'),
+    'admin_name' => (string)(getenv('MAIL_ADMIN_NAME') ?: 'Admin'),
+    'send_copy_to_sender' => filter_var(getenv('MAIL_SEND_COPY_TO_SENDER') ?: '0', FILTER_VALIDATE_BOOLEAN),
     'smtp' => [
-        'host' => '',
-        'port' => 587,
-        'username' => '',
-        'password' => '',
-        'encryption' => 'tls',
-        'auth' => true,
-        'timeout' => 10,
+        'host' => (string)(getenv('MAIL_SMTP_HOST') ?: ''),
+        'port' => (int)(getenv('MAIL_SMTP_PORT') ?: 587),
+        'username' => (string)(getenv('MAIL_SMTP_USER') ?: ''),
+        'password' => (string)(getenv('MAIL_SMTP_PASS') ?: ''),
+        'encryption' => (string)(getenv('MAIL_SMTP_ENCRYPTION') ?: 'tls'),
+        'auth' => filter_var(getenv('MAIL_SMTP_AUTH') ?: '1', FILTER_VALIDATE_BOOLEAN),
+        'timeout' => (int)(getenv('MAIL_SMTP_TIMEOUT') ?: 10),
     ],
 ];
 if (file_exists($mailConfigPath)) {
@@ -147,7 +158,7 @@ if (file_exists($mailConfigPath)) {
 }
 
 try {
-    $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+    $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

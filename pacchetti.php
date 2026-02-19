@@ -98,7 +98,7 @@
                         <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio</li>
                         <li><i class="fas fa-calendar-check"></i> Attivazione in segreteria</li>
                     </ul>
-                    <p class="package-note-inline">Questo passaggio Ã¨ necessario prima di selezionare il pacchetto ingressi.</p>
+                    <p class="package-note-inline">Questo passaggio &egrave; necessario prima di selezionare il pacchetto ingressi.</p>
                 </div>
 
                 <div class="pricing-card featured package-card package-step-card" data-package="10-ingressi" data-price="90.00" data-required-fee="20.00" data-name="Pacchetto 10 Ingressi">
@@ -116,7 +116,7 @@
                         <li><i class="fas fa-check"></i> 10 ingressi validi</li>
                         <li><i class="fas fa-check"></i> Accesso corsie nuoto libero</li>
                         <li><i class="fas fa-check"></i> Utilizzabile solo dopo STEP 1</li>
-                        <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio (validitÃ  60 giorni)</li>
+                        <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio (validit&agrave; 60 giorni)</li>
                     </ul>
                     <button class="btn btn-primary btn-block select-package">
                         <i class="fas fa-check-circle"></i> Finalizza iscrizione in struttura
@@ -224,7 +224,7 @@
 
     <section class="security-section">
         <div class="container">
-            <h2 class="section-title">Trasparenza e ConformitÃ </h2>
+            <h2 class="section-title">Trasparenza e Conformit&agrave;</h2>
             <div class="security-grid">
                 <div class="security-item">
                     <i class="fas fa-id-card"></i>
@@ -271,17 +271,17 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>SÃ¬. Puoi inviare la richiesta online e finalizzare iscrizione, firma e quota direttamente in struttura.</p>
+                        <p>S&igrave;. Puoi inviare la richiesta online e finalizzare iscrizione, firma e quota direttamente in struttura.</p>
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>Il certificato medico Ã¨ obbligatorio?</span>
+                        <span>Il certificato medico &egrave; obbligatorio?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>SÃ¬, per nuoto non agonistico Ã¨ richiesto certificato in corso di validitÃ  prima dell'attivazione.</p>
+                        <p>S&igrave;, per nuoto non agonistico &egrave; richiesto certificato in corso di validit&agrave; prima dell'attivazione.</p>
                     </div>
                 </div>
 
@@ -291,7 +291,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>SÃ¬, la segreteria puÃ² emettere pacchetti omaggio o buoni regalo intestati al beneficiario.</p>
+                        <p>S&igrave;, la segreteria pu&ograve; emettere pacchetti omaggio o buoni regalo intestati al beneficiario.</p>
                     </div>
                 </div>
 
@@ -363,5 +363,3 @@
     <script src="js/payment.js"></script>
 </body>
 </html>
-
-

@@ -48,7 +48,7 @@
                 <p><em>Ultimo aggiornamento: 18/02/2026</em></p>
 
                 <h2>1. Cosa sono i cookie</h2>
-                <p>I cookie sono piccoli file di testo memorizzati nel browser per migliorare funzionalitÃ , sicurezza e usabilitÃ  del sito.</p>
+                <p>I cookie sono piccoli file di testo memorizzati nel browser per migliorare funzionalit&agrave;, sicurezza e usabilit&agrave; del sito.</p>
 
                 <h2>2. Cookie utilizzati</h2>
                 <h3>2.1 Tecnici</h3>
@@ -61,7 +61,7 @@
                 <p>Possono essere utilizzati strumenti analitici aggregati per migliorare contenuti e performance del sito.</p>
 
                 <h2>3. Gestione preferenze</h2>
-                <p>Puoi accettare/rifiutare i cookie non essenziali dal banner o dal browser. La disattivazione dei cookie tecnici puÃ² ridurre le funzionalitÃ  disponibili.</p>
+                <p>Puoi accettare/rifiutare i cookie non essenziali dal banner o dal browser. La disattivazione dei cookie tecnici pu&ograve; ridurre le funzionalit&agrave; disponibili.</p>
 
                 <h2>4. Durata</h2>
                 <table class="cookie-table">
@@ -70,7 +70,7 @@
                             <th>Cookie</th>
                             <th>Tipo</th>
                             <th>Durata</th>
-                            <th>FinalitÃ </th>
+                            <th>Finalit&agrave;</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -113,5 +113,3 @@
     <script src="js/main.js"></script>
 </body>
 </html>
-
-

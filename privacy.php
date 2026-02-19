@@ -48,7 +48,7 @@
                 <p><em>Ultimo aggiornamento: 18/02/2026</em></p>
 
                 <h2>1. Titolare del trattamento</h2>
-                <p>Gli Squaletti Ã¨ titolare del trattamento dei dati personali raccolti tramite sito web, area riservata e attivitÃ  amministrative correlate all'iscrizione.</p>
+                <p>Gli Squaletti &egrave; titolare del trattamento dei dati personali raccolti tramite sito web, area riservata e attivit&agrave; amministrative correlate all'iscrizione.</p>
 
                 <h2>2. Dati trattati</h2>
                 <ul>
@@ -58,7 +58,7 @@
                     <li>Dati tecnici di navigazione e sicurezza applicativa.</li>
                 </ul>
 
-                <h2>3. FinalitÃ  del trattamento</h2>
+                <h2>3. Finalit&agrave; del trattamento</h2>
                 <ul>
                     <li>Gestione iscrizioni, documenti e accessi in struttura.</li>
                     <li>Gestione amministrativa dei pacchetti ingressi.</li>
@@ -70,12 +70,12 @@
                 <ul>
                     <li>Esecuzione del rapporto associativo/contrattuale di servizio.</li>
                     <li>Adempimento di obblighi di legge.</li>
-                    <li>Legittimo interesse alla sicurezza e continuitÃ  operativa.</li>
+                    <li>Legittimo interesse alla sicurezza e continuit&agrave; operativa.</li>
                     <li>Consenso espresso, ove richiesto (es. comunicazioni promozionali).</li>
                 </ul>
 
                 <h2>5. Conservazione</h2>
-                <p>I dati sono conservati per il tempo necessario alle finalitÃ  indicate e ai termini previsti da norme applicabili e procedure interne di conservazione.</p>
+                <p>I dati sono conservati per il tempo necessario alle finalit&agrave; indicate e ai termini previsti da norme applicabili e procedure interne di conservazione.</p>
 
                 <h2>6. Destinatari e fornitori</h2>
                 <p>I dati possono essere trattati da personale autorizzato e da fornitori tecnici/organizzativi incaricati (hosting, email, consulenza amministrativa), con misure di sicurezza adeguate.</p>
@@ -84,7 +84,7 @@
                 <p>Puoi richiedere accesso, rettifica, aggiornamento, limitazione o cancellazione dei dati nei limiti di legge, scrivendo ai contatti sotto indicati.</p>
 
                 <h2>8. Sicurezza</h2>
-                <p>Adottiamo misure tecniche e organizzative per proteggere i dati: controllo accessi per ruolo, log attivitÃ , protezioni applicative e gestione sicura upload documenti.</p>
+                <p>Adottiamo misure tecniche e organizzative per proteggere i dati: controllo accessi per ruolo, log attivit&agrave;, protezioni applicative e gestione sicura upload documenti.</p>
 
                 <h2>9. Contatti privacy</h2>
                 <p><strong>Email:</strong> privacy@glisqualetti.it<br>
@@ -111,5 +111,3 @@
     <script src="js/main.js"></script>
 </body>
 </html>
-
-

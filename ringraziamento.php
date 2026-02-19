@@ -19,7 +19,7 @@
             <h1 style="color: #0077b6; margin-bottom: 1rem;">Grazie per la Tua Richiesta!</h1>
             
             <p style="font-size: 1.125rem; margin-bottom: 2rem; color: #6c757d;">
-                La tua richiesta di iscrizione Ã¨ stata inviata con successo.
+                La tua richiesta di iscrizione &egrave; stata inviata con successo.
             </p>
             
             <div style="background: #f8f9fa; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; text-align: left;">
@@ -28,14 +28,14 @@
                     <li>Riceverai una <strong>email di conferma</strong> all'indirizzo fornito</li>
                     <li>Per completare l'iscrizione, vieni presso la piscina nei <strong>giorni prestabiliti</strong>:
                         <ul style="margin-top: 0.5rem; list-style: none; padding-left: 1rem;">
-                            <li><i class="fas fa-calendar-day" style="color: #00a8e8;"></i> <strong>LunedÃ¬, MercoledÃ¬, VenerdÃ¬</strong></li>
+                            <li><i class="fas fa-calendar-day" style="color: #00a8e8;"></i> <strong>Luned&igrave;, Mercoled&igrave;, Venerd&igrave;</strong></li>
                             <li><i class="fas fa-clock" style="color: #00a8e8;"></i> Mattina: 06:30-09:00</li>
                             <li><i class="fas fa-clock" style="color: #00a8e8;"></i> Pomeriggio: 13:00-14:00</li>
                         </ul>
                     </li>
                     <li>Porta con te:
                         <ul style="margin-top: 0.5rem; list-style: none; padding-left: 1rem;">
-                            <li><i class="fas fa-id-card" style="color: #00a8e8;"></i> Documento d'identitÃ </li>
+                            <li><i class="fas fa-id-card" style="color: #00a8e8;"></i> Documento d'identit&agrave;</li>
                             <li><i class="fas fa-file-medical" style="color: #00a8e8;"></i> Certificato medico</li>
                             <li><i class="fas fa-file-alt" style="color: #00a8e8;"></i> Modulo iscrizione compilato</li>
                         </ul>
@@ -72,4 +72,3 @@
     </div>
 </body>
 </html>
-
