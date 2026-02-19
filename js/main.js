@@ -1,5 +1,5 @@
 /**
- * Gli Squaletti - Main JavaScript
+ * Nuoto libero Le Naiadi - Main JavaScript
  * Handles all interactive functionality
  */
 
@@ -437,8 +437,8 @@ function validatePhone(phone) {
 
 // Show notification
 function showNotification(message, type = 'info') {
-    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.toast === 'function') {
-        window.GliSqualettiUI.toast(message, type);
+    if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.toast === 'function') {
+        window.NuotoLiberoUI.toast(message, type);
         return;
     }
 
@@ -466,8 +466,8 @@ function showNotification(message, type = 'info') {
 }
 
 async function alertDialog(message, title = 'Avviso') {
-    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.alert === 'function') {
-        await window.GliSqualettiUI.alert(message, { title });
+    if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.alert === 'function') {
+        await window.NuotoLiberoUI.alert(message, { title });
         return true;
     }
     showNotification(message, 'info');
@@ -475,15 +475,15 @@ async function alertDialog(message, title = 'Avviso') {
 }
 
 async function confirmDialog(message, title = 'Conferma') {
-    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.confirm === 'function') {
-        return window.GliSqualettiUI.confirm(message, { title });
+    if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.confirm === 'function') {
+        return window.NuotoLiberoUI.confirm(message, { title });
     }
     return true;
 }
 
 async function promptDialog(message, options = {}) {
-    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.prompt === 'function') {
-        return window.GliSqualettiUI.prompt(message, options);
+    if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.prompt === 'function') {
+        return window.NuotoLiberoUI.prompt(message, options);
     }
     return null;
 }
@@ -505,7 +505,7 @@ if (!document.getElementById('gs-fallback-toast-style')) {
 }
 
 // Export functions for use in other scripts
-window.GliSqualetti = {
+window.NuotoLibero = {
     formatCurrency,
     generateOrderId,
     validateEmail,
@@ -515,3 +515,4 @@ window.GliSqualetti = {
     confirmDialog,
     promptDialog
 };
+

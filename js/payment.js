@@ -1,5 +1,5 @@
 /**
- * Gli Squaletti - Flusso iscrizione in struttura (no pagamento online)
+ * Nuoto libero Le Naiadi - Flusso iscrizione in struttura (no pagamento online)
  */
 
 const paymentState = {
@@ -101,8 +101,8 @@ function initPackageSelection() {
 }
 
 function formatCurrency(value) {
-    if (window.GliSqualetti && typeof window.GliSqualetti.formatCurrency === 'function') {
-        return window.GliSqualetti.formatCurrency(value);
+    if (window.NuotoLibero && typeof window.NuotoLibero.formatCurrency === 'function') {
+        return window.NuotoLibero.formatCurrency(value);
     }
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
 }
@@ -206,26 +206,26 @@ function getFormData() {
 }
 
 function validateEmail(value) {
-    if (window.GliSqualetti && typeof window.GliSqualetti.validateEmail === 'function') {
-        return window.GliSqualetti.validateEmail(value);
+    if (window.NuotoLibero && typeof window.NuotoLibero.validateEmail === 'function') {
+        return window.NuotoLibero.validateEmail(value);
     }
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ''));
 }
 
 function validatePhone(value) {
-    if (window.GliSqualetti && typeof window.GliSqualetti.validatePhone === 'function') {
-        return window.GliSqualetti.validatePhone(value);
+    if (window.NuotoLibero && typeof window.NuotoLibero.validatePhone === 'function') {
+        return window.NuotoLibero.validatePhone(value);
     }
     return /^[\d\s+()-]{8,}$/.test(String(value || ''));
 }
 
 function showNotification(message, type) {
-    if (window.GliSqualetti && typeof window.GliSqualetti.showNotification === 'function') {
-        window.GliSqualetti.showNotification(message, type);
+    if (window.NuotoLibero && typeof window.NuotoLibero.showNotification === 'function') {
+        window.NuotoLibero.showNotification(message, type);
         return;
     }
-    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.toast === 'function') {
-        window.GliSqualettiUI.toast(message, type || 'info');
+    if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.toast === 'function') {
+        window.NuotoLiberoUI.toast(message, type || 'info');
         return;
     }
 }
@@ -262,4 +262,5 @@ function redirectToConfirmation(enrollmentId, orderData) {
 
     window.location.href = `grazie-iscrizione.php?${params.toString()}`;
 }
+
 

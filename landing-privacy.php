@@ -8,9 +8,9 @@ require_once __DIR__ . '/bootstrap.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Informativa privacy sintetica per la modalita landing Gli Squaletti.">
+    <meta name="description" content="Informativa privacy sintetica per la modalita landing Nuoto libero Le Naiadi.">
     <meta name="robots" content="noindex,nofollow">
-    <title>Privacy Landing - Gli Squaletti</title>
+    <title>Privacy Landing - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -106,7 +106,7 @@ require_once __DIR__ . '/bootstrap.php';
 
     <section class="box">
         <strong>Conservazione:</strong> i dati vengono trattati dal personale autorizzato per il tempo necessario alla gestione della richiesta.<br>
-        <strong>Diritti:</strong> puoi chiedere accesso, rettifica o cancellazione scrivendo a <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a>.
+        <strong>Diritti:</strong> puoi chiedere accesso, rettifica o cancellazione scrivendo a <a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a>.
     </section>
 
     <div class="actions">
@@ -117,3 +117,4 @@ require_once __DIR__ . '/bootstrap.php';
 </main>
 </body>
 </html>
+

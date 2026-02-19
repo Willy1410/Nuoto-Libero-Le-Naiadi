@@ -347,16 +347,16 @@
         box.textContent = message;
     }
     async function modalAlert(message, title) {
-        if (window.GliSqualettiUI && typeof window.GliSqualettiUI.alert === 'function') {
-            await window.GliSqualettiUI.alert(message, { title: title || 'Avviso' });
+        if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.alert === 'function') {
+            await window.NuotoLiberoUI.alert(message, { title: title || 'Avviso' });
             return;
         }
         setStatus(message, 'error');
     }
 
     async function modalConfirm(message, title) {
-        if (window.GliSqualettiUI && typeof window.GliSqualettiUI.confirm === 'function') {
-            return window.GliSqualettiUI.confirm(message, {
+        if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.confirm === 'function') {
+            return window.NuotoLiberoUI.confirm(message, {
                 title: title || 'Conferma',
                 confirmText: 'Conferma',
                 cancelText: 'Annulla'
@@ -366,8 +366,8 @@
     }
 
     async function modalPrompt(message, options = {}) {
-        if (window.GliSqualettiUI && typeof window.GliSqualettiUI.prompt === 'function') {
-            return window.GliSqualettiUI.prompt(message, options);
+        if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.prompt === 'function') {
+            return window.NuotoLiberoUI.prompt(message, options);
         }
         return null;
     }
@@ -1882,3 +1882,4 @@
         setStatus(error.message || 'Errore caricamento dashboard', 'error');
     });
 })();
+

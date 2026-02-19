@@ -6,9 +6,9 @@ appLoadEnvFile(dirname(__DIR__) . '/.env');
 
 $mailEnabled = appEnvBool('MAIL_ENABLED', false);
 $mailFromEmail = appEnv('MAIL_FROM_EMAIL', 'noreply@nuotolibero.local');
-$mailFromName = appEnv('MAIL_FROM_NAME', 'Gli Squaletti');
+$mailFromName = appEnv('MAIL_FROM_NAME', 'Nuoto libero Le Naiadi');
 $mailAdminEmail = appEnv('MAIL_ADMIN_EMAIL', $mailFromEmail);
-$mailAdminName = appEnv('MAIL_ADMIN_NAME', 'Segreteria Gli Squaletti');
+$mailAdminName = appEnv('MAIL_ADMIN_NAME', 'Segreteria Nuoto libero Le Naiadi');
 $mailCopyToSender = appEnvBool('MAIL_SEND_COPY_TO_SENDER', false);
 
 return [
@@ -28,3 +28,4 @@ return [
         'timeout' => (int)appEnv('MAIL_SMTP_TIMEOUT', '15'),
     ],
 ];
+

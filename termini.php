@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Termini e condizioni di iscrizione e utilizzo servizi di nuoto libero non agonistico presso Gli Squaletti.">
+    <meta name="description" content="Termini e condizioni di iscrizione e utilizzo servizi di nuoto libero non agonistico presso Nuoto libero Le Naiadi.">
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="/termini.php">
-    <title>Termini e Condizioni Iscrizione - Gli Squaletti</title>
+    <title>Termini e Condizioni Iscrizione - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -18,8 +18,8 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <span>Gli Squaletti</span>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <span>Nuoto libero Le Naiadi</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
                         <li><a href="index.php">Home</a></li>
@@ -48,7 +48,7 @@
                 <p><em>Ultimo aggiornamento: 18/02/2026</em></p>
 
                 <h2>1. Ambito di applicazione</h2>
-                <p>I presenti termini disciplinano l'iscrizione all'associazione/societ&agrave; sportiva e l'accesso ai servizi di nuoto libero non agonistico erogati da Gli Squaletti.</p>
+                <p>I presenti termini disciplinano l'iscrizione all'associazione/societ&agrave; sportiva e l'accesso ai servizi di nuoto libero non agonistico erogati da Nuoto libero Le Naiadi.</p>
 
                 <h2>2. Iscrizione e requisiti</h2>
                 <ul>
@@ -88,7 +88,7 @@
                 <p>Il trattamento dei dati &egrave; descritto nella <a href="privacy.php">Privacy Policy</a>, parte integrante dei presenti termini.</p>
 
                 <h2>10. Contatti amministrativi</h2>
-                <p><strong>Email:</strong> info@glisqualetti.it<br>
+                <p><strong>Email:</strong> info@nuotoliberolenaiadi.it<br>
                 <strong>Telefono:</strong> +39 331 1931 737<br>
                 <strong>Sede:</strong> Viale della Riviera, 343, 65123 Pescara PE</p>
 
@@ -103,7 +103,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2026 Gli Squaletti. Tutti i diritti riservati. | <a href="privacy.php">Privacy</a> | <a href="cookie.php">Cookie</a> | <a href="termini.php">Termini</a></p>
+                <p>&copy; 2026 Nuoto libero Le Naiadi. Tutti i diritti riservati. | <a href="privacy.php">Privacy</a> | <a href="cookie.php">Cookie</a> | <a href="termini.php">Termini</a></p>
             </div>
         </div>
     </footer>
@@ -113,4 +113,5 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+
 

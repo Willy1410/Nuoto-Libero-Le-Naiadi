@@ -101,7 +101,7 @@ function outputPrefilledPdf(array $profilo, array $tipo): void
 
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
     $pdf->SetCreator('Nuoto Libero');
-    $pdf->SetAuthor('Gli Squaletti');
+    $pdf->SetAuthor('Nuoto libero Le Naiadi');
     $pdf->SetTitle('Documento Precompilato - ' . (string)$tipo['nome']);
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
@@ -213,3 +213,4 @@ function outputPrefilledPdf(array $profilo, array $tipo): void
     $pdf->Output('prefill_' . $safeTipo . '_' . $safeName . '.pdf', 'D');
     exit();
 }
+

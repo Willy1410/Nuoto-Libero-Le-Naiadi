@@ -13,7 +13,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Il mio profilo - Gli Squaletti</title>
+    <title>Il mio profilo - Nuoto libero Le Naiadi</title>
     <style>
         :root {
             --primary: #10b981;
@@ -754,3 +754,4 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     </script>
 </body>
 </html>
+

@@ -13,7 +13,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Il mio profilo - Gli Squaletti</title>
+    <title>Il mio profilo - Nuoto libero Le Naiadi</title>
     <style>
         :root {
             --accent: #dc2626;
@@ -833,3 +833,4 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     <script src="../js/dashboard-staff.js"></script>
 </body>
 </html>
+

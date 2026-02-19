@@ -40,10 +40,10 @@ if ($email === '') {
     <meta name="robots" content="noindex,nofollow">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="it_IT">
-    <meta property="og:title" content="Richiesta Iscrizione Ricevuta - Gli Squaletti">
+    <meta property="og:title" content="Richiesta Iscrizione Ricevuta - Nuoto libero Le Naiadi">
     <meta property="og:description" content="La tua richiesta e stata registrata. Completa la finalizzazione in struttura.">
     <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/grazie-iscrizione.php', ENT_QUOTES, 'UTF-8'); ?>">
-    <title>Richiesta Iscrizione Ricevuta - Gli Squaletti</title>
+    <title>Richiesta Iscrizione Ricevuta - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -168,8 +168,9 @@ if ($email === '') {
         <a class="btn btn-secondary" href="contatti.php">Contattaci</a>
     </div>
 
-    <p class="help">Per urgenze: <a href="tel:+393311931737">+39 331 1931 737</a> | <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></p>
+    <p class="help">Per urgenze: <a href="tel:+393311931737">+39 331 1931 737</a> | <a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></p>
 </main>
 </body>
 </html>
+
 

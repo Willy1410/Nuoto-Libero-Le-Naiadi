@@ -9,12 +9,12 @@
     <link rel="canonical" href="/moduli.php">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="it_IT">
-    <meta property="og:title" content="Moduli Iscrizione Nuoto Libero - Gli Squaletti">
+    <meta property="og:title" content="Moduli Iscrizione Nuoto Libero - Nuoto libero Le Naiadi">
     <meta property="og:description" content="Scarica e compila la modulistica necessaria per nuoto libero non agonistico.">
     <meta property="og:url" content="/moduli.php">
     <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
-    <title>Moduli Iscrizione Nuoto Libero - Gli Squaletti</title>
+    <title>Moduli Iscrizione Nuoto Libero - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -35,8 +35,8 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <span>Gli Squaletti</span>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <span>Nuoto libero Le Naiadi</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
                         <li><a href="index.php">Home</a></li>
@@ -280,8 +280,8 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <h3>Gli Squaletti</h3>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <h3>Nuoto libero Le Naiadi</h3>
                     </div>
                     <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>
                 </div>
@@ -291,7 +291,7 @@
                         <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
                         <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
                         <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/393311931737" target="_blank" rel="noopener">WhatsApp +39 331 1931 737</a></li>
-                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -320,7 +320,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Gli Squaletti. Tutti i diritti riservati.</p>
+                <p>&copy; 2026 Nuoto libero Le Naiadi. Tutti i diritti riservati.</p>
             </div>
         </div>
     </footer>
@@ -330,4 +330,5 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+
 

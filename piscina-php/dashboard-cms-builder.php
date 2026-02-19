@@ -13,7 +13,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CMS Builder-Ready - Gli Squaletti</title>
+    <title>CMS Builder-Ready - Nuoto libero Le Naiadi</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: #f2f4f7; color: #1f2937; }
@@ -427,7 +427,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 btn.addEventListener('click', async () => {
                     const id = Number(btn.getAttribute('data-delete-id') || 0);
                     if (!id) return;
-                    const confirmed = window.GliSqualettiUI ? await window.GliSqualettiUI.confirm('Eliminare questo media?', { title: 'Conferma eliminazione media' }) : true;
+                    const confirmed = window.NuotoLiberoUI ? await window.NuotoLiberoUI.confirm('Eliminare questo media?', { title: 'Conferma eliminazione media' }) : true;
                     if (!confirmed) return;
 
                     try {
@@ -571,3 +571,5 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     </script>
 </body>
 </html>
+
+

@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Privacy policy per iscrizione e gestione utenti nuoto libero Gli Squaletti.">
+    <meta name="description" content="Privacy policy per iscrizione e gestione utenti nuoto libero Nuoto libero Le Naiadi.">
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="/privacy.php">
-    <title>Privacy Policy - Gli Squaletti</title>
+    <title>Privacy Policy - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -18,8 +18,8 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <span>Gli Squaletti</span>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <span>Nuoto libero Le Naiadi</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
                         <li><a href="index.php">Home</a></li>
@@ -105,7 +105,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2026 Gli Squaletti. Tutti i diritti riservati. | <a href="privacy.php">Privacy</a> | <a href="cookie.php">Cookie</a> | <a href="termini.php">Termini</a></p>
+                <p>&copy; 2026 Nuoto libero Le Naiadi. Tutti i diritti riservati. | <a href="privacy.php">Privacy</a> | <a href="cookie.php">Cookie</a> | <a href="termini.php">Termini</a></p>
             </div>
         </div>
     </footer>
@@ -115,4 +115,5 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+
 

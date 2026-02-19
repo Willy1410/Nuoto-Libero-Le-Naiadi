@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Pacchetti ingressi per nuoto libero in piscina 50 metri all'aperto d'estate. Richiesta iscrizione ad associazione sportiva non agonistica Gli Squaletti.">
+    <meta name="description" content="Pacchetti ingressi per nuoto libero in piscina 50 metri all'aperto d'estate. Richiesta iscrizione ad associazione sportiva non agonistica Nuoto libero Le Naiadi.">
     <meta name="keywords" content="nuoto libero, piscina all'aperto, piscina 50 metri, associazione sportiva nuoto, nuoto non agonistico, ingressi piscina, iscrizione nuoto libero">
     <meta name="robots" content="index,follow,max-image-preview:large">
     <link rel="canonical" href="/pacchetti.php">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="it_IT">
-    <meta property="og:site_name" content="Gli Squaletti">
-    <meta property="og:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
+    <meta property="og:site_name" content="Nuoto libero Le Naiadi">
+    <meta property="og:title" content="Pacchetti Ingressi Nuoto Libero - Nuoto libero Le Naiadi">
     <meta property="og:description" content="Richiedi iscrizione e attivazione pacchetti ingressi per nuoto libero non agonistico in piscina.">
     <meta property="og:url" content="/pacchetti.php">
     <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
+    <meta name="twitter:title" content="Pacchetti Ingressi Nuoto Libero - Nuoto libero Le Naiadi">
     <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico: iscrizione e pacchetti ingressi.">
     <meta name="twitter:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
-    <title>Pacchetti Ingressi Nuoto Libero - Gli Squaletti</title>
+    <title>Pacchetti Ingressi Nuoto Libero - Nuoto libero Le Naiadi</title>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SportsActivityLocation",
-      "name": "Gli Squaletti - Nuoto Libero",
+      "name": "Nuoto libero Le Naiadi - Nuoto Libero",
       "sport": "Swimming",
       "description": "Associazione sportiva per nuoto libero non agonistico in piscina coperta e piscina 50 metri all'aperto in estate.",
       "url": "/pacchetti.php"
@@ -47,8 +47,8 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <span>Gli Squaletti</span>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <span>Nuoto libero Le Naiadi</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
                         <li><a href="index.php">Home</a></li>
@@ -312,8 +312,8 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <h3>Gli Squaletti</h3>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <h3>Nuoto libero Le Naiadi</h3>
                     </div>
                     <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>
                 </div>
@@ -322,7 +322,7 @@
                     <ul class="footer-links">
                         <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
                         <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
-                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -351,7 +351,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Gli Squaletti. Tutti i diritti riservati.</p>
+                <p>&copy; 2026 Nuoto libero Le Naiadi. Tutti i diritti riservati.</p>
             </div>
         </div>
     </footer>
@@ -362,4 +362,5 @@
     <script src="js/payment.js"></script>
 </body>
 </html>
+
 

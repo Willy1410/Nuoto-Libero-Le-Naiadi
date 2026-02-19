@@ -12,8 +12,8 @@ file_put_contents($outputDir . '/README.txt', "Cartella interna: PDF pro-forma m
 function createPdf(string $path, string $title, array $blocks): void
 {
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-    $pdf->SetCreator('Gli Squaletti');
-    $pdf->SetAuthor('Gli Squaletti');
+    $pdf->SetCreator('Nuoto libero Le Naiadi');
+    $pdf->SetAuthor('Nuoto libero Le Naiadi');
     $pdf->SetTitle($title);
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
@@ -164,3 +164,4 @@ foreach ($documents as $doc) {
 }
 
 echo "PDF pro-forma generati in: {$outputDir}\n";
+

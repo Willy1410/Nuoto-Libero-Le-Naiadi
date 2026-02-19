@@ -7,7 +7,7 @@ require_once __DIR__ . '/bootstrap.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Gli Squaletti: sito in aggiornamento. Contattaci per informazioni su nuoto libero e iscrizioni.">
+    <meta name="description" content="Sito in aggiornamento. Contattaci per informazioni su nuoto libero e iscrizioni.">
     <meta name="robots" content="noindex,nofollow">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="it_IT">
@@ -15,8 +15,7 @@ require_once __DIR__ . '/bootstrap.php';
     <meta property="og:description" content="Stiamo preparando il nuovo sito. Contattaci per supporto immediato.">
     <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/landing.php', ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
-    <title>Nuoto Libero Le Naiadi - Sito in aggiornamento</title>
-    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
+    <title>Nuoto Libero le Naiadi - Sito in aggiornamento</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -317,17 +316,10 @@ require_once __DIR__ . '/bootstrap.php';
 </head>
 <body>
     <main class="landing-card" role="main">
-        <section class="brand-side" aria-label="Brand Gli Squaletti">
-            <div class="brand-logo">
-                <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Logo Gli Squaletti">
-            </div>
-            <h2 class="brand-title">Nuoto Libero Le Naiadi</h2>
-            <p class="brand-copy">Stiamo finalizzando gli ultimi dettagli del nuovo sito. Le attivita operative proseguono regolarmente con supporto diretto della segreteria.</p>
-            <div class="brand-badges">
-                <span>Nuoto libero</span>
-                <span>Piscina Naiadi</span>
-                <span>Supporto diretto</span>
-            </div>
+        <section class="brand-side" aria-label="Brand Nuoto libero Le Naiadi">
+            <h2 class="brand-title">Nuoto Libero le Naiadi</h2>
+            <p class="brand-copy">Stiamo finalizzando gli ultimi dettagli del nuovo sito. A breve saremo operativi.</p>
+
             <div class="brand-map" aria-label="Mappa sede piscina">
                 <iframe
                     src="https://www.google.com/maps?q=Viale+della+Riviera+343,+65123+Pescara+PE&output=embed"
@@ -339,7 +331,7 @@ require_once __DIR__ . '/bootstrap.php';
         </section>
         <section class="info-side" aria-label="Aggiornamento sito">
             <h1>Sito in aggiornamento</h1>
-            <p>La piattaforma completa sara online a breve. Siamo presenti in piscina negli orari di nuoto libero indicati sotto; per altri orari riceviamo solo su appuntamento.</p>
+            <p>La piattaforma completa sara online a breve. Siamo presenti in piscina negli orari sottoindicati. Per altre esigenze o urgenze riceviamo solo su appuntamento.</p>
             <ul class="contact-list">
                 <li><strong>Email</strong><a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></li>
                 <li><strong>Telefono</strong><a href="tel:+393311931737">+39 331 1931 737</a></li>
@@ -347,7 +339,7 @@ require_once __DIR__ . '/bootstrap.php';
                 <li><strong>Sede</strong><span>Viale della Riviera, 343, 65123 Pescara PE</span></li>
             </ul>
             <div class="cta-row">
-                <a class="cta-btn cta-primary" href="https://wa.me/393311931737?text=Buongiorno%2C%20desidero%20ricevere%20informazioni%20su%20Nuoto%20Libero%20Le%20Naiadi%20e%20valutare%20un%20appuntamento.%20Resto%20in%20attesa%20di%20un%20vostro%20gentile%20riscontro." target="_blank" rel="noopener">Contattaci ora</a>
+                <a class="cta-btn cta-primary" href="https://wa.me/393311931737?text=Salve%2C%20desidero%20ricevere%20informazioni%20su%20Nuoto%20Libero%20Le%20Naiadi%20e%20valutare%20un%20appuntamento.%20Resto%20in%20attesa%20di%20un%20vostro%20gentile%20riscontro." target="_blank" rel="noopener">Contattaci ora</a>
                 <a class="cta-btn cta-secondary" href="area-riservata.php">Area riservata</a>
             </div>
             <div class="hours-grid" aria-label="Giorni e orari di apertura">
@@ -366,19 +358,25 @@ require_once __DIR__ . '/bootstrap.php';
                 <h3>Richiedi informazioni o appuntamento</h3>
                 <div class="row">
                     <div class="field">
-                        <label for="landingName">Nome e cognome *</label>
-                        <input id="landingName" name="name" type="text" maxlength="120" required>
+                        <label for="landingFirstName">Nome *</label>
+                        <input id="landingFirstName" name="first_name" type="text" maxlength="80" required>
                     </div>
                     <div class="field">
-                        <label for="landingEmail">Email *</label>
-                        <input id="landingEmail" name="email" type="email" maxlength="255" required>
+                        <label for="landingLastName">Cognome *</label>
+                        <input id="landingLastName" name="last_name" type="text" maxlength="80" required>
                     </div>
                 </div>
                 <div class="row">
                     <div class="field">
+                        <label for="landingEmail">Email *</label>
+                        <input id="landingEmail" name="email" type="email" maxlength="255" required>
+                    </div>
+                    <div class="field">
                         <label for="landingPhone">Telefono</label>
                         <input id="landingPhone" name="phone" type="tel" maxlength="40">
                     </div>
+                </div>
+                <div class="row">
                     <div class="field">
                         <label for="landingSubject">Oggetto *</label>
                         <select id="landingSubject" name="subject" required>
@@ -386,7 +384,7 @@ require_once __DIR__ . '/bootstrap.php';
                             <option value="informazioni-iscrizione">Informazioni iscrizione</option>
                             <option value="orari-corsi">Orari nuoto libero</option>
                             <option value="costi">Costi e pacchetti</option>
-                            <option value="problemi-account">Problemi con account</option>
+                            <option value="problemi-account">Richiesta appuntamento</option>
                             <option value="altro">Altro</option>
                         </select>
                     </div>
@@ -402,12 +400,13 @@ require_once __DIR__ . '/bootstrap.php';
                 <input class="hp-field" type="text" name="website" id="landingWebsite" tabindex="-1" autocomplete="off" aria-hidden="true">
                 <label class="privacy" for="landingPrivacy">
                     <input id="landingPrivacy" name="privacy" type="checkbox" required>
-                    <span>Accetto l'<a href="assets/documenti/informativa-privacy-cladam.pdf" target="_blank" rel="noopener">informativa privacy (PDF)</a> *</span>
+                    <span>Accetto l'<a href="assets/documenti/informativa-privacy-cladam.pdf" target="_blank" rel="noopener">informativa privacy</a> *</span>
                 </label>
                 <button id="landingSubmitBtn" class="submit-btn" type="submit">Invia richiesta</button>
                 <div id="landingFormFeedback" class="form-feedback" role="status" aria-live="polite"></div>
             </form>
             <div class="mode-hint">Modalita corrente: <strong><?= htmlspecialchars(appSiteMode(), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+            <div class="mode-hint">Copyright CLADAM GROUP S.S.D. A R.L.</div>
         </section>
     </main>
     <script>
@@ -455,8 +454,13 @@ require_once __DIR__ . '/bootstrap.php';
                 event.preventDefault();
                 clearFeedback();
 
+                const firstName = (document.getElementById('landingFirstName')?.value || '').trim();
+                const lastName = (document.getElementById('landingLastName')?.value || '').trim();
+
                 const payload = {
-                    name: (document.getElementById('landingName')?.value || '').trim(),
+                    first_name: firstName,
+                    last_name: lastName,
+                    name: `${firstName} ${lastName}`.trim(),
                     email: (document.getElementById('landingEmail')?.value || '').trim(),
                     phone: (document.getElementById('landingPhone')?.value || '').trim(),
                     subject: (document.getElementById('landingSubject')?.value || '').trim(),
@@ -466,7 +470,7 @@ require_once __DIR__ . '/bootstrap.php';
                     website: (document.getElementById('landingWebsite')?.value || '').trim()
                 };
 
-                if (!payload.name || !payload.email || !payload.subject || !payload.message) {
+                if (!payload.first_name || !payload.last_name || !payload.email || !payload.subject || !payload.message) {
                     setFeedback('Compila tutti i campi obbligatori.', 'error');
                     return;
                 }
@@ -518,4 +522,6 @@ require_once __DIR__ . '/bootstrap.php';
     </script>
 </body>
 </html>
+
+
 

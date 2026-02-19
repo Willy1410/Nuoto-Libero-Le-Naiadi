@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    if (window.GliSqualettiUI) {
+    if (window.NuotoLiberoUI) {
         return;
     }
 
@@ -266,10 +266,11 @@
         }, ttl);
     }
 
-    window.GliSqualettiUI = {
+    window.NuotoLiberoUI = {
         alert: alertDialog,
         confirm: confirmDialog,
         prompt: promptDialog,
         toast: toast,
     };
 })();
+

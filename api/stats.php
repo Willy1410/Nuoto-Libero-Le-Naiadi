@@ -180,7 +180,7 @@ function exportDailyReportPdf(): void
     }
 
     $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
-    $pdf->SetCreator('Gli Squaletti');
+    $pdf->SetCreator('Nuoto libero Le Naiadi');
     $pdf->SetAuthor('Dashboard Ufficio/Admin');
     $pdf->SetTitle('Report giornaliero check-in ' . $date);
     $pdf->setPrintHeader(false);
@@ -1151,7 +1151,7 @@ function outputPdfTable(string $title, array $header, array $rows, string $filen
     }
 
     $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
-    $pdf->SetCreator('Gli Squaletti');
+    $pdf->SetCreator('Nuoto libero Le Naiadi');
     $pdf->SetAuthor('Dashboard Staff');
     $pdf->SetTitle($title);
     $pdf->setPrintHeader(false);
@@ -1221,3 +1221,4 @@ function resolveRange(string $period, string $from, string $to): array
 
     return [date('Y-m-d', strtotime('-29 days')), $today];
 }
+

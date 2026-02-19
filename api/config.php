@@ -27,12 +27,16 @@ if (file_exists($envLoaderPath)) {
 define('LOG_DIR', PROJECT_ROOT . '/logs');
 define('ERROR_LOG_PATH', LOG_DIR . '/error.log');
 define('RATE_LIMIT_DIR', LOG_DIR . '/ratelimit');
+define('JWT_REVOKE_DIR', LOG_DIR . '/jwt_revocations');
 
 if (!is_dir(LOG_DIR)) {
     mkdir(LOG_DIR, 0755, true);
 }
 if (!is_dir(RATE_LIMIT_DIR)) {
     mkdir(RATE_LIMIT_DIR, 0755, true);
+}
+if (!is_dir(JWT_REVOKE_DIR)) {
+    mkdir(JWT_REVOKE_DIR, 0755, true);
 }
 if (!file_exists(ERROR_LOG_PATH)) {
     touch(ERROR_LOG_PATH);
@@ -116,7 +120,7 @@ define('UPLOAD_ALLOWED_TYPES', ['pdf', 'jpg', 'jpeg', 'png']);
 define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
 define('MAIL_LOG_PATH', LOG_DIR . '/mail.log');
 define('MAIL_QUEUE_DIR', LOG_DIR . '/mail_queue');
-define('SITE_NAME', 'Gli Squaletti');
+define('SITE_NAME', 'Nuoto libero Le Naiadi');
 define('SITE_LOGO_URL', 'https://public.gensparkspace.com/api/files/s/s3WpPfgP');
 
 if (!file_exists(MAIL_LOG_PATH)) {
@@ -205,7 +209,67 @@ function sanitizeText(string $value, int $maxLength = 1000): string
 
 function validatePasswordStrength(string $password): bool
 {
-    return strlen($password) >= 8;
+    if (strlen($password) < 10) {
+        return false;
+    }
+
+    if (!preg_match('/[a-z]/', $password)) {
+        return false;
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return false;
+    }
+    if (!preg_match('/\d/', $password)) {
+        return false;
+    }
+    if (!preg_match('/[^a-zA-Z\d]/', $password)) {
+        return false;
+    }
+
+    return true;
+}
+
+function passwordPolicyHint(): string
+{
+    return 'minimo 10 caratteri, con maiuscola, minuscola, numero e simbolo';
+}
+
+function buildSecurePasswordHash(string $password): string
+{
+    $algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_BCRYPT;
+
+    if ($algo === PASSWORD_ARGON2ID) {
+        $hash = password_hash($password, PASSWORD_ARGON2ID, [
+            'memory_cost' => 1 << 16,
+            'time_cost' => 4,
+            'threads' => 2,
+        ]);
+    } else {
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+    }
+
+    if (!is_string($hash) || $hash === '') {
+        throw new RuntimeException('Impossibile generare hash password');
+    }
+
+    return $hash;
+}
+
+function passwordHashNeedsUpgrade(string $hash): bool
+{
+    if ($hash === '') {
+        return false;
+    }
+
+    if (defined('PASSWORD_ARGON2ID')) {
+        return password_needs_rehash($hash, PASSWORD_ARGON2ID, [
+            'memory_cost' => 1 << 16,
+            'time_cost' => 4,
+            'threads' => 2,
+        ]);
+    }
+
+    return password_needs_rehash($hash, PASSWORD_BCRYPT);
 }
 
 function base64UrlEncode(string $value): string
@@ -278,6 +342,10 @@ function verifyJWT(?string $token): ?array
         return null;
     }
 
+    if (isJwtTokenRevoked($token)) {
+        return null;
+    }
+
     return $payloadData;
 }
 
@@ -300,6 +368,64 @@ function getAuthorizationHeader(): string
     return '';
 }
 
+function extractBearerToken(string $authHeader): ?string
+{
+    $value = trim($authHeader);
+    if ($value === '') {
+        return null;
+    }
+
+    if (!preg_match('/^Bearer\s+([A-Za-z0-9\-\._]+)$/i', $value, $matches)) {
+        return null;
+    }
+
+    return trim((string)$matches[1]);
+}
+
+function jwtRevocationFilePath(string $token): string
+{
+    return JWT_REVOKE_DIR . '/' . hash('sha256', $token) . '.json';
+}
+
+function revokeJwtToken(string $token, int $exp): void
+{
+    if ($token === '' || $exp <= time()) {
+        return;
+    }
+
+    if (!is_dir(JWT_REVOKE_DIR)) {
+        @mkdir(JWT_REVOKE_DIR, 0755, true);
+    }
+
+    $payload = [
+        'exp' => $exp,
+        'revoked_at' => time(),
+    ];
+    @file_put_contents(jwtRevocationFilePath($token), json_encode($payload, JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+
+function isJwtTokenRevoked(string $token): bool
+{
+    if ($token === '') {
+        return false;
+    }
+
+    $path = jwtRevocationFilePath($token);
+    if (!is_file($path)) {
+        return false;
+    }
+
+    $raw = @file_get_contents($path);
+    $decoded = is_string($raw) ? json_decode($raw, true) : null;
+    $exp = is_array($decoded) ? (int)($decoded['exp'] ?? 0) : 0;
+    if ($exp > 0 && $exp < time()) {
+        @unlink($path);
+        return false;
+    }
+
+    return true;
+}
+
 function getCurrentUser(): ?array
 {
     $authHeader = getAuthorizationHeader();
@@ -307,11 +433,12 @@ function getCurrentUser(): ?array
         return null;
     }
 
-    if (!preg_match('/Bearer\s+(.+)/i', $authHeader, $matches)) {
+    $token = extractBearerToken($authHeader);
+    if (!$token) {
         return null;
     }
 
-    return verifyJWT(trim($matches[1]));
+    return verifyJWT($token);
 }
 
 function requireAuth(): array
@@ -857,17 +984,13 @@ function buildBrandedEmail(string $title, string $bodyHtml, string $previewText 
     $preview = $previewText !== '' ? $previewText : $title;
     $safePreview = htmlspecialchars($preview, ENT_QUOTES, 'UTF-8');
     $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-    $logoUrl = htmlspecialchars(SITE_LOGO_URL, ENT_QUOTES, 'UTF-8');
 
     return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>'
         . '<body style="margin:0;padding:0;background:#f8f9fa;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">'
         . '<div style="max-width:640px;margin:0 auto;padding:24px;">'
         . '<div style="background:linear-gradient(135deg,#00a8e8,#0077b6);padding:18px 22px;border-radius:12px 12px 0 0;color:#ffffff;">'
-        . '<table role="presentation" style="width:100%;border-collapse:collapse;"><tr>'
-        . '<td style="width:70px;vertical-align:middle;"><img src="' . $logoUrl . '" alt="Logo Gli Squaletti" style="width:56px;height:56px;border-radius:8px;display:block;"></td>'
-        . '<td style="vertical-align:middle;"><div style="font-size:22px;font-weight:700;line-height:1.2;">' . SITE_NAME . '</div>'
-        . '<div style="margin-top:4px;font-size:13px;opacity:0.95;">' . $safePreview . '</div></td>'
-        . '</tr></table>'
+        . '<div style="font-size:22px;font-weight:700;line-height:1.2;">' . SITE_NAME . '</div>'
+        . '<div style="margin-top:4px;font-size:13px;opacity:0.95;">' . $safePreview . '</div>'
         . '</div>'
         . '<div style="background:#ffffff;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">'
         . '<h2 style="margin:0 0 16px 0;color:#0077b6;font-size:20px;">' . $safeTitle . '</h2>'
@@ -1343,3 +1466,4 @@ function sanitizeInput($input)
 
     return htmlspecialchars(strip_tags(trim((string)$input)), ENT_QUOTES, 'UTF-8');
 }
+

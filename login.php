@@ -19,7 +19,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Area Riservata - Gli Squaletti</title>
+    <title>Area Riservata - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -29,9 +29,9 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     <div class="login-page">
         <div class="login-container">
             <div class="login-header">
-                <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo" style="height: 80px; margin-bottom: 1rem;">
+                <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo" style="height: 80px; margin-bottom: 1rem;">
                 <h1>Area Riservata</h1>
-                <p>Accedi al tuo account Gli Squaletti</p>
+                <p>Accedi al tuo account Nuoto libero Le Naiadi</p>
             </div>
 
             <form id="loginForm" class="login-form">
@@ -111,7 +111,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             user: 'piscina-php/dashboard-utente.php'
         };
 
-        const UI = window.GliSqualettiUI || {};
+        const UI = window.NuotoLiberoUI || {};
 
         async function uiAlert(message, title = 'Avviso') {
             if (typeof UI.alert === 'function') {
@@ -189,14 +189,22 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
                 if (data.user && data.user.force_password_change) {
                     const newPassword = await uiPrompt(
-                        'Primo accesso: imposta una nuova password (minimo 8 caratteri).',
+                        'Primo accesso: imposta una nuova password (minimo 10 caratteri con maiuscola, minuscola, numero e simbolo).',
                         {
                             title: 'Cambio password obbligatorio',
                             inputType: 'password',
                             confirmText: 'Aggiorna password',
                             cancelText: 'Annulla',
                             required: true,
-                            validator: (value) => value.trim().length >= 8 ? '' : 'Password minima: 8 caratteri'
+                            validator: (value) => {
+                                const candidate = String(value || '').trim();
+                                const strong = candidate.length >= 10
+                                    && /[a-z]/.test(candidate)
+                                    && /[A-Z]/.test(candidate)
+                                    && /\d/.test(candidate)
+                                    && /[^a-zA-Z\d]/.test(candidate);
+                                return strong ? '' : 'Password non valida: minimo 10 caratteri con maiuscola, minuscola, numero e simbolo';
+                            }
                         }
                     );
 
@@ -290,3 +298,5 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     </script>
 </body>
 </html>
+
+

@@ -22,11 +22,11 @@
             <form id="resetForm" class="login-form">
                 <div class="form-group">
                     <label for="newPassword"><i class="fas fa-lock"></i> Nuova password</label>
-                    <input type="password" id="newPassword" required minlength="8" placeholder="Minimo 8 caratteri">
+                    <input type="password" id="newPassword" required minlength="10" placeholder="Minimo 10 caratteri con maiuscola, minuscola, numero e simbolo">
                 </div>
                 <div class="form-group">
                     <label for="confirmPassword"><i class="fas fa-lock"></i> Conferma password</label>
-                    <input type="password" id="confirmPassword" required minlength="8" placeholder="Ripeti la password">
+                    <input type="password" id="confirmPassword" required minlength="10" placeholder="Ripeti la password">
                 </div>
                 <div class="form-group checkbox-group" style="margin-top:-8px;">
                     <label class="checkbox-label">
@@ -91,8 +91,14 @@
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            if (newPassword.length < 8) {
-                showStatus('La password deve avere almeno 8 caratteri.', true);
+            const strongPassword = newPassword.length >= 10
+                && /[a-z]/.test(newPassword)
+                && /[A-Z]/.test(newPassword)
+                && /\d/.test(newPassword)
+                && /[^a-zA-Z\d]/.test(newPassword);
+
+            if (!strongPassword) {
+                showStatus('Password non valida: minimo 10 caratteri con maiuscola, minuscola, numero e simbolo.', true);
                 return;
             }
 

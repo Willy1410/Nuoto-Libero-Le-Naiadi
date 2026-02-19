@@ -24,6 +24,8 @@ if ($honeypot !== '') {
     sendJson(200, ['success' => true, 'message' => 'Messaggio ricevuto']);
 }
 
+$firstName = sanitizeText((string)($data['first_name'] ?? ''), 80);
+$lastName = sanitizeText((string)($data['last_name'] ?? ''), 80);
 $name = sanitizeText((string)($data['name'] ?? ''), 120);
 $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
 $phone = sanitizeText((string)($data['phone'] ?? ''), 40);
@@ -32,8 +34,22 @@ $subjectOther = sanitizeText((string)($data['subject_other'] ?? ''), 220);
 $message = sanitizeText((string)($data['message'] ?? ''), 4000);
 $privacy = filter_var($data['privacy'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-if ($name === '' || $email === '' || $subjectRaw === '' || $message === '') {
+if (($name === '' && $firstName === '' && $lastName === '') || $email === '' || $subjectRaw === '' || $message === '') {
     sendJson(400, ['success' => false, 'message' => 'Compila tutti i campi obbligatori']);
+}
+
+if ($firstName === '' && $lastName === '' && $name !== '') {
+    $parts = preg_split('/\s+/', trim($name)) ?: [];
+    $firstName = (string)($parts[0] ?? '');
+    $lastName = trim(implode(' ', array_slice($parts, 1)));
+}
+
+$fullName = trim($name);
+if ($fullName === '') {
+    $fullName = trim($firstName . ' ' . $lastName);
+}
+if ($fullName === '') {
+    $fullName = 'Contatto sito';
 }
 
 if (!validateEmail($email)) {
@@ -80,7 +96,9 @@ if ($adminEmail === '' || !validateEmail($adminEmail)) {
 }
 
 $body = '<p><strong>Nuovo messaggio dal sito</strong></p>'
-    . '<p><strong>Nome:</strong> ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Nome:</strong> ' . htmlspecialchars($firstName !== '' ? $firstName : '-', ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Cognome:</strong> ' . htmlspecialchars($lastName !== '' ? $lastName : '-', ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Nominativo:</strong> ' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</p>'
     . '<p><strong>Email:</strong> ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</p>'
     . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? htmlspecialchars($phone, ENT_QUOTES, 'UTF-8') : '-') . '</p>'
     . '<p><strong>Oggetto:</strong> ' . htmlspecialchars($subjectLabel, ENT_QUOTES, 'UTF-8') . '</p>'
@@ -95,7 +113,7 @@ $sent = sendTemplateEmail(
     '[Contatti] ' . $subject,
     'Nuovo messaggio dal form contatti',
     $body,
-    'Nuovo messaggio da ' . $name
+    'Nuovo messaggio da ' . $fullName
 );
 
 if (!$sent) {
@@ -103,11 +121,11 @@ if (!$sent) {
 }
 
 if (!empty($MAIL_CONFIG['send_copy_to_sender'])) {
-    $copyBody = '<p>Ciao <strong>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+    $copyBody = '<p>Ciao <strong>' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
         . '<p>abbiamo ricevuto il tuo messaggio. Ti risponderemo al piu presto.</p>'
         . '<p><strong>Oggetto:</strong> ' . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</p>';
 
-    sendTemplateEmail($email, $name, 'Conferma ricezione messaggio', 'Messaggio ricevuto', $copyBody);
+    sendTemplateEmail($email, $fullName, 'Conferma ricezione messaggio', 'Messaggio ricevuto', $copyBody);
 }
 
 sendJson(200, ['success' => true, 'message' => 'Grazie! Il tuo messaggio e stato inviato correttamente.']);

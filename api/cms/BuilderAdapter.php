@@ -130,7 +130,7 @@ final class BuilderAdapter
             'http' => [
                 'method' => 'GET',
                 'timeout' => 8,
-                'header' => "Accept: application/json\r\nUser-Agent: GliSqualettiCMS/1.0\r\n",
+                'header' => "Accept: application/json\r\nUser-Agent: NuotoLiberoCMS/1.0\r\n",
             ],
         ]);
 
@@ -143,3 +143,4 @@ final class BuilderAdapter
         return is_array($decoded) ? $decoded : null;
     }
 }
+

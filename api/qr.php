@@ -131,7 +131,7 @@ function outputQrPdf(array $acquisto): void
 
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
     $pdf->SetCreator('Nuoto Libero');
-    $pdf->SetAuthor('Gli Squaletti');
+    $pdf->SetAuthor('Nuoto libero Le Naiadi');
     $pdf->SetTitle('QR Utente - ' . (string)$acquisto['pacchetto_nome']);
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
@@ -139,7 +139,7 @@ function outputQrPdf(array $acquisto): void
     $pdf->AddPage();
 
     $pdf->SetFont('helvetica', 'B', 18);
-    $pdf->Cell(0, 10, 'Gli Squaletti - QR Utente', 0, 1, 'C');
+    $pdf->Cell(0, 10, 'Nuoto libero Le Naiadi - QR Utente', 0, 1, 'C');
 
     $pdf->Ln(2);
     $pdf->SetFont('helvetica', '', 10);
@@ -222,3 +222,4 @@ function outputQrPdf(array $acquisto): void
     $pdf->Output('QR_' . $safeCode . '.pdf', 'D');
     exit();
 }
+

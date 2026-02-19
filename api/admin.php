@@ -745,7 +745,7 @@ function sendDocumentReminder(array $staff): void
         $mailSent = sendBrandedEmail(
             (string)$target['email'],
             trim((string)$target['nome'] . ' ' . (string)$target['cognome']),
-            'Promemoria documenti mancanti - Gli Squaletti',
+            'Promemoria documenti mancanti - Nuoto libero Le Naiadi',
             'Documenti mancanti',
             $body,
             'Promemoria documenti mancanti'
@@ -858,7 +858,7 @@ function sendPasswordResetRequest(array $staff): void
         $sent = sendResetEmailToUser(
             $target,
             $token,
-            'Richiesta cambio password - Gli Squaletti',
+            'Richiesta cambio password - Nuoto libero Le Naiadi',
             'Cambio password richiesto',
             'La segreteria ti ha inviato un link per impostare una nuova password.'
         );
@@ -920,7 +920,7 @@ function createUser(array $staff): void
 
         $userId = generateUuid();
         $tempPassword = bin2hex(random_bytes(12));
-        $hash = password_hash($tempPassword, PASSWORD_DEFAULT);
+        $hash = buildSecurePasswordHash($tempPassword);
 
         $stmt = $pdo->prepare(
             'INSERT INTO profili (id, ruolo_id, email, password_hash, nome, cognome, telefono, attivo, email_verificata, force_password_change)
@@ -943,7 +943,7 @@ function createUser(array $staff): void
                 'email' => $email,
             ],
             $token,
-            'Attiva il tuo account - Gli Squaletti',
+            'Attiva il tuo account - Nuoto libero Le Naiadi',
             'Imposta la tua password',
             'Il tuo account e stato creato dalla segreteria. Clicca il link per impostare la password di accesso.'
         );
@@ -1025,10 +1025,10 @@ function updateUser(array $staff): void
         $password = (string)$data['password'];
         if ($password !== '') {
             if (!validatePasswordStrength($password)) {
-                sendJson(400, ['success' => false, 'message' => 'Password troppo debole (minimo 8 caratteri)']);
+                sendJson(400, ['success' => false, 'message' => 'Password troppo debole (' . passwordPolicyHint() . ')']);
             }
             $fields[] = 'password_hash = ?';
-            $params[] = password_hash($password, PASSWORD_DEFAULT);
+            $params[] = buildSecurePasswordHash($password);
         }
     }
 
@@ -1114,3 +1114,4 @@ function deleteUser(array $staff): void
         sendJson(500, ['success' => false, 'message' => 'Errore eliminazione utente']);
     }
 }
+

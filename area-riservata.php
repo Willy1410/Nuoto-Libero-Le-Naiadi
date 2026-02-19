@@ -57,9 +57,9 @@ $currentBlock = $demoBlocks[$demo];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Area riservata demo vetrina Gli Squaletti.">
+    <meta name="description" content="Area riservata demo vetrina Nuoto libero Le Naiadi.">
     <meta name="robots" content="noindex,nofollow">
-    <title>Area Riservata Demo - Gli Squaletti</title>
+    <title>Area Riservata Demo - Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -294,9 +294,9 @@ $currentBlock = $demoBlocks[$demo];
 </head>
 <body>
 <main class="layout" role="main">
-    <section class="left" aria-label="Brand Gli Squaletti">
+    <section class="left" aria-label="Brand Nuoto libero Le Naiadi">
         <div class="logo">
-            <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Logo Gli Squaletti">
+            <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Logo Nuoto libero Le Naiadi">
         </div>
         <h1>Area riservata</h1>
         <p>Versione vetrina attiva: i pulsanti restano nel percorso demo e non aprono il sito principale.</p>
@@ -385,3 +385,4 @@ $currentBlock = $demoBlocks[$demo];
 </script>
 </body>
 </html>
+

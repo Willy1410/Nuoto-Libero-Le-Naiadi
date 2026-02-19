@@ -176,7 +176,7 @@ function submitEnrollment(): void
         $mailSent = sendTemplateEmail(
             $email,
             trim($nome . ' ' . $cognome),
-            'Richiesta iscrizione ricevuta - Gli Squaletti',
+            'Richiesta iscrizione ricevuta - Nuoto libero Le Naiadi',
             'Richiesta iscrizione ricevuta',
             $body,
             'Richiesta iscrizione ricevuta'
@@ -343,7 +343,7 @@ function reviewEnrollment(): void
         $mailSent = sendTemplateEmail(
             (string)$row['email'],
             trim((string)$row['nome'] . ' ' . (string)$row['cognome']),
-            'Esito richiesta iscrizione - Gli Squaletti',
+            'Esito richiesta iscrizione - Nuoto libero Le Naiadi',
             'Richiesta iscrizione rifiutata',
             $mailBody,
             'Esito richiesta iscrizione'
@@ -391,7 +391,7 @@ function approveEnrollment(array $enrollment, array $staff, string $reviewNote):
 
     $userId = '';
     $temporaryPassword = generateTemporaryPassword();
-    $passwordHash = password_hash($temporaryPassword, PASSWORD_DEFAULT);
+    $passwordHash = buildSecurePasswordHash($temporaryPassword);
 
     if ($codiceFiscale !== '') {
         $cfStmt = $pdo->prepare('SELECT id FROM profili WHERE codice_fiscale = ? LIMIT 1 FOR UPDATE');
@@ -689,7 +689,7 @@ function sendActivationEmailWithAttachments(array $payload): bool
     return sendBrandedEmail(
         (string)$payload['email'],
         trim((string)$payload['nome'] . ' ' . (string)$payload['cognome']),
-        'Iscrizione approvata: credenziali e QR - Gli Squaletti',
+        'Iscrizione approvata: credenziali e QR - Nuoto libero Le Naiadi',
         'Iscrizione approvata',
         $body,
         'Iscrizione approvata e account attivo',
@@ -706,7 +706,7 @@ function buildQrPdfAttachment(array $payload): ?array
 
     try {
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        $pdf->SetCreator('Gli Squaletti');
+        $pdf->SetCreator('Nuoto libero Le Naiadi');
         $pdf->SetAuthor('Segreteria');
         $pdf->SetTitle('QR Utente - ' . (string)$payload['qr_code']);
         $pdf->setPrintHeader(false);
@@ -757,7 +757,7 @@ function buildInstructionsPdfAttachment(array $payload): ?array
 
     try {
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        $pdf->SetCreator('Gli Squaletti');
+        $pdf->SetCreator('Nuoto libero Le Naiadi');
         $pdf->SetAuthor('Segreteria');
         $pdf->SetTitle('Istruzioni Utilizzo Servizio');
         $pdf->setPrintHeader(false);
@@ -790,3 +790,4 @@ function buildInstructionsPdfAttachment(array $payload): ?array
         return null;
     }
 }
+

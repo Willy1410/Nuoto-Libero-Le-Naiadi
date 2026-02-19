@@ -77,7 +77,7 @@ function handleRegister(): void
     }
 
     if (!validatePasswordStrength($password)) {
-        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (minimo 8 caratteri)']);
+        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (' . passwordPolicyHint() . ')']);
     }
 
     if ($codiceFiscale !== '' && !validateCodiceFiscale($codiceFiscale)) {
@@ -106,7 +106,7 @@ function handleRegister(): void
         }
 
         $userId = generateUuid();
-        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $hash = buildSecurePasswordHash($password);
 
         $stmt = $pdo->prepare(
             'INSERT INTO profili
@@ -224,6 +224,16 @@ function handleLogin(): void
             sendJson(401, ['success' => false, 'message' => 'Credenziali non valide']);
         }
 
+        if (passwordHashNeedsUpgrade((string)$user['password_hash'])) {
+            try {
+                $rehash = buildSecurePasswordHash($password);
+                $rehashStmt = $pdo->prepare('UPDATE profili SET password_hash = ? WHERE id = ?');
+                $rehashStmt->execute([$rehash, $user['id']]);
+            } catch (Throwable $rehashError) {
+                error_log('password rehash error: ' . $rehashError->getMessage());
+            }
+        }
+
         unset($cooldown[$cooldownKey]);
 
         $stmt = $pdo->prepare('UPDATE profili SET ultimo_accesso = NOW() WHERE id = ?');
@@ -264,7 +274,19 @@ function handleLogin(): void
 
 function handleLogout(): void
 {
-    session_regenerate_id(true);
+    $authHeader = getAuthorizationHeader();
+    $token = extractBearerToken($authHeader);
+    if ($token) {
+        $payload = verifyJWT($token);
+        if (is_array($payload) && isset($payload['exp'])) {
+            revokeJwtToken($token, (int)$payload['exp']);
+        }
+    }
+
+    $_SESSION = [];
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_regenerate_id(true);
+    }
     sendJson(200, ['success' => true, 'message' => 'Logout effettuato']);
 }
 
@@ -768,7 +790,7 @@ function handleChangePassword(): void
     }
 
     if (!validatePasswordStrength($newPassword)) {
-        sendJson(400, ['success' => false, 'message' => 'Nuova password troppo debole (minimo 8 caratteri)']);
+        sendJson(400, ['success' => false, 'message' => 'Nuova password troppo debole (' . passwordPolicyHint() . ')']);
     }
 
     try {
@@ -780,7 +802,7 @@ function handleChangePassword(): void
             sendJson(401, ['success' => false, 'message' => 'Vecchia password non corretta']);
         }
 
-        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $newHash = buildSecurePasswordHash($newPassword);
         $stmt = $pdo->prepare('UPDATE profili SET password_hash = ?, force_password_change = 0 WHERE id = ?');
         $stmt->execute([$newHash, $currentUser['user_id']]);
 
@@ -930,7 +952,7 @@ function handleResetPassword(): void
     }
 
     if (!validatePasswordStrength($newPassword)) {
-        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (minimo 8 caratteri)']);
+        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (' . passwordPolicyHint() . ')']);
     }
 
     $tokenHash = hash('sha256', $token);
@@ -956,7 +978,7 @@ function handleResetPassword(): void
             sendJson(400, ['success' => false, 'message' => 'Token non valido o scaduto']);
         }
 
-        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $newHash = buildSecurePasswordHash($newPassword);
         $pdo->prepare('UPDATE profili SET password_hash = ?, force_password_change = 0 WHERE id = ?')->execute([$newHash, $row['user_id']]);
 
         $pdo->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?')->execute([$row['id']]);

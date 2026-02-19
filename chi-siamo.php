@@ -9,12 +9,12 @@
     <link rel="canonical" href="/chi-siamo.php">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="it_IT">
-    <meta property="og:title" content="Chi Siamo - Gli Squaletti">
+    <meta property="og:title" content="Chi Siamo - Nuoto libero Le Naiadi">
     <meta property="og:description" content="Scopri la missione e il team dedicato al nuoto libero non agonistico.">
     <meta property="og:url" content="/chi-siamo.php">
     <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
-    <title>Chi Siamo - Associazione Nuoto Libero Gli Squaletti</title>
+    <title>Chi Siamo - Associazione Nuoto Libero Nuoto libero Le Naiadi</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -35,8 +35,8 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <span>Gli Squaletti</span>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <span>Nuoto libero Le Naiadi</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
                         <li><a href="index.php">Home</a></li>
@@ -68,7 +68,7 @@
             <div class="about-content">
                 <div class="about-text">
                     <h2>CLADAM GROUP</h2>
-                    <p class="lead">La Societ&agrave; Sportiva <strong>CLADAM GROUP</strong>, proprietaria dei marchi <strong>"Le SqualOtte"</strong> e <strong>"Gli Squaletti"</strong>, &egrave; altamente specializzata e con anni di esperienza nel settore, promuove e segue le attivit&agrave; di acquaticit&agrave; pre e post natale e nuoto libero.</p>
+                    <p class="lead">La Societ&agrave; Sportiva <strong>CLADAM GROUP</strong>, proprietaria dei marchi <strong>"Nuoto libero Le Naiadi"</strong> e <strong>"Nuoto libero Le Naiadi"</strong>, &egrave; altamente specializzata e con anni di esperienza nel settore, promuove e segue le attivit&agrave; di acquaticit&agrave; pre e post natale e nuoto libero.</p>
                     
                     <div class="mission-box">
                         <h3><i class="fas fa-bullseye"></i> La Nostra Missione</h3>
@@ -91,9 +91,9 @@
             <div class="brands-grid">
                 <div class="brand-card">
                     <div class="brand-icon">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
                     </div>
-                    <h3>Gli Squaletti</h3>
+                    <h3>Nuoto libero Le Naiadi</h3>
                     <p>Dedicato al <strong>nuoto libero</strong> per adulti e ragazzi. Corsie dedicate, orari flessibili e ambiente professionale presso la Piscina Naiadi di Pescara.</p>
                     <a href="pacchetti.php" class="btn btn-primary">Scopri i Pacchetti</a>
                 </div>
@@ -102,7 +102,7 @@
                     <div class="brand-icon">
                         <i class="fas fa-baby" style="font-size: 4rem; color: var(--primary-color);"></i>
                     </div>
-                    <h3>Le SqualOtte</h3>
+                    <h3>Nuoto libero Le Naiadi</h3>
                     <p>Programmi di <strong>acquaticit&agrave; pre e post natale</strong>. Corsi per gestanti, neonati e bambini in un ambiente sicuro e accogliente.</p>
                     <a href="contatti.php" class="btn btn-secondary">Informazioni</a>
                 </div>
@@ -272,8 +272,8 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <h3>Gli Squaletti</h3>
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <h3>Nuoto libero Le Naiadi</h3>
                     </div>
                     <p>CLADAM GROUP - Nuoto libero presso Piscina Naiadi, Pescara</p>
                 </div>
@@ -283,7 +283,7 @@
                         <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
                         <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
                         <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/393311931737" target="_blank" rel="noopener">WhatsApp +39 331 1931 737</a></li>
-                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -313,7 +313,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 CLADAM GROUP - Gli Squaletti. Tutti i diritti riservati.</p>
+                <p>&copy; 2026 CLADAM GROUP - Nuoto libero Le Naiadi. Tutti i diritti riservati.</p>
             </div>
         </div>
     </footer>
@@ -323,4 +323,5 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+
 

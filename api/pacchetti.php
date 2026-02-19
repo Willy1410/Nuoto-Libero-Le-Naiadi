@@ -662,8 +662,8 @@ function assignManualPackage(): void
         $mailSent = false;
         if ($sendEmail && !empty($userRow['email'])) {
             $subject = $isConfirmed
-                ? 'Pacchetto assegnato e confermato - Gli Squaletti'
-                : 'Pacchetto assegnato in attesa - Gli Squaletti';
+                ? 'Pacchetto assegnato e confermato - Nuoto libero Le Naiadi'
+                : 'Pacchetto assegnato in attesa - Nuoto libero Le Naiadi';
 
             $body = '<p>Ciao <strong>' . htmlspecialchars((string)$userRow['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
                 . '<p>ti e stato assegnato un nuovo pacchetto dalla segreteria.</p>'
@@ -841,7 +841,7 @@ function acquistaPacchetto(): void
                 $mailSent = sendBrandedEmail(
                     (string)$user['email'],
                     $fullName,
-                    'Pratica confermata e QR disponibile - Gli Squaletti',
+                    'Pratica confermata e QR disponibile - Nuoto libero Le Naiadi',
                     'QR code disponibile',
                     $body,
                     'Pratica confermata'
@@ -860,7 +860,7 @@ function acquistaPacchetto(): void
                 $mailSent = sendBrandedEmail(
                     (string)$user['email'],
                     $fullName,
-                    'Conferma richiesta pacchetto ingressi - Gli Squaletti',
+                    'Conferma richiesta pacchetto ingressi - Nuoto libero Le Naiadi',
                     'Richiesta pacchetto ricevuta',
                     $body,
                     'Conferma richiesta pacchetto'
@@ -1026,7 +1026,7 @@ function confirmPayment(): void
             $mailSent = sendBrandedEmail(
                 (string)$user['email'],
                 trim((string)$user['nome'] . ' ' . (string)$user['cognome']),
-                'Pratica confermata e QR pronto - Gli Squaletti',
+                'Pratica confermata e QR pronto - Nuoto libero Le Naiadi',
                 'Pratica confermata',
                 $body,
                 'Il tuo QR e pronto'
@@ -1055,3 +1055,4 @@ function confirmPayment(): void
         respond(500, ['success' => false, 'message' => 'Errore durante la conferma della pratica']);
     }
 }
+
