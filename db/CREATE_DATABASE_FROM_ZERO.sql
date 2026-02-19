@@ -3,12 +3,12 @@
 -- Compatibile con XAMPP (MySQL/MariaDB)
 -- =====================================================
 
-DROP DATABASE IF EXISTS nuoto_libero;
-CREATE DATABASE nuoto_libero
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE nuoto_libero;
+--DROP DATABASE IF EXISTS nuoto_libero;
+--CREATE DATABASE nuoto_libero
+--  CHARACTER SET utf8mb4
+--  COLLATE utf8mb4_unicode_ci;
+--
+--USE nuoto_libero;
 
 -- =====================================================
 -- 1) RUOLI
