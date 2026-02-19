@@ -98,7 +98,7 @@
                     </div>
                     <div class="document-info">
                         <h3>Regolamento Piscina</h3>
-                        <p>Regolamento completo della piscina con norme di comportamento, sicurezza e igiene. Ãˆ obbligatorio prenderne visione prima del primo accesso.</p>
+                        <p>Regolamento completo della piscina con norme di comportamento, sicurezza e igiene. ÃƒË† obbligatorio prenderne visione prima del primo accesso.</p>
                         <div class="document-meta">
                             <span><i class="fas fa-calendar"></i> Ultima revisione: 10/01/2026</span>
                             <span><i class="fas fa-file-pdf"></i> PDF - 180 KB</span>
@@ -116,7 +116,7 @@
                     </div>
                     <div class="document-info">
                         <h3>Informativa Privacy</h3>
-                        <p>Informativa completa sul trattamento dei dati personali ai sensi del GDPR. Include modalitÃ  di raccolta, conservazione e utilizzo dei tuoi dati.</p>
+                        <p>Informativa completa sul trattamento dei dati personali ai sensi del GDPR. Include modalitÃƒÂ  di raccolta, conservazione e utilizzo dei tuoi dati.</p>
                         <div class="document-meta">
                             <span><i class="fas fa-calendar"></i> Ultima revisione: 01/01/2026</span>
                             <span><i class="fas fa-file-pdf"></i> PDF - 220 KB</span>
@@ -135,7 +135,7 @@
                     </div>
                     <div class="document-info">
                         <h3>Certificato Medico - Indicazioni</h3>
-                        <p>Informazioni su come ottenere il certificato medico di idoneitÃ  sportiva non agonistica obbligatorio per accedere alla piscina. Include elenco medici convenzionati.</p>
+                        <p>Informazioni su come ottenere il certificato medico di idoneitÃƒÂ  sportiva non agonistica obbligatorio per accedere alla piscina. Include elenco medici convenzionati.</p>
                         <div class="document-meta">
                             <span><i class="fas fa-calendar"></i> Ultima revisione: 20/12/2025</span>
                             <span><i class="fas fa-file-pdf"></i> PDF - 150 KB</span>
@@ -193,7 +193,7 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <h3><i class="fas fa-question-circle"></i> Quando Portare i Moduli?</h3>
-                        <p>Porta i moduli compilati al primo accesso in struttura. Il personale della reception li verificherÃ  e li archivierÃ . Ti consigliamo di scaricarli e compilarli a casa con calma.</p>
+                        <p>Porta i moduli compilati al primo accesso in struttura. Il personale della reception li verificherÃƒÂ  e li archivierÃƒÂ . Ti consigliamo di scaricarli e compilarli a casa con calma.</p>
                     </div>
                     <div class="info-item">
                         <h3><i class="fas fa-pen"></i> Come Compilare i Moduli?</h3>
@@ -201,11 +201,11 @@
                     </div>
                     <div class="info-item">
                         <h3><i class="fas fa-file-medical"></i> Certificato Medico</h3>
-                        <p>Il certificato medico Ã¨ obbligatorio e deve essere in corso di validitÃ . Scarica il documento informativo per sapere come ottenerlo e quali medici sono convenzionati.</p>
+                        <p>Il certificato medico ÃƒÂ¨ obbligatorio e deve essere in corso di validitÃƒÂ . Scarica il documento informativo per sapere come ottenerlo e quali medici sono convenzionati.</p>
                     </div>
                     <div class="info-item">
                         <h3><i class="fas fa-headset"></i> Hai Bisogno di Aiuto?</h3>
-                        <p>Se hai dubbi sulla compilazione dei moduli o sui documenti necessari, contattaci. Il nostro staff Ã¨ a tua disposizione per ogni chiarimento.</p>
+                        <p>Se hai dubbi sulla compilazione dei moduli o sui documenti necessari, contattaci. Il nostro staff ÃƒÂ¨ a tua disposizione per ogni chiarimento.</p>
                     </div>
                 </div>
             </div>
@@ -234,7 +234,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Il certificato medico per attivitÃ  non agonistica ha validitÃ  di 1 anno dalla data di rilascio. Dovrai rinnovarlo annualmente.</p>
+                        <p>Il certificato medico per attivitÃƒÂ  non agonistica ha validitÃƒÂ  di 1 anno dalla data di rilascio. Dovrai rinnovarlo annualmente.</p>
                     </div>
                 </div>
 
@@ -254,7 +254,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>SÃ¬, il modulo di iscrizione e il certificato medico sono obbligatori per legge per tutti gli utenti, senza eccezioni.</p>
+                        <p>SÃƒÂ¬, il modulo di iscrizione e il certificato medico sono obbligatori per legge per tutti gli utenti, senza eccezioni.</p>
                     </div>
                 </div>
             </div>
@@ -326,9 +326,11 @@
     </footer>
 
     <script src="js/cms-loader.js"></script>
+    <script src="js/ui-modal.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
+
 
 
 

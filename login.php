@@ -80,7 +80,7 @@
 
         </div>
     </div>
-
+    <script src="js/ui-modal.js"></script>
     <script>
         const API_URL = 'api';
         const ROLE_REDIRECTS = {
@@ -91,6 +91,23 @@
             utente: 'piscina-php/dashboard-utente.php',
             user: 'piscina-php/dashboard-utente.php'
         };
+
+        const UI = window.GliSqualettiUI || {};
+
+        async function uiAlert(message, title = 'Avviso') {
+            if (typeof UI.alert === 'function') {
+                await UI.alert(message, { title });
+                return;
+            }
+            console.warn(title + ': ' + message);
+        }
+
+        async function uiPrompt(message, options = {}) {
+            if (typeof UI.prompt === 'function') {
+                return UI.prompt(message, options);
+            }
+            return null;
+        }
 
         function redirectByRole(role) {
             window.location.href = ROLE_REDIRECTS[role] || 'piscina-php/dashboard-utente.php';
@@ -148,9 +165,20 @@
                 localStorage.setItem('user', JSON.stringify(data.user));
 
                 if (data.user && data.user.force_password_change) {
-                    const newPassword = prompt('Primo accesso: imposta una nuova password (minimo 8 caratteri).');
-                    if (!newPassword || newPassword.length < 8) {
-                        throw new Error('Cambio password obbligatorio: inserisci una password valida (minimo 8 caratteri).');
+                    const newPassword = await uiPrompt(
+                        'Primo accesso: imposta una nuova password (minimo 8 caratteri).',
+                        {
+                            title: 'Cambio password obbligatorio',
+                            inputType: 'password',
+                            confirmText: 'Aggiorna password',
+                            cancelText: 'Annulla',
+                            required: true,
+                            validator: (value) => value.trim().length >= 8 ? '' : 'Password minima: 8 caratteri'
+                        }
+                    );
+
+                    if (!newPassword) {
+                        throw new Error('Cambio password obbligatorio non completato.');
                     }
 
                     const changeResponse = await fetch(`${API_URL}/auth.php?action=change-password`, {
@@ -174,9 +202,10 @@
                     data.user.force_password_change = false;
                     localStorage.setItem('user', JSON.stringify(data.user));
                 }
+
                 redirectByRole(data.user.ruolo);
             } catch (error) {
-                alert('Errore: ' + error.message);
+                await uiAlert('Errore: ' + error.message, 'Accesso non riuscito');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             }
@@ -203,7 +232,7 @@
 
             const email = document.getElementById('forgotEmail').value.trim();
             if (!email) {
-                alert('Inserisci una email valida.');
+                await uiAlert('Inserisci una email valida.', 'Validazione');
                 return;
             }
 
@@ -225,11 +254,11 @@
                     throw new Error(data.message || 'Errore invio reset password');
                 }
 
-                alert(data.message || 'Se l\'email esiste, riceverai un link di reset.');
+                await uiAlert(data.message || 'Se l\'email esiste, riceverai un link di reset.', 'Reset password');
                 forgotForm.classList.add('hidden');
                 loginForm.classList.remove('hidden');
             } catch (error) {
-                alert('Errore: ' + error.message);
+                await uiAlert('Errore: ' + error.message, 'Reset password');
             } finally {
                 button.disabled = false;
                 button.innerHTML = original;
@@ -238,4 +267,5 @@
     </script>
 </body>
 </html>
+
 

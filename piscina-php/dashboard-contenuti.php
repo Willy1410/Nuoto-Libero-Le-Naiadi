@@ -265,6 +265,7 @@
     </div>
 
     <script src="../assets/vendor/quill/quill.min.js"></script>
+    <script src="../js/ui-modal.js"></script>
     <script>
         const API_URL = '../api';
         const token = localStorage.getItem('token');
@@ -582,7 +583,8 @@
             const page = pageSelect.value;
             const rawKey = resolveRawKey(safeKey);
 
-            if (!confirm(`Eliminare override per "${rawKey}"?`)) {
+            const confirmed = window.GliSqualettiUI ? await window.GliSqualettiUI.confirm(`Eliminare override per "${rawKey}"?`, { title: "Conferma reset contenuto" }) : true;
+            if (!confirmed) {
                 return;
             }
 
@@ -812,5 +814,7 @@
     </script>
 </body>
 </html>
+
+
 
 

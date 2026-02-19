@@ -194,6 +194,7 @@
         </div>
     </div>
 
+    <script src="../js/ui-modal.js"></script>
     <script>
         const API_URL = '../api/cms.php';
         const token = localStorage.getItem('token');
@@ -395,7 +396,8 @@
                 btn.addEventListener('click', async () => {
                     const id = Number(btn.getAttribute('data-delete-id') || 0);
                     if (!id) return;
-                    if (!window.confirm('Eliminare questo media?')) return;
+                    const confirmed = window.GliSqualettiUI ? await window.GliSqualettiUI.confirm('Eliminare questo media?', { title: 'Conferma eliminazione media' }) : true;
+                    if (!confirmed) return;
 
                     try {
                         await apiJson(`${API_URL}?action=media&id=${encodeURIComponent(String(id))}`, {
@@ -515,4 +517,5 @@
     </script>
 </body>
 </html>
+
 

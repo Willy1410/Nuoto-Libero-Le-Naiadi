@@ -434,7 +434,11 @@ function validatePhone(phone) {
 
 // Show notification
 function showNotification(message, type = 'info') {
-    // Create notification element
+    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.toast === 'function') {
+        window.GliSqualettiUI.toast(message, type);
+        return;
+    }
+
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -450,29 +454,52 @@ function showNotification(message, type = 'info') {
         z-index: 10000;
         animation: slideIn 0.3s ease;
     `;
-    
+
     document.body.appendChild(notification);
-    
-    // Remove after 5 seconds
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notification.remove(), 300);
     }, 5000);
 }
 
-// Add animations CSS
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(400px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+async function alertDialog(message, title = 'Avviso') {
+    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.alert === 'function') {
+        await window.GliSqualettiUI.alert(message, { title });
+        return true;
     }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(400px); opacity: 0; }
+    showNotification(message, 'info');
+    return true;
+}
+
+async function confirmDialog(message, title = 'Conferma') {
+    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.confirm === 'function') {
+        return window.GliSqualettiUI.confirm(message, { title });
     }
-`;
-document.head.appendChild(style);
+    return true;
+}
+
+async function promptDialog(message, options = {}) {
+    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.prompt === 'function') {
+        return window.GliSqualettiUI.prompt(message, options);
+    }
+    return null;
+}
+
+if (!document.getElementById('gs-fallback-toast-style')) {
+    const style = document.createElement('style');
+    style.id = 'gs-fallback-toast-style';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
 
 // Export functions for use in other scripts
 window.GliSqualetti = {
@@ -480,6 +507,8 @@ window.GliSqualetti = {
     generateOrderId,
     validateEmail,
     validatePhone,
-    showNotification
+    showNotification,
+    alertDialog,
+    confirmDialog,
+    promptDialog
 };
-

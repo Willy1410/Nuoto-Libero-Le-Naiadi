@@ -229,7 +229,7 @@
                 <div class="hours-card">
                     <h3>Giorni Feriali</h3>
                     <div class="hours-item">
-                        <span>LunedÃ¬ - VenerdÃ¬</span>
+                        <span>LunedÃƒÂ¬ - VenerdÃƒÂ¬</span>
                         <strong>07:00 - 22:00</strong>
                     </div>
                     <p class="hours-note">Reception sempre disponibile durante l'orario di apertura</p>
@@ -262,13 +262,13 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Certo! Vieni durante gli orari di apertura e chiedi alla reception una visita guidata. Ãˆ completamente gratuita e senza impegno.</p>
+                        <p>Certo! Vieni durante gli orari di apertura e chiedi alla reception una visita guidata. ÃƒË† completamente gratuita e senza impegno.</p>
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>C'Ã¨ un numero per emergenze?</span>
+                        <span>C'ÃƒÂ¨ un numero per emergenze?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
@@ -353,9 +353,11 @@
     </footer>
 
     <script src="js/cms-loader.js"></script>
+    <script src="js/ui-modal.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
+
 
 
 

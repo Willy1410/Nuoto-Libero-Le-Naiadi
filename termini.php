@@ -48,7 +48,7 @@
                 <p><em>Ultimo aggiornamento: 18/02/2026</em></p>
 
                 <h2>1. Ambito di applicazione</h2>
-                <p>I presenti termini disciplinano l'iscrizione all'associazione/società sportiva e l'accesso ai servizi di nuoto libero non agonistico erogati da Gli Squaletti.</p>
+                <p>I presenti termini disciplinano l'iscrizione all'associazione/societÃ  sportiva e l'accesso ai servizi di nuoto libero non agonistico erogati da Gli Squaletti.</p>
 
                 <h2>2. Iscrizione e requisiti</h2>
                 <ul>
@@ -59,17 +59,17 @@
                 </ul>
 
                 <h2>3. Pacchetti ingressi e contributi</h2>
-                <p>I pacchetti pubblicati sul sito rappresentano formule di partecipazione alle attività con relativo contributo. La richiesta online non costituisce attivazione automatica fino a verifica amministrativa.</p>
+                <p>I pacchetti pubblicati sul sito rappresentano formule di partecipazione alle attivitÃ  con relativo contributo. La richiesta online non costituisce attivazione automatica fino a verifica amministrativa.</p>
 
-                <h2>4. Modalità di conferma</h2>
+                <h2>4. ModalitÃ  di conferma</h2>
                 <ul>
                     <li>Bonifico bancario con riferimento tracciabile.</li>
                     <li>Contributo in struttura presso reception/segreteria.</li>
                 </ul>
                 <p>L'attivazione avviene dopo verifica documenti e conferma segreteria.</p>
 
-                <h2>5. Decorrenza e validità</h2>
-                <p>La validità del pacchetto decorre dalla data di attivazione registrata a sistema, non dalla data di invio richiesta.</p>
+                <h2>5. Decorrenza e validitÃ </h2>
+                <p>La validitÃ  del pacchetto decorre dalla data di attivazione registrata a sistema, non dalla data di invio richiesta.</p>
 
                 <h2>6. Regolamento utilizzo impianto</h2>
                 <ul>
@@ -79,13 +79,13 @@
                 </ul>
 
                 <h2>7. Sospensioni e variazioni servizio</h2>
-                <p>La direzione può modificare orari o sospendere temporaneamente attività per manutenzione, sicurezza o cause straordinarie. Le eventuali compensazioni seguono il regolamento interno vigente.</p>
+                <p>La direzione puÃ² modificare orari o sospendere temporaneamente attivitÃ  per manutenzione, sicurezza o cause straordinarie. Le eventuali compensazioni seguono il regolamento interno vigente.</p>
 
                 <h2>8. Rinunce e annullamenti</h2>
                 <p>Eventuali richieste di annullamento o rimodulazione sono valutate dalla segreteria in base a stato pratica, documentazione e regolamento associativo/contrattuale applicabile.</p>
 
                 <h2>9. Trattamento dati personali</h2>
-                <p>Il trattamento dei dati è descritto nella <a href="privacy.php">Privacy Policy</a>, parte integrante dei presenti termini.</p>
+                <p>Il trattamento dei dati Ã¨ descritto nella <a href="privacy.php">Privacy Policy</a>, parte integrante dei presenti termini.</p>
 
                 <h2>10. Contatti amministrativi</h2>
                 <p><strong>Email:</strong> info@glisqualetti.it<br>
@@ -109,7 +109,9 @@
     </footer>
 
     <script src="js/cms-loader.js"></script>
+    <script src="js/ui-modal.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
+
 

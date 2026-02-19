@@ -187,7 +187,11 @@ function showNotification(message, type) {
         window.GliSqualetti.showNotification(message, type);
         return;
     }
-    alert(message);
+    if (window.GliSqualettiUI && typeof window.GliSqualettiUI.toast === 'function') {
+        window.GliSqualettiUI.toast(message, type || 'info');
+        return;
+    }
+    console.warn('Notification:', message);
 }
 
 function validateFormData(data) {
@@ -222,5 +226,6 @@ function redirectToConfirmation(enrollmentId, orderData) {
 
     window.location.href = `grazie-iscrizione.php?${params.toString()}`;
 }
+
 
 

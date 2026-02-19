@@ -35,7 +35,7 @@ if (appIsLandingMode()) {
       "@type": "SportsActivityLocation",
       "name": "Gli Squaletti - Nuoto Libero",
       "sport": "Swimming",
-      "description": "AttivitÃƒÂ  di nuoto libero non agonistico in piscina coperta e piscina 50 metri all'aperto in estate.",
+      "description": "AttivitÃƒÆ’Ã‚Â  di nuoto libero non agonistico in piscina coperta e piscina 50 metri all'aperto in estate.",
       "url": "/index.php"
     }
     </script>
@@ -126,7 +126,7 @@ if (appIsLandingMode()) {
     <!-- Vantaggi Section -->
     <section class="advantages">
         <div class="container">
-            <h2 class="section-title">PerchÃƒÂ© Scegliere Gli Squaletti</h2>
+            <h2 class="section-title">PerchÃƒÆ’Ã‚Â© Scegliere Gli Squaletti</h2>
             <p class="section-subtitle">I vantaggi del nuoto libero nella nostra struttura</p>
             
             <div class="advantages-grid">
@@ -135,7 +135,7 @@ if (appIsLandingMode()) {
                         <i class="fas fa-swimming-pool"></i>
                     </div>
                     <h3>Corsie Dedicate</h3>
-                    <p>Corsie riservate al nuoto libero con divisione per velocitÃƒÂ . Massimo comfort durante l'allenamento.</p>
+                    <p>Corsie riservate al nuoto libero con divisione per velocitÃƒÆ’Ã‚Â . Massimo comfort durante l'allenamento.</p>
                 </div>
 
                 <div class="advantage-card">
@@ -151,7 +151,7 @@ if (appIsLandingMode()) {
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <h3>Ambiente Sicuro</h3>
-                    <p>Struttura pulita e costantemente controllata. Acqua trattata secondo le normative piÃƒÂ¹ rigide.</p>
+                    <p>Struttura pulita e costantemente controllata. Acqua trattata secondo le normative piÃƒÆ’Ã‚Â¹ rigide.</p>
                 </div>
             </div>
         </div>
@@ -170,7 +170,7 @@ if (appIsLandingMode()) {
                         <i class="fas fa-shopping-cart"></i>
                     </div>
                     <h3>Scegli il Pacchetto</h3>
-                    <p>Seleziona il pacchetto piÃƒÂ¹ adatto alle tue esigenze: singolo ingresso o abbonamenti multipli</p>
+                    <p>Seleziona il pacchetto piÃƒÆ’Ã‚Â¹ adatto alle tue esigenze: singolo ingresso o abbonamenti multipli</p>
                 </div>
 
                 <div class="step-arrow">
@@ -221,7 +221,7 @@ if (appIsLandingMode()) {
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>SÃƒÂ¬, ÃƒÂ¨ obbligatorio presentare un certificato medico di idoneitÃƒÂ  sportiva non agonistica in corso di validitÃƒÂ . Puoi scaricarlo dalla sezione <a href="moduli.php">Moduli</a>.</p>
+                        <p>SÃƒÆ’Ã‚Â¬, ÃƒÆ’Ã‚Â¨ obbligatorio presentare un certificato medico di idoneitÃƒÆ’Ã‚Â  sportiva non agonistica in corso di validitÃƒÆ’Ã‚Â . Puoi scaricarlo dalla sezione <a href="moduli.php">Moduli</a>.</p>
                     </div>
                 </div>
 
@@ -257,11 +257,11 @@ if (appIsLandingMode()) {
 
                 <div class="faq-item">
                     <button class="faq-question">
-                        <span>Quanto dura la validitÃƒÂ  dei pacchetti?</span>
+                        <span>Quanto dura la validitÃƒÆ’Ã‚Â  dei pacchetti?</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>I pacchetti da 10 e 20 ingressi hanno validitÃƒÂ  di 6 mesi dalla data di attivazione. Il mensile dura 30 giorni dalla prima entrata.</p>
+                        <p>I pacchetti da 10 e 20 ingressi hanno validitÃƒÆ’Ã‚Â  di 6 mesi dalla data di attivazione. Il mensile dura 30 giorni dalla prima entrata.</p>
                     </div>
                 </div>
             </div>
@@ -307,7 +307,7 @@ if (appIsLandingMode()) {
                         <li><i class="fas fa-map-marker-alt"></i> <a href="https://maps.google.com/?q=Piscina+Naiadi+Pescara" target="_blank" rel="noopener">Via Federico Fellini, 2 - Spoltore (PE)</a></li>
                         <li><i class="fas fa-phone"></i> <a href="tel:+39123456789">123 456 789</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
-                        <li><i class="fas fa-building"></i> SocietÃƒÂ  Sportiva CLADAM GROUP</li>
+                        <li><i class="fas fa-building"></i> SocietÃƒÆ’Ã‚Â  Sportiva CLADAM GROUP</li>
                     </ul>
                 </div>
 
@@ -350,9 +350,11 @@ if (appIsLandingMode()) {
 
     <!-- JavaScript -->
     <script src="js/cms-loader.js"></script>
+    <script src="js/ui-modal.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
+
 
 
 

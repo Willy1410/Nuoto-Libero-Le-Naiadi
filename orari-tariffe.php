@@ -68,7 +68,7 @@
     <section class="schedule-section">
         <div class="container">
             <h2 class="section-title">Orari Nuoto Libero</h2>
-            <p class="section-subtitle">LunedÃ¬, MercoledÃ¬ e VenerdÃ¬ presso Piscina Naiadi - Spoltore (PE)</p>
+            <p class="section-subtitle">LunedÃƒÂ¬, MercoledÃƒÂ¬ e VenerdÃƒÂ¬ presso Piscina Naiadi - Spoltore (PE)</p>
 
             <div class="schedule-table-container">
                 <table class="schedule-table">
@@ -82,27 +82,27 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>LunedÃ¬</strong></td>
+                            <td><strong>LunedÃƒÂ¬</strong></td>
                             <td>06:30 - 09:00</td>
                             <td>13:00 - 14:00</td>
                             <td>-</td>
                         </tr>
                         <tr class="weekend">
-                            <td><strong>MartedÃ¬</strong></td>
+                            <td><strong>MartedÃƒÂ¬</strong></td>
                             <td colspan="3" style="text-align: center; color: var(--gray-500);">CHIUSO</td>
                         </tr>
                         <tr>
-                            <td><strong>MercoledÃ¬</strong></td>
+                            <td><strong>MercoledÃƒÂ¬</strong></td>
                             <td>06:30 - 09:00</td>
                             <td>13:00 - 14:00</td>
                             <td>-</td>
                         </tr>
                         <tr class="weekend">
-                            <td><strong>GiovedÃ¬</strong></td>
+                            <td><strong>GiovedÃƒÂ¬</strong></td>
                             <td colspan="3" style="text-align: center; color: var(--gray-500);">CHIUSO</td>
                         </tr>
                         <tr>
-                            <td><strong>VenerdÃ¬</strong></td>
+                            <td><strong>VenerdÃƒÂ¬</strong></td>
                             <td>06:30 - 09:00</td>
                             <td>13:00 - 14:00</td>
                             <td>-</td>
@@ -122,7 +122,7 @@
             <div class="schedule-notes">
                 <h3><i class="fas fa-info-circle"></i> Note Importanti</h3>
                 <ul>
-                    <li><i class="fas fa-check"></i> Le corsie sono divise per velocitÃ  (lenta, media, veloce)</li>
+                    <li><i class="fas fa-check"></i> Le corsie sono divise per velocitÃƒÂ  (lenta, media, veloce)</li>
                     <li><i class="fas fa-calendar-times"></i> Chiusi il 25 dicembre, 1 gennaio e a Pasqua</li>
                     <li><i class="fas fa-swimming-pool"></i> Piscina olimpionica 50m scoperta d'estate, coperta d'inverno</li>
                     <li><i class="fas fa-clock"></i> Orari soggetti a modifiche durante i festivi - verifica sempre sul sito</li>
@@ -144,7 +144,7 @@
                         <i class="fas fa-file-medical"></i>
                     </div>
                     <h3>Certificato Medico</h3>
-                    <p>Ãˆ <strong>obbligatorio</strong> presentare un certificato medico di idoneitÃ  sportiva non agonistica in corso di validitÃ . Scarica il modulo dalla sezione <a href="moduli.php">Moduli</a>.</p>
+                    <p>ÃƒË† <strong>obbligatorio</strong> presentare un certificato medico di idoneitÃƒÂ  sportiva non agonistica in corso di validitÃƒÂ . Scarica il modulo dalla sezione <a href="moduli.php">Moduli</a>.</p>
                 </div>
 
                 <div class="rule-card">
@@ -152,7 +152,7 @@
                         <i class="fas fa-user-lock"></i>
                     </div>
                     <h3>Cuffia Obbligatoria</h3>
-                    <p>L'uso della <strong>cuffia</strong> Ã¨ obbligatorio per tutti gli utenti, compresi coloro che hanno capelli corti o rasati. Disponibile in reception.</p>
+                    <p>L'uso della <strong>cuffia</strong> ÃƒÂ¨ obbligatorio per tutti gli utenti, compresi coloro che hanno capelli corti o rasati. Disponibile in reception.</p>
                 </div>
 
                 <div class="rule-card">
@@ -160,7 +160,7 @@
                         <i class="fas fa-shower"></i>
                     </div>
                     <h3>Doccia Prima di Entrare</h3>
-                    <p>Ãˆ <strong>obbligatorio</strong> fare la doccia prima di accedere in vasca. Aiutiamo a mantenere l'acqua pulita per tutti.</p>
+                    <p>ÃƒË† <strong>obbligatorio</strong> fare la doccia prima di accedere in vasca. Aiutiamo a mantenere l'acqua pulita per tutti.</p>
                 </div>
 
                 <div class="rule-card">
@@ -184,7 +184,7 @@
                         <i class="fas fa-ban"></i>
                     </div>
                     <h3>Comportamento</h3>
-                    <p>Ãˆ vietato correre, tuffarsi, immergersi, giocare in modo pericoloso. Rispetta gli altri nuotatori e il personale.</p>
+                    <p>ÃƒË† vietato correre, tuffarsi, immergersi, giocare in modo pericoloso. Rispetta gli altri nuotatori e il personale.</p>
                 </div>
             </div>
 
@@ -260,9 +260,11 @@
     </footer>
 
     <script src="js/cms-loader.js"></script>
+    <script src="js/ui-modal.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
+
 
 
 

@@ -750,7 +750,9 @@
             cmsBuilderUrl: 'dashboard-cms-builder.php'
         };
     </script>
+    <script src="../js/ui-modal.js"></script>
     <script src="../js/dashboard-staff.js"></script>
 </body>
 </html>
+
 

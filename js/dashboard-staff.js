@@ -96,6 +96,31 @@
         box.className = `status-box ${type === 'error' ? 'err' : 'ok'}`;
         box.textContent = message;
     }
+    async function modalAlert(message, title) {
+        if (window.GliSqualettiUI && typeof window.GliSqualettiUI.alert === 'function') {
+            await window.GliSqualettiUI.alert(message, { title: title || 'Avviso' });
+            return;
+        }
+        setStatus(message, 'error');
+    }
+
+    async function modalConfirm(message, title) {
+        if (window.GliSqualettiUI && typeof window.GliSqualettiUI.confirm === 'function') {
+            return window.GliSqualettiUI.confirm(message, {
+                title: title || 'Conferma',
+                confirmText: 'Conferma',
+                cancelText: 'Annulla'
+            });
+        }
+        return true;
+    }
+
+    async function modalPrompt(message, options = {}) {
+        if (window.GliSqualettiUI && typeof window.GliSqualettiUI.prompt === 'function') {
+            return window.GliSqualettiUI.prompt(message, options);
+        }
+        return null;
+    }
 
     function openModal(id) {
         const node = el(id);
@@ -878,7 +903,7 @@
 
     async function handleToggleUser(userId) {
         if (!userId) return;
-        if (!window.confirm('Confermare cambio stato utente?')) return;
+        if (!(await modalConfirm('Confermare cambio stato utente?', 'Aggiorna stato utente'))) return;
 
         const data = await apiJson(`admin.php?action=toggle-user&id=${encodeURIComponent(userId)}`, {
             method: 'PATCH',
@@ -891,7 +916,7 @@
 
     async function handleConfirmPurchase(acquistoId) {
         if (!acquistoId) return;
-        if (!window.confirm('Confermare pagamento e generare QR?')) return;
+        if (!(await modalConfirm('Confermare pagamento e generare QR?', 'Conferma pagamento'))) return;
 
         const data = await apiJson(`pacchetti.php?action=confirm&id=${encodeURIComponent(acquistoId)}`, {
             method: 'PATCH',
@@ -909,7 +934,12 @@
         if (!enrollmentId) return;
         let note = '';
         if (!approve) {
-            note = window.prompt('Motivo rifiuto iscrizione (facoltativo):', '') || '';
+            const promptValue = await modalPrompt('Motivo rifiuto iscrizione (facoltativo):', {
+                title: 'Rifiuta iscrizione',
+                defaultValue: '',
+                placeholder: 'Inserisci eventuale motivazione'
+            });
+            note = promptValue === null ? '' : promptValue;
         }
 
         const data = await apiJson(`iscrizioni.php?action=review&id=${encodeURIComponent(enrollmentId)}`, {
@@ -941,17 +971,41 @@
             throw new Error('Pacchetto non trovato');
         }
 
-        const nome = window.prompt('Nome pacchetto', pkg.nome || '');
-        if (!nome || !nome.trim()) {
+        const nome = await modalPrompt('Nome pacchetto', {
+            title: 'Modifica pacchetto',
+            defaultValue: pkg.nome || '',
+            required: true,
+            validator: (value) => value.trim() ? '' : 'Nome pacchetto obbligatorio'
+        });
+        if (nome === null) {
             return;
         }
-        const entriesRaw = window.prompt('Numero ingressi', String(pkg.num_ingressi || 0));
-        const priceRaw = window.prompt('Prezzo EUR', String(pkg.prezzo || 0));
+
+        const entriesRaw = await modalPrompt('Numero ingressi', {
+            title: 'Modifica pacchetto',
+            defaultValue: String(pkg.num_ingressi || 0),
+            required: true,
+            validator: (value) => /^\d+$/.test(String(value).trim()) && Number(value) > 0 ? '' : 'Inserisci un numero intero > 0'
+        });
+        if (entriesRaw === null) {
+            return;
+        }
+
+        const priceRaw = await modalPrompt('Prezzo EUR', {
+            title: 'Modifica pacchetto',
+            defaultValue: String(pkg.prezzo || 0),
+            required: true,
+            validator: (value) => Number.isFinite(Number(String(value).replace(',', '.'))) && Number(String(value).replace(',', '.')) >= 0 ? '' : 'Inserisci un prezzo valido'
+        });
+        if (priceRaw === null) {
+            return;
+        }
 
         const numIngressi = Number(entriesRaw);
         const prezzo = Number(priceRaw);
         if (!Number.isFinite(numIngressi) || numIngressi <= 0 || !Number.isFinite(prezzo) || prezzo < 0) {
-            throw new Error('Valori pacchetto non validi');
+            await modalAlert('Valori pacchetto non validi', 'Validazione');
+            return;
         }
 
         const payload = {
@@ -975,7 +1029,12 @@
         if (!documentId) return;
         let note = '';
         if (!approve) {
-            note = window.prompt('Motivo rifiuto (facoltativo):', '') || '';
+            const promptValue = await modalPrompt('Motivo rifiuto (facoltativo):', {
+                title: 'Rifiuta documento',
+                defaultValue: '',
+                placeholder: 'Inserisci eventuale motivazione'
+            });
+            note = promptValue === null ? '' : promptValue;
         }
 
         const data = await apiJson(`documenti.php?action=review&id=${encodeURIComponent(documentId)}`, {
@@ -1337,4 +1396,6 @@
         setStatus(error.message || 'Errore caricamento dashboard', 'error');
     });
 })();
+
+
 
