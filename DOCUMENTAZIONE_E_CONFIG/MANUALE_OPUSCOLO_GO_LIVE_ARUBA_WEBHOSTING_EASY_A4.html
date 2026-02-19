@@ -1,0 +1,377 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuale Go-Live Aruba WebHosting Easy - Nuoto Libero Le Naiadi</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm;
+        }
+
+        :root {
+            --ink: #0f172a;
+            --muted: #334155;
+            --line: #cbd5e1;
+            --panel: #f8fafc;
+            --accent: #0ea5e9;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--ink);
+            line-height: 1.45;
+            font-size: 11pt;
+            background: #fff;
+        }
+
+        .page {
+            page-break-after: always;
+            min-height: 257mm;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        h1, h2, h3 {
+            margin: 0 0 8px;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 21pt;
+            margin-bottom: 12px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            margin-top: 16px;
+            color: #0369a1;
+        }
+
+        h3 {
+            font-size: 12pt;
+            margin-top: 12px;
+        }
+
+        p {
+            margin: 0 0 8px;
+            color: var(--muted);
+        }
+
+        ul, ol {
+            margin: 0 0 10px 20px;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .hero {
+            border: 1px solid var(--line);
+            background: linear-gradient(160deg, #f0f9ff, #ffffff 60%);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0 14px;
+        }
+
+        .meta div {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px;
+            background: var(--panel);
+            font-size: 10pt;
+        }
+
+        .box {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px;
+            background: var(--panel);
+            margin-bottom: 10px;
+        }
+
+        .checklist li {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .checklist li::before {
+            content: "[ ] ";
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .warn {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+            padding: 8px 10px;
+            border-radius: 6px;
+            color: #713f12;
+            margin: 10px 0;
+        }
+
+        .ok {
+            border-left: 4px solid #22c55e;
+            background: #f0fdf4;
+            padding: 8px 10px;
+            border-radius: 6px;
+            color: #14532d;
+            margin: 10px 0;
+        }
+
+        code {
+            font-family: Consolas, "Courier New", monospace;
+            background: #e2e8f0;
+            border-radius: 4px;
+            padding: 1px 4px;
+            color: #0f172a;
+            font-size: 10pt;
+        }
+
+        .footer-note {
+            margin-top: 14px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--line);
+            font-size: 9.5pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <section class="page">
+        <div class="hero">
+            <h1>Manuale Go-Live Aruba WebHosting Easy</h1>
+            <p><strong>Progetto:</strong> Nuoto Libero Le Naiadi</p>
+            <p>Manuale operativo in formato A4, pronto per stampa opuscolo.</p>
+        </div>
+
+        <div class="meta">
+            <div><strong>Ambiente locale:</strong><br>XAMPP (Windows)</div>
+            <div><strong>Hosting:</strong><br>Aruba WebHosting Easy</div>
+            <div><strong>Upload consigliato:</strong><br>FileZilla con FTPS</div>
+            <div><strong>Database:</strong><br>MySQL (export/import SQL)</div>
+        </div>
+
+        <h2>0) Strategia consigliata (sicura)</h2>
+        <ol>
+            <li>Prepari tutto in locale su XAMPP.</li>
+            <li>Esegui backup completo file + database.</li>
+            <li>Carichi i file su Aruba in una finestra di manutenzione.</li>
+            <li>Importi database e configuri <code>.env</code>.</li>
+            <li>Fai smoke test completo.</li>
+            <li>Se qualcosa non va: rollback immediato da backup.</li>
+        </ol>
+
+        <h2>1) Prerequisiti prima del deploy</h2>
+        <div class="box">
+            <ul class="checklist">
+                <li>Hai accesso Aruba: pannello hosting + FTP + DB + phpMyAdmin.</li>
+                <li>Hai credenziali FTP/FTPS.</li>
+                <li>Hai credenziali DB Aruba (host, db, user, password).</li>
+                <li>Hai dominio puntato ad Aruba.</li>
+                <li>Hai SSL attivo (Let's Encrypt o certificato Aruba).</li>
+            </ul>
+        </div>
+
+        <h2>2) Test obbligatori in locale (XAMPP)</h2>
+        <ol>
+            <li>Apri progetto locale e verifica pagine pubbliche + login + dashboard ruoli.</li>
+            <li>Testa flusso QR (utente -> bagnino -> check-in).</li>
+            <li>Testa form contatti landing con redirect pagina grazie.</li>
+            <li>Esegui lint rapido:
+                <ul>
+                    <li><code>C:\xampp\php\php.exe -l api\config.php</code></li>
+                    <li><code>C:\xampp\php\php.exe -l api\admin.php</code></li>
+                    <li><code>node --check js\dashboard-staff.js</code> (se Node installato)</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="warn">
+            Non andare online se anche un solo flusso critico fallisce: login, dashboard staff, scanner QR, invio form.
+        </div>
+
+        <div class="footer-note">
+            Stampa consigliata: fronte/retro, margini standard A4, scala 100%.
+        </div>
+    </section>
+
+    <section class="page">
+        <h2>3) Backup completo prima del deploy</h2>
+
+        <h3>3.1 Backup file progetto</h3>
+        <ol>
+            <li>Chiudi editor e processi non necessari.</li>
+            <li>Crea zip della cartella progetto.</li>
+            <li>Salva copia in cartella esterna, es. <code>C:\xampp\htdocs\_backups\</code>.</li>
+        </ol>
+
+        <h3>3.2 Backup database locale</h3>
+        <ol>
+            <li>Apri phpMyAdmin locale.</li>
+            <li>Seleziona DB <code>nuoto_libero</code>.</li>
+            <li>Export -> formato SQL -> salva file <code>nuoto_libero_pre_go_live.sql</code>.</li>
+        </ol>
+
+        <div class="ok">
+            Regola pratica: se non hai backup verificato, non fare deploy.
+        </div>
+
+        <h2>4) Metodo upload: FileZilla (consigliato)</h2>
+        <h3>4.1 Configura connessione</h3>
+        <ul>
+            <li>Host: server FTP Aruba (dal pannello Aruba).</li>
+            <li>Protocollo: <strong>FTP over TLS esplicito (FTPS)</strong>.</li>
+            <li>Porta: 21 (salvo diversa indicazione Aruba).</li>
+            <li>User e password: credenziali FTP Aruba.</li>
+        </ul>
+
+        <h3>4.2 Cartella remota</h3>
+        <ul>
+            <li>Carica i file nella root pubblica del dominio (tipicamente <code>htdocs</code> o <code>public_html</code> secondo piano Aruba).</li>
+            <li>Non caricare cartelle inutili locali (es. backup personali).</li>
+            <li>Verifica presenza di <code>.htaccess</code> e file PHP principali in root sito.</li>
+        </ul>
+
+        <h3>4.3 Ordine di upload consigliato</h3>
+        <ol>
+            <li>Upload completo file applicazione.</li>
+            <li>Upload file <code>.env</code> solo dopo averlo valorizzato con dati Aruba.</li>
+            <li>Upload eventuali assets/documenti statici.</li>
+        </ol>
+
+        <h2>5) Alternativa upload</h2>
+        <p>Puoi usare file manager Aruba da pannello, ma per progetti medio/grandi FileZilla e piu stabile e veloce.</p>
+
+        <div class="footer-note">
+            Se FTPS fallisce, controlla firewall antivirus e modalita passiva in FileZilla.
+        </div>
+    </section>
+
+    <section class="page">
+        <h2>6) Configurazione ambiente produzione (.env)</h2>
+
+        <p>Nel server Aruba crea/aggiorna il file <code>.env</code> in root progetto.</p>
+
+        <div class="box">
+            <p><strong>Valori minimi da impostare:</strong></p>
+            <ul>
+                <li><code>APP_ENV=production</code></li>
+                <li><code>APP_BASE_URL=https://tuodominio.it</code></li>
+                <li><code>SITE_MODE=full</code> oppure <code>SITE_MODE=landing</code></li>
+                <li><code>DB_HOST=...</code></li>
+                <li><code>DB_PORT=3306</code></li>
+                <li><code>DB_NAME=...</code></li>
+                <li><code>DB_USER=...</code></li>
+                <li><code>DB_PASS=...</code></li>
+                <li><code>JWT_SECRET=...</code> (stringa lunga e robusta)</li>
+                <li><code>MAIL_ENABLED=true</code> (se SMTP gia pronta)</li>
+                <li><code>MAIL_SMTP_HOST=...</code>, <code>MAIL_SMTP_PORT=...</code>, <code>MAIL_SMTP_USER=...</code>, <code>MAIL_SMTP_PASS=...</code></li>
+                <li><code>MAIL_FROM_EMAIL=info@nuotoliberolenaiadi.it</code></li>
+                <li><code>MAIL_ADMIN_EMAIL=info@nuotoliberolenaiadi.it</code></li>
+            </ul>
+        </div>
+
+        <div class="warn">
+            Mai lasciare segreti hardcoded nel codice. Tutto in <code>.env</code>.
+        </div>
+
+        <h2>7) Import database su Aruba</h2>
+        <ol>
+            <li>Apri phpMyAdmin Aruba.</li>
+            <li>Crea database (se non gia creato dal pannello).</li>
+            <li>Importa SQL da locale (backup piu recente e testato).</li>
+            <li>Verifica tabelle chiave: <code>profili</code>, <code>acquisti</code>, <code>check_ins</code>, <code>audit_log</code>, <code>impostazioni_operative</code>.</li>
+        </ol>
+
+        <h2>8) Permessi file/cartelle (Linux hosting)</h2>
+        <ul>
+            <li>File PHP/CSS/JS: 644</li>
+            <li>Cartelle: 755</li>
+            <li>Cartelle scrivibili (es. <code>logs</code>, <code>uploads</code>): 755 (o 775 se richiesto dal piano).</li>
+        </ul>
+
+        <div class="footer-note">
+            Evita permessi 777 salvo emergenza temporanea e solo su cartella specifica.
+        </div>
+    </section>
+
+    <section class="page">
+        <h2>9) Verifica post-deploy (smoke test)</h2>
+
+        <div class="box">
+            <p><strong>URL da testare subito:</strong></p>
+            <ul>
+                <li><code>/</code></li>
+                <li><code>/landing.php</code></li>
+                <li><code>/grazie-contatto.php?from=landing</code></li>
+                <li><code>/login.php</code></li>
+                <li><code>/piscina-php/dashboard-admin.php</code></li>
+                <li><code>/piscina-php/dashboard-ufficio.php</code></li>
+                <li><code>/piscina-php/dashboard-bagnino.php</code></li>
+            </ul>
+        </div>
+
+        <h3>Checklist funzionale rapida</h3>
+        <ul class="checklist">
+            <li>Login admin/ufficio/bagnino/utente funzionante.</li>
+            <li>Dashboard staff carica utenti e dettaglio cliente.</li>
+            <li>Invio richiesta cambio password da staff funzionante.</li>
+            <li>Creazione nuovo cliente invia email impostazione password.</li>
+            <li>QR check-in bloccato fuori orario e consentito in fascia attiva.</li>
+            <li>Landing: bottone "Contattaci ora" apre WhatsApp.</li>
+            <li>Landing: form invia e reindirizza a pagina grazie.</li>
+            <li>Pagina grazie mostra bottone "TORNA ALLA HOME".</li>
+            <li>SITE_MODE da dashboard modifica homepage (landing/full).</li>
+        </ul>
+
+        <h2>10) SEO e URL puliti</h2>
+        <ol>
+            <li>Controlla che i link interni usino URL coerenti del progetto.</li>
+            <li>Verifica redirect legacy da <code>.html</code> a <code>.php</code>.</li>
+            <li>Controlla <code>robots.txt</code> e <code>sitemap.xml</code>.</li>
+        </ol>
+
+        <h2>11) Rollback rapido (se necessario)</h2>
+        <ol>
+            <li>Rimetti online zip backup file precedente.</li>
+            <li>Reimporta backup SQL precedente.</li>
+            <li>Ripristina <code>.env</code> precedente.</li>
+            <li>Verifica home + login + API principali.</li>
+        </ol>
+
+        <div class="warn">
+            Tempo massimo consigliato per rollback: 15-20 minuti dalla rilevazione problema critico.
+        </div>
+
+        <h2>12) Routine operativa dopo pubblicazione</h2>
+        <ul>
+            <li>Backup giornaliero DB.</li>
+            <li>Backup settimanale file.</li>
+            <li>Controllo log errori e invii email.</li>
+            <li>Test periodico scanner QR su telefono reale.</li>
+            <li>Verifica SSL e scadenze dominio.</li>
+        </ul>
+
+        <div class="ok">
+            Manuale concluso. Per opuscolo: stampa questo file in PDF A4 e poi in tipografia (fronte/retro).
+        </div>
+
+        <p class="footer-note">Versione: 2026-02-19 | Documento operativo interno</p>
+    </section>
+</body>
+</html>
