@@ -3,6 +3,8 @@ Options -Indexes
 
 # Dedicated emergency landing aliases.
 RewriteRule ^(landing|emergenza)/?$ landing.php [L,QSA,NC]
+RewriteRule ^area-riservata/?$ area-riservata.php [L,QSA,NC]
+RewriteRule ^landing-privacy/?$ landing-privacy.php [L,QSA,NC]
 
 # Redirect legacy .html URLs to the new .php pages only when target exists.
 RewriteCond %{THE_REQUEST} \s/+(.+?)\.html(?:[\s?]|$) [NC]

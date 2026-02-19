@@ -279,8 +279,8 @@ require_once __DIR__ . '/bootstrap.php';
                 <li><strong>Sede</strong><span>Via Federico Fellini, 2 - Spoltore (PE)</span></li>
             </ul>
             <div class="cta-row">
-                <a class="cta-btn cta-primary" href="contatti.php">Contattaci ora</a>
-                <a class="cta-btn cta-secondary" href="login.php">Area riservata</a>
+                <a class="cta-btn cta-primary" href="#landingContactForm">Contattaci ora</a>
+                <a class="cta-btn cta-secondary" href="area-riservata.php">Area riservata</a>
             </div>
             <form id="landingContactForm" class="quick-form" novalidate>
                 <h3>Richiedi contatto rapido</h3>
@@ -311,7 +311,7 @@ require_once __DIR__ . '/bootstrap.php';
                 <input class="hp-field" type="text" name="website" id="landingWebsite" tabindex="-1" autocomplete="off" aria-hidden="true">
                 <label class="privacy" for="landingPrivacy">
                     <input id="landingPrivacy" name="privacy" type="checkbox" required>
-                    <span>Accetto l'<a href="privacy.php" target="_blank" rel="noopener">informativa privacy</a> *</span>
+                    <span>Accetto l'<a href="landing-privacy.php" target="_blank" rel="noopener">informativa privacy</a> *</span>
                 </label>
                 <button id="landingSubmitBtn" class="submit-btn" type="submit">Invia richiesta</button>
                 <div id="landingFormFeedback" class="form-feedback" role="status" aria-live="polite"></div>
@@ -385,7 +385,7 @@ require_once __DIR__ . '/bootstrap.php';
                         subject: payload.subject,
                         email: payload.email
                     });
-                    window.location.href = 'grazie-contatto.php?' + params.toString();
+                    window.location.href = 'grazie-contatto.php?from=landing&' + params.toString();
                 } catch (error) {
                     setFeedback((error && error.message) ? error.message : 'Errore invio richiesta. Riprova o usa i contatti diretti.', 'error');
                 } finally {
@@ -399,3 +399,4 @@ require_once __DIR__ . '/bootstrap.php';
     </script>
 </body>
 </html>
+

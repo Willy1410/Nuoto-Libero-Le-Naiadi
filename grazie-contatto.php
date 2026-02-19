@@ -9,6 +9,7 @@ function contactSafe(string $value, int $maxLen = 120): string
     if (mb_strlen($value) > $maxLen) {
         $value = mb_substr($value, 0, $maxLen);
     }
+
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
@@ -18,6 +19,13 @@ $email = contactSafe((string)($_GET['email'] ?? ''), 255);
 if ($email === '') {
     $email = '-';
 }
+
+$isLandingContext = appIsLandingMode() || strtolower((string)($_GET['from'] ?? '')) === 'landing';
+$homeHref = $isLandingContext ? 'landing.php' : 'index.php';
+$homeLabel = $isLandingContext ? 'Torna alla landing' : 'Torna alla home';
+$secondaryHref = $isLandingContext ? 'landing.php#landingContactForm' : 'contatti.php';
+$thirdHref = $isLandingContext ? 'area-riservata.php' : 'pacchetti.php';
+$thirdLabel = $isLandingContext ? 'Area riservata demo' : 'Vai ai pacchetti';
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -126,12 +134,13 @@ if ($email === '') {
     </section>
 
     <div class="cta">
-        <a class="btn btn-primary" href="index.php">Torna alla home</a>
-        <a class="btn btn-secondary" href="contatti.php">Invia un altro messaggio</a>
-        <a class="btn btn-secondary" href="pacchetti.php">Vai ai pacchetti</a>
+        <a class="btn btn-primary" href="<?= htmlspecialchars($homeHref, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($homeLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+        <a class="btn btn-secondary" href="<?= htmlspecialchars($secondaryHref, ENT_QUOTES, 'UTF-8'); ?>">Invia un altro messaggio</a>
+        <a class="btn btn-secondary" href="<?= htmlspecialchars($thirdHref, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($thirdLabel, ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
 
     <p class="note">Risposta media: entro 24 ore lavorative.</p>
 </main>
 </body>
 </html>
+
