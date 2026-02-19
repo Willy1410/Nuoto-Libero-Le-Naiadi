@@ -74,7 +74,6 @@ if (appIsLandingMode()) {
             <small id="whoami">Utente</small>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" class="btn btn-light" id="openLegacyCmsBtn">Apri CMS visuale attuale</button>
             <button type="button" class="btn btn-light" id="backBtn">Torna dashboard</button>
             <button type="button" class="btn btn-danger" id="logoutBtn">Esci</button>
         </div>
@@ -198,6 +197,27 @@ if (appIsLandingMode()) {
                             </thead>
                             <tbody id="settingsBody"></tbody>
                         </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Builder.io Base</h2>
+                    <p class="muted" style="margin-bottom:8px;">Test connessione contenuto pubblicato da Builder tramite API key in env.</p>
+                    <div class="row">
+                        <div class="field">
+                            <label for="builderModelInput">Model</label>
+                            <input id="builderModelInput" value="page">
+                        </div>
+                        <div class="field">
+                            <label for="builderPathInput">URL path</label>
+                            <input id="builderPathInput" value="/">
+                        </div>
+                    </div>
+                    <div class="actions" style="margin-bottom:8px;">
+                        <button class="btn btn-primary" type="button" id="testBuilderBtn">Test Builder.io</button>
+                    </div>
+                    <div style="overflow:auto; max-height:220px; border:1px solid #e5e7eb; border-radius:8px; padding:8px; font-size:12px; font-family:Consolas,monospace; background:#f8fafc;">
+                        <pre id="builderResult" style="margin:0; white-space:pre-wrap;">Nessun test eseguito.</pre>
                     </div>
                 </div>
             </div>
@@ -488,6 +508,15 @@ if (appIsLandingMode()) {
             await loadSettings();
         }
 
+        async function testBuilderConnection() {
+            const model = document.getElementById('builderModelInput').value.trim() || 'page';
+            const path = document.getElementById('builderPathInput').value.trim() || '/';
+            const data = await apiJson(`${API_URL}?action=builder-stub&model=${encodeURIComponent(model)}&url_path=${encodeURIComponent(path)}`);
+            const output = document.getElementById('builderResult');
+            output.textContent = JSON.stringify(data.builder || {}, null, 2);
+            showStatus('Test Builder completato', 'ok');
+        }
+
         function resetPageForm() {
             setPageForm({ id: '', slug: '', title: '', status: 'draft', content_json: '{}' });
             document.getElementById('revisionsList').innerHTML = '<div class="list-item">Nuova pagina (nessuna revisione)</div>';
@@ -501,10 +530,7 @@ if (appIsLandingMode()) {
         document.getElementById('refreshMediaBtn').addEventListener('click', () => loadMedia().catch((error) => showStatus(error.message, 'error')));
         document.getElementById('saveSettingBtn').addEventListener('click', () => saveSetting().catch((error) => showStatus(error.message, 'error')));
         document.getElementById('loadSettingsBtn').addEventListener('click', () => loadSettings().catch((error) => showStatus(error.message, 'error')));
-
-        document.getElementById('openLegacyCmsBtn').addEventListener('click', () => {
-            window.location.href = 'dashboard-contenuti.php';
-        });
+        document.getElementById('testBuilderBtn').addEventListener('click', () => testBuilderConnection().catch((error) => showStatus(error.message, 'error')));
 
         document.getElementById('backBtn').addEventListener('click', () => {
             if (user.ruolo === 'admin') {

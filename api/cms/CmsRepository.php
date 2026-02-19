@@ -12,8 +12,8 @@ final class CmsRepository
     {
         $required = ['cms_pages', 'cms_media', 'cms_revisions', 'cms_settings'];
         foreach ($required as $table) {
-            $stmt = $this->pdo->prepare('SHOW TABLES LIKE ?');
-            $stmt->execute([$table]);
+            $quotedTable = $this->pdo->quote($table);
+            $stmt = $this->pdo->query('SHOW TABLES LIKE ' . $quotedTable);
             if (!$stmt->fetch()) {
                 throw new RuntimeException('Schema CMS non pronto. Esegui db/MIGRATION_2026_02_18_CMS_BUILDER_READY.sql');
             }

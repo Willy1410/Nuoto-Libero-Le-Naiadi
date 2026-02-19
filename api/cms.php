@@ -27,8 +27,31 @@ $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 $action = (string)($_GET['action'] ?? 'public-page');
 
 try {
-    $service = new CmsService(new CmsRepository($pdo));
     $builderAdapter = new BuilderAdapter();
+
+    if ($method === 'GET' && $action === 'builder-stub') {
+        requireCmsEditorRole();
+        $model = sanitizeText((string)($_GET['model'] ?? 'page'), 80);
+        $urlPath = sanitizeText((string)($_GET['url_path'] ?? '/'), 255);
+        $payload = $builderAdapter->fetchPublishedContent($model, $urlPath);
+        sendJson(200, ['success' => true, 'builder' => $payload]);
+    }
+
+    if ($method === 'POST' && $action === 'builder-webhook') {
+        $secret = trim((string)(getenv('BUILDER_WEBHOOK_SECRET') ?: ''));
+        if ($secret !== '') {
+            $provided = trim((string)($_SERVER['HTTP_X_BUILDER_SECRET'] ?? ''));
+            if (!hash_equals($secret, $provided)) {
+                sendJson(403, ['success' => false, 'message' => 'Webhook secret non valido']);
+            }
+        }
+
+        $payload = getJsonInput();
+        $result = $builderAdapter->handleWebhook($payload);
+        sendJson(200, ['success' => true, 'webhook' => $result]);
+    }
+
+    $service = new CmsService(new CmsRepository($pdo));
 
     if ($method === 'GET' && $action === 'public-page') {
         $slug = (string)($_GET['slug'] ?? '');
@@ -105,28 +128,6 @@ try {
         $value = $data['value'] ?? '';
         $saved = $service->saveSetting($key, $value, (string)$user['user_id']);
         sendJson(200, ['success' => true, 'setting' => $saved]);
-    }
-
-    if ($method === 'GET' && $action === 'builder-stub') {
-        requireCmsEditorRole();
-        $model = sanitizeText((string)($_GET['model'] ?? 'page'), 80);
-        $urlPath = sanitizeText((string)($_GET['url_path'] ?? '/'), 255);
-        $payload = $builderAdapter->fetchPublishedContent($model, $urlPath);
-        sendJson(200, ['success' => true, 'builder' => $payload]);
-    }
-
-    if ($method === 'POST' && $action === 'builder-webhook') {
-        $secret = trim((string)(getenv('BUILDER_WEBHOOK_SECRET') ?: ''));
-        if ($secret !== '') {
-            $provided = trim((string)($_SERVER['HTTP_X_BUILDER_SECRET'] ?? ''));
-            if (!hash_equals($secret, $provided)) {
-                sendJson(403, ['success' => false, 'message' => 'Webhook secret non valido']);
-            }
-        }
-
-        $payload = getJsonInput();
-        $result = $builderAdapter->handleWebhook($payload);
-        sendJson(200, ['success' => true, 'webhook' => $result]);
     }
 
     sendJson(404, ['success' => false, 'message' => 'Azione CMS non valida']);

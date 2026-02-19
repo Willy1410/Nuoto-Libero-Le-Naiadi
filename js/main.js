@@ -16,6 +16,7 @@ const state = {
 // DOM Ready
 // ===================================
 document.addEventListener('DOMContentLoaded', function() {
+    initLazyImages();
     initNavigation();
     initCookieBanner();
     initFAQ();
@@ -23,6 +24,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initContactForm();
     initScrollEffects();
 });
+
+function initLazyImages() {
+    const images = document.querySelectorAll('img:not([loading])');
+    images.forEach((img, index) => {
+        img.setAttribute('loading', index < 2 ? 'eager' : 'lazy');
+    });
+}
 
 // ===================================
 // Navigation
@@ -108,9 +116,6 @@ function initCookieBanner() {
         localStorage.setItem('cookieConsent', 'accepted');
         localStorage.setItem('cookieConsentDate', new Date().toISOString());
         banner.classList.remove('show');
-        
-        // Here you can initialize analytics or other tracking scripts
-        console.log('Cookies accepted');
     });
 }
 
@@ -291,7 +296,6 @@ function initContactForm() {
         // Check honeypot field
         const honeypot = contactForm.querySelector('input[name="website"]');
         if (honeypot && honeypot.value) {
-            console.log('Spam detected');
             return;
         }
         
