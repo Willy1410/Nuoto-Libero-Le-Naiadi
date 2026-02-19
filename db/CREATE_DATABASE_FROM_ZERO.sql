@@ -229,7 +229,29 @@ CREATE INDEX idx_profile_update_requests_status ON profile_update_requests(statu
 CREATE INDEX idx_profile_update_requests_created_at ON profile_update_requests(created_at);
 
 -- =====================================================
--- 10) TOKEN RESET PASSWORD
+-- 10) IMPOSTAZIONI OPERATIVE SCANNER
+-- =====================================================
+CREATE TABLE impostazioni_operative (
+  id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  scanner_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  h24_mode TINYINT(1) NOT NULL DEFAULT 0,
+  schedule_json LONGTEXT NULL,
+  updated_by CHAR(36) NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_impostazioni_operative_updated_by FOREIGN KEY (updated_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO impostazioni_operative (id, scanner_enabled, h24_mode, schedule_json, updated_by)
+VALUES (
+  1,
+  1,
+  0,
+  '[{\"day\":1,\"start\":\"06:30\",\"end\":\"09:00\"},{\"day\":1,\"start\":\"13:00\",\"end\":\"14:00\"},{\"day\":3,\"start\":\"06:30\",\"end\":\"09:00\"},{\"day\":3,\"start\":\"13:00\",\"end\":\"14:00\"},{\"day\":5,\"start\":\"06:30\",\"end\":\"09:00\"},{\"day\":5,\"start\":\"13:00\",\"end\":\"14:00\"}]',
+  NULL
+);
+
+-- =====================================================
+-- 11) TOKEN RESET PASSWORD
 -- =====================================================
 CREATE TABLE password_reset_tokens (
   id CHAR(36) PRIMARY KEY,
@@ -247,7 +269,7 @@ CREATE INDEX idx_reset_user ON password_reset_tokens(user_id);
 CREATE INDEX idx_reset_expires ON password_reset_tokens(expires_at);
 
 -- =====================================================
--- 11) LOG NOTIFICHE EMAIL
+-- 12) LOG NOTIFICHE EMAIL
 -- =====================================================
 CREATE TABLE notifiche_email (
   id CHAR(36) PRIMARY KEY,
@@ -259,7 +281,7 @@ CREATE TABLE notifiche_email (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 12) CONTENUTI CMS (supporto)
+-- 13) CONTENUTI CMS (supporto)
 -- =====================================================
 CREATE TABLE contenuti_sito (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -276,7 +298,7 @@ CREATE TABLE contenuti_sito (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 13) GALLERY (supporto)
+-- 14) GALLERY (supporto)
 -- =====================================================
 CREATE TABLE gallery (
   id CHAR(36) PRIMARY KEY,
@@ -295,7 +317,7 @@ CREATE TABLE gallery (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 14) MODULI SCARICABILI CMS
+-- 15) MODULI SCARICABILI CMS
 -- =====================================================
 CREATE TABLE moduli (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,

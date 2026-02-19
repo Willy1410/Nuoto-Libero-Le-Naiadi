@@ -315,6 +315,7 @@ if (appIsLandingMode()) {
                 <button class="tab-btn" data-tab="documents" type="button">Documenti</button>
                 <button class="tab-btn" data-tab="report" type="button">Report</button>
                 <button class="tab-btn" data-tab="export" type="button">Export</button>
+                <button class="tab-btn" data-tab="settings" type="button">Impostazioni</button>
             </div>
 
             <div id="globalStatus" class="status-box"></div>
@@ -554,6 +555,56 @@ if (appIsLandingMode()) {
                 </div>
                 <p style="margin-top:8px; color: var(--muted); font-size:13px;">I CSV sono esportati con separatore `;` e BOM UTF-8 per apertura corretta in Excel.</p>
             </div>
+
+            <div id="tab-settings" class="tab-pane">
+                <div class="detail-block" style="margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;">Modalita sito (landing/full)</h4>
+                    <p style="margin:0 0 8px; color: var(--muted); font-size:13px;">
+                        Se attiva la modalita landing, homepage e area riservata vengono confinate in modalita vetrina.
+                    </p>
+                    <div class="toolbar">
+                        <label style="display:flex; gap:8px; align-items:center; font-size:13px;">
+                            <input id="siteModeLandingToggle" type="checkbox">
+                            Attiva modalita landing
+                        </label>
+                        <button class="btn btn-warn" id="saveSiteModeBtn" type="button">Salva modalita sito</button>
+                    </div>
+                    <p style="margin-top:8px; color: var(--muted); font-size:12px;">
+                        Stato corrente: <strong id="siteModeCurrentLabel">-</strong>
+                    </p>
+                </div>
+
+                <div class="detail-block">
+                    <h4 style="margin-bottom:8px;">Orari scanner QR (bagnino)</h4>
+                    <div class="toolbar">
+                        <label style="display:flex; gap:8px; align-items:center; font-size:13px;">
+                            <input id="scannerEnabledToggle" type="checkbox" checked>
+                            Scanner abilitato
+                        </label>
+                        <label style="display:flex; gap:8px; align-items:center; font-size:13px;">
+                            <input id="scannerH24Toggle" type="checkbox">
+                            H24 tutti i giorni
+                        </label>
+                        <button class="btn btn-primary" id="reloadOperationalSettingsBtn" type="button">Ricarica</button>
+                        <button class="btn btn-ok" id="saveOperationalSettingsBtn" type="button">Salva orari scanner</button>
+                    </div>
+                    <p style="margin:8px 0 10px; color: var(--muted); font-size:12px;">
+                        Riepilogo: <strong id="scannerScheduleSummary">-</strong>
+                    </p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Giorno</th>
+                                    <th>Fascia 1</th>
+                                    <th>Fascia 2</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scannerScheduleBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -566,7 +617,6 @@ if (appIsLandingMode()) {
                     <div class="field"><label for="cuSurname">Cognome</label><input id="cuSurname" required></div>
                     <div class="field"><label for="cuEmail">Email</label><input id="cuEmail" type="email" required></div>
                     <div class="field"><label for="cuPhone">Telefono</label><input id="cuPhone"></div>
-                    <div class="field"><label for="cuPassword">Password</label><input id="cuPassword" type="password" minlength="8" required></div>
                     <div class="field">
                         <label for="cuRole">Ruolo</label>
                         <select id="cuRole">
@@ -578,6 +628,7 @@ if (appIsLandingMode()) {
                         </select>
                     </div>
                 </div>
+                <p class="muted" style="margin-top:8px;">Dopo la creazione l'utente riceve email con link per impostare la password.</p>
                 <div class="modal-actions">
                     <button class="btn" type="button" data-modal-close="createUserModal">Annulla</button>
                     <button class="btn btn-ok" type="submit">Crea utente</button>
@@ -624,6 +675,7 @@ if (appIsLandingMode()) {
                         <ul id="missingDocsList" class="mini-list"></ul>
                         <div class="modal-actions" style="justify-content:flex-start;">
                             <button class="btn btn-primary" id="sendReminderBtn" type="button">Invia promemoria documenti</button>
+                            <button class="btn btn-secondary" id="sendResetPasswordBtn" type="button">Invia richiesta cambio password</button>
                             <button class="btn btn-ok" id="openAssignBtn" type="button">Assegna pacchetto</button>
                         </div>
                     </div>

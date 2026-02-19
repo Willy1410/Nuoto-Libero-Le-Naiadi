@@ -25,12 +25,29 @@
         userDetail: null,
         packages: [],
         reportDate: new Date().toISOString().slice(0, 10),
+        operationalSettings: {
+            siteMode: 'full',
+            scannerEnabled: true,
+            scannerH24Mode: false,
+            windows: [],
+            summary: '',
+        },
         exportPreview: {
             dataset: '',
             columns: [],
             rows: [],
             selectedColumns: [],
         },
+    };
+
+    const DAY_LABELS = {
+        1: 'Lunedi',
+        2: 'Martedi',
+        3: 'Mercoledi',
+        4: 'Giovedi',
+        5: 'Venerdi',
+        6: 'Sabato',
+        7: 'Domenica',
     };
 
     function el(id) {
@@ -115,6 +132,207 @@
             .filter((key) => key && Object.prototype.hasOwnProperty.call(changes, key))
             .map((key) => `${getProfileFieldLabel(key)}: ${String(changes[key] ?? '-')}`);
         return entries.length ? entries.join(' | ') : '-';
+    }
+
+    function scannerTimeToMinutes(time) {
+        const value = String(time || '').trim();
+        if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+            return NaN;
+        }
+        const parts = value.split(':');
+        return (Number(parts[0]) * 60) + Number(parts[1]);
+    }
+
+    function normalizeScannerWindows(windows) {
+        if (!Array.isArray(windows)) {
+            return [];
+        }
+
+        const unique = new Map();
+        windows.forEach((windowRow) => {
+            if (!windowRow || typeof windowRow !== 'object') {
+                return;
+            }
+            const day = Number(windowRow.day || 0);
+            const start = String(windowRow.start || '').trim();
+            const end = String(windowRow.end || '').trim();
+            if (!Number.isInteger(day) || day < 1 || day > 7) {
+                return;
+            }
+            const startMinutes = scannerTimeToMinutes(start);
+            const endMinutes = scannerTimeToMinutes(end);
+            if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+                return;
+            }
+            const key = `${day}|${start}|${end}`;
+            unique.set(key, { day, start, end });
+        });
+
+        return Array.from(unique.values()).sort((a, b) => {
+            if (a.day === b.day) {
+                return String(a.start).localeCompare(String(b.start));
+            }
+            return a.day - b.day;
+        });
+    }
+
+    function buildScannerSummary(windows, scannerEnabled, h24Mode) {
+        if (!scannerEnabled) {
+            return 'Scanner check-in disattivato';
+        }
+        if (h24Mode) {
+            return 'Tutti i giorni - 00:00-23:59';
+        }
+        if (!windows.length) {
+            return 'Nessuna finestra oraria configurata';
+        }
+
+        const grouped = {};
+        windows.forEach((windowRow) => {
+            const day = Number(windowRow.day);
+            if (!grouped[day]) {
+                grouped[day] = [];
+            }
+            grouped[day].push(`${windowRow.start}-${windowRow.end}`);
+        });
+
+        return Object.keys(grouped)
+            .map((dayKey) => `${DAY_LABELS[Number(dayKey)] || `Giorno ${dayKey}`} ${grouped[dayKey].join(', ')}`)
+            .join('; ');
+    }
+
+    function updateSiteModeLabel() {
+        const labelNode = el('siteModeCurrentLabel');
+        if (!labelNode) return;
+
+        labelNode.textContent = state.operationalSettings.siteMode === 'landing'
+            ? 'landing (vetrina attiva)'
+            : 'full (sito completo)';
+    }
+
+    function getGroupedWindowsByDay(windows) {
+        const grouped = {};
+        for (let day = 1; day <= 7; day += 1) {
+            grouped[day] = [];
+        }
+        windows.forEach((windowRow) => {
+            const day = Number(windowRow.day || 0);
+            if (day >= 1 && day <= 7) {
+                grouped[day].push(windowRow);
+            }
+        });
+        return grouped;
+    }
+
+    function renderScannerScheduleTable() {
+        const body = el('scannerScheduleBody');
+        if (!body) return;
+
+        const grouped = getGroupedWindowsByDay(state.operationalSettings.windows || []);
+        const h24Enabled = !!(el('scannerH24Toggle') && el('scannerH24Toggle').checked);
+        const disabledAttr = h24Enabled ? 'disabled' : '';
+        const disabledHint = h24Enabled
+            ? '<span style="display:inline-block; margin-top:4px; font-size:11px; color:#64748b;">Gestito da H24</span>'
+            : '';
+
+        body.innerHTML = '';
+        for (let day = 1; day <= 7; day += 1) {
+            const slots = grouped[day] || [];
+            const first = slots[0] || {};
+            const second = slots[1] || {};
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${escapeHtml(DAY_LABELS[day] || `Giorno ${day}`)}</strong></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <input type="time" data-day="${day}" data-slot="1" data-edge="start" value="${escapeHtml(first.start || '')}" ${disabledAttr}>
+                        <span>-</span>
+                        <input type="time" data-day="${day}" data-slot="1" data-edge="end" value="${escapeHtml(first.end || '')}" ${disabledAttr}>
+                    </div>
+                    ${disabledHint}
+                </td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <input type="time" data-day="${day}" data-slot="2" data-edge="start" value="${escapeHtml(second.start || '')}" ${disabledAttr}>
+                        <span>-</span>
+                        <input type="time" data-day="${day}" data-slot="2" data-edge="end" value="${escapeHtml(second.end || '')}" ${disabledAttr}>
+                    </div>
+                    ${disabledHint}
+                </td>
+            `;
+            body.appendChild(row);
+        }
+    }
+
+    function collectScannerWindowsFromUi() {
+        const windows = [];
+        for (let day = 1; day <= 7; day += 1) {
+            for (let slot = 1; slot <= 2; slot += 1) {
+                const startNode = document.querySelector(`input[data-day="${day}"][data-slot="${slot}"][data-edge="start"]`);
+                const endNode = document.querySelector(`input[data-day="${day}"][data-slot="${slot}"][data-edge="end"]`);
+                const start = String(startNode ? startNode.value : '').trim();
+                const end = String(endNode ? endNode.value : '').trim();
+                if (start === '' && end === '') {
+                    continue;
+                }
+                if (start === '' || end === '') {
+                    throw new Error(`Completa start/end per ${DAY_LABELS[day]} fascia ${slot}`);
+                }
+
+                const startMinutes = scannerTimeToMinutes(start);
+                const endMinutes = scannerTimeToMinutes(end);
+                if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+                    throw new Error(`Fascia non valida in ${DAY_LABELS[day]} fascia ${slot}`);
+                }
+
+                windows.push({ day, start, end });
+            }
+        }
+
+        return normalizeScannerWindows(windows);
+    }
+
+    function applyOperationalSettings(data) {
+        const scanner = data && typeof data === 'object' && data.scanner && typeof data.scanner === 'object'
+            ? data.scanner
+            : {};
+
+        const windows = normalizeScannerWindows(Array.isArray(scanner.windows) ? scanner.windows : []);
+
+        state.operationalSettings.siteMode = String(data.site_mode || state.operationalSettings.siteMode || 'full') === 'landing'
+            ? 'landing'
+            : 'full';
+        state.operationalSettings.scannerEnabled = !!scanner.enabled;
+        state.operationalSettings.scannerH24Mode = !!scanner.h24_mode;
+        state.operationalSettings.windows = windows;
+        state.operationalSettings.summary = String(
+            scanner.summary
+            || buildScannerSummary(windows, state.operationalSettings.scannerEnabled, state.operationalSettings.scannerH24Mode)
+        );
+
+        if (el('siteModeLandingToggle')) {
+            el('siteModeLandingToggle').checked = state.operationalSettings.siteMode === 'landing';
+        }
+        if (el('scannerEnabledToggle')) {
+            el('scannerEnabledToggle').checked = !!state.operationalSettings.scannerEnabled;
+        }
+        if (el('scannerH24Toggle')) {
+            el('scannerH24Toggle').checked = !!state.operationalSettings.scannerH24Mode;
+        }
+        if (el('scannerScheduleSummary')) {
+            el('scannerScheduleSummary').textContent = state.operationalSettings.summary || '-';
+        }
+
+        updateSiteModeLabel();
+        renderScannerScheduleTable();
+    }
+
+    async function loadOperationalSettings() {
+        if (!el('scannerScheduleBody') && !el('siteModeCurrentLabel')) {
+            return;
+        }
+        const data = await apiJson('admin.php?action=operational-settings', { method: 'GET' });
+        applyOperationalSettings(data || {});
     }
 
     function setStatus(message, type) {
@@ -484,6 +702,10 @@
         }
         if (state.activeTab === 'report') {
             await loadDailyReport();
+            return;
+        }
+        if (state.activeTab === 'settings') {
+            await loadOperationalSettings();
             return;
         }
         if (state.activeTab === 'export') {
@@ -874,7 +1096,6 @@
             cognome: (el('cuSurname') ? el('cuSurname').value : '').trim(),
             email: (el('cuEmail') ? el('cuEmail').value : '').trim(),
             telefono: (el('cuPhone') ? el('cuPhone').value : '').trim(),
-            password: el('cuPassword') ? el('cuPassword').value : '',
             ruolo: el('cuRole') ? el('cuRole').value : 'utente',
         };
 
@@ -1156,6 +1377,111 @@
         await openUserDetail(state.selectedUserId);
     }
 
+    async function handleSendResetPassword() {
+        if (!state.selectedUserId) {
+            throw new Error('Seleziona prima un cliente');
+        }
+        const confirmed = await modalConfirm(
+            'Inviare al cliente una email per impostare una nuova password?',
+            'Invio richiesta cambio password'
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        const data = await apiJson(`admin.php?action=send-password-reset&id=${encodeURIComponent(state.selectedUserId)}`, {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+        setStatus(data.message || 'Richiesta cambio password inviata', 'ok');
+    }
+
+    async function handleSaveOperationalSettings() {
+        if (!el('scannerEnabledToggle') || !el('scannerH24Toggle')) {
+            return;
+        }
+
+        const scannerEnabled = !!el('scannerEnabledToggle').checked;
+        const scannerH24Mode = !!el('scannerH24Toggle').checked;
+        const windows = scannerH24Mode ? [] : collectScannerWindowsFromUi();
+
+        if (scannerEnabled && !scannerH24Mode && windows.length === 0) {
+            throw new Error('Configura almeno una finestra oraria quando lo scanner e attivo');
+        }
+
+        const confirmed = await modalConfirm(
+            'Confermi salvataggio impostazioni scanner QR?',
+            'Salva orari scanner'
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        const data = await apiJson('admin.php?action=save-operational-settings', {
+            method: 'PATCH',
+            body: JSON.stringify({
+                scanner: {
+                    enabled: scannerEnabled,
+                    h24_mode: scannerH24Mode,
+                    windows,
+                },
+            }),
+        });
+
+        applyOperationalSettings({
+            site_mode: state.operationalSettings.siteMode,
+            scanner: data.scanner || {},
+        });
+        setStatus(data.message || 'Impostazioni scanner aggiornate', 'ok');
+    }
+
+    async function handleSaveSiteMode() {
+        const toggle = el('siteModeLandingToggle');
+        if (!toggle) {
+            return;
+        }
+
+        const targetMode = toggle.checked ? 'landing' : 'full';
+        if (targetMode === state.operationalSettings.siteMode) {
+            setStatus('Modalita sito invariata', 'ok');
+            return;
+        }
+
+        const confirmStepOne = await modalConfirm(
+            `Stai per cambiare SITE_MODE a "${targetMode}". Continuare?`,
+            'Conferma 1 di 2'
+        );
+        if (!confirmStepOne) {
+            toggle.checked = state.operationalSettings.siteMode === 'landing';
+            return;
+        }
+
+        const confirmStepTwo = await modalConfirm(
+            `Conferma definitiva: applicare SITE_MODE="${targetMode}" adesso?`,
+            'Conferma 2 di 2'
+        );
+        if (!confirmStepTwo) {
+            toggle.checked = state.operationalSettings.siteMode === 'landing';
+            return;
+        }
+
+        const data = await apiJson('admin.php?action=set-site-mode', {
+            method: 'PATCH',
+            body: JSON.stringify({
+                mode: targetMode,
+                confirm_step_one: true,
+                confirm_step_two: true,
+            }),
+        });
+
+        state.operationalSettings.siteMode = String(data.site_mode || targetMode) === 'landing'
+            ? 'landing'
+            : 'full';
+        toggle.checked = state.operationalSettings.siteMode === 'landing';
+        updateSiteModeLabel();
+        setStatus(data.message || 'Modalita sito aggiornata', 'ok');
+    }
+
     async function handleDownloadQr(acquistoId) {
         if (!acquistoId) {
             throw new Error('ID acquisto mancante');
@@ -1271,6 +1597,38 @@
         if (el('sendReminderBtn')) {
             el('sendReminderBtn').addEventListener('click', () => {
                 handleSendReminder().catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('sendResetPasswordBtn')) {
+            el('sendResetPasswordBtn').addEventListener('click', () => {
+                handleSendResetPassword().catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('reloadOperationalSettingsBtn')) {
+            el('reloadOperationalSettingsBtn').addEventListener('click', () => {
+                loadOperationalSettings()
+                    .then(() => setStatus('Impostazioni operative ricaricate', 'ok'))
+                    .catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('saveOperationalSettingsBtn')) {
+            el('saveOperationalSettingsBtn').addEventListener('click', () => {
+                handleSaveOperationalSettings().catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('saveSiteModeBtn')) {
+            el('saveSiteModeBtn').addEventListener('click', () => {
+                handleSaveSiteMode().catch((error) => setStatus(error.message, 'error'));
+            });
+        }
+
+        if (el('scannerH24Toggle')) {
+            el('scannerH24Toggle').addEventListener('change', () => {
+                renderScannerScheduleTable();
             });
         }
 
@@ -1485,7 +1843,11 @@
         renderExportPreviewTable();
         updateExportPreviewMeta();
         updateExportActionButtons();
-        await Promise.all([loadPackages().catch(() => null), loadStats()]);
+        await Promise.all([
+            loadPackages().catch(() => null),
+            loadStats(),
+            loadOperationalSettings().catch(() => null),
+        ]);
     }
 
     bootstrap().catch((error) => {

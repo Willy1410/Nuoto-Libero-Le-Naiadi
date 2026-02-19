@@ -831,40 +831,280 @@ function validateCodiceFiscale(string $cf): bool
     return (bool)preg_match('/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/', strtoupper($cf));
 }
 
-function getIngressScheduleConfig(): array
+function getDefaultOperationalScannerWindows(): array
 {
     return [
-        'days' => [1, 3, 5], // Monday, Wednesday, Friday
-        'mattina' => ['start' => '06:30', 'end' => '09:00'],
-        'pomeriggio' => ['start' => '13:00', 'end' => '14:00'],
+        ['day' => 1, 'start' => '06:30', 'end' => '09:00'],
+        ['day' => 1, 'start' => '13:00', 'end' => '14:00'],
+        ['day' => 3, 'start' => '06:30', 'end' => '09:00'],
+        ['day' => 3, 'start' => '13:00', 'end' => '14:00'],
+        ['day' => 5, 'start' => '06:30', 'end' => '09:00'],
+        ['day' => 5, 'start' => '13:00', 'end' => '14:00'],
     ];
+}
+
+function buildH24ScannerWindows(): array
+{
+    $windows = [];
+    for ($day = 1; $day <= 7; $day++) {
+        $windows[] = [
+            'day' => $day,
+            'start' => '00:00',
+            'end' => '23:59',
+        ];
+    }
+    return $windows;
+}
+
+function scannerTimeToMinutes(string $time): int
+{
+    [$hour, $minute] = array_map('intval', explode(':', $time, 2));
+    return ($hour * 60) + $minute;
+}
+
+function normalizeScannerWindows(array $windows): array
+{
+    $normalized = [];
+    foreach ($windows as $window) {
+        if (!is_array($window)) {
+            continue;
+        }
+
+        $day = (int)($window['day'] ?? 0);
+        $start = trim((string)($window['start'] ?? ''));
+        $end = trim((string)($window['end'] ?? ''));
+
+        if ($day < 1 || $day > 7) {
+            continue;
+        }
+        if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $start)) {
+            continue;
+        }
+        if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $end)) {
+            continue;
+        }
+        if (scannerTimeToMinutes($end) <= scannerTimeToMinutes($start)) {
+            continue;
+        }
+
+        $key = $day . '|' . $start . '|' . $end;
+        $normalized[$key] = [
+            'day' => $day,
+            'start' => $start,
+            'end' => $end,
+        ];
+    }
+
+    $rows = array_values($normalized);
+    usort($rows, static function (array $a, array $b): int {
+        if ((int)$a['day'] === (int)$b['day']) {
+            return strcmp((string)$a['start'], (string)$b['start']);
+        }
+        return ((int)$a['day'] <=> (int)$b['day']);
+    });
+
+    return $rows;
+}
+
+function ensureOperationalSettingsTable(): void
+{
+    global $pdo;
+
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+
+    try {
+        $exists = $pdo->query("SHOW TABLES LIKE 'impostazioni_operative'");
+        if ($exists && $exists->fetch()) {
+            return;
+        }
+
+        $pdo->exec(
+            'CREATE TABLE impostazioni_operative (
+                id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+                scanner_enabled TINYINT(1) NOT NULL DEFAULT 1,
+                h24_mode TINYINT(1) NOT NULL DEFAULT 0,
+                schedule_json LONGTEXT NULL,
+                updated_by CHAR(36) NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT fk_impostazioni_operative_updated_by
+                    FOREIGN KEY (updated_by) REFERENCES profili(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+    } catch (Throwable $e) {
+        error_log('ensureOperationalSettingsTable error: ' . $e->getMessage());
+    }
+}
+
+function setOperationalSettingsCache(?array $settings): void
+{
+    $GLOBALS['__scanner_operational_settings_cache'] = $settings;
+}
+
+function getOperationalSettings(): array
+{
+    global $pdo;
+
+    if (array_key_exists('__scanner_operational_settings_cache', $GLOBALS) && is_array($GLOBALS['__scanner_operational_settings_cache'])) {
+        return $GLOBALS['__scanner_operational_settings_cache'];
+    }
+
+    $default = [
+        'scanner_enabled' => true,
+        'h24_mode' => false,
+        'windows' => getDefaultOperationalScannerWindows(),
+    ];
+
+    try {
+        ensureOperationalSettingsTable();
+
+        $stmt = $pdo->query(
+            'SELECT scanner_enabled, h24_mode, schedule_json
+             FROM impostazioni_operative
+             WHERE id = 1
+             LIMIT 1'
+        );
+        $row = $stmt ? $stmt->fetch() : false;
+        if (!$row) {
+            setOperationalSettingsCache($default);
+            return $default;
+        }
+
+        $decodedWindows = json_decode((string)($row['schedule_json'] ?? ''), true);
+        if (!is_array($decodedWindows)) {
+            $decodedWindows = [];
+        }
+
+        $settings = [
+            'scanner_enabled' => (int)($row['scanner_enabled'] ?? 1) === 1,
+            'h24_mode' => (int)($row['h24_mode'] ?? 0) === 1,
+            'windows' => normalizeScannerWindows($decodedWindows),
+        ];
+
+        if ($settings['h24_mode']) {
+            $settings['windows'] = buildH24ScannerWindows();
+        } elseif (!$settings['windows']) {
+            $settings['windows'] = getDefaultOperationalScannerWindows();
+        }
+
+        setOperationalSettingsCache($settings);
+        return $settings;
+    } catch (Throwable $e) {
+        error_log('getOperationalSettings error: ' . $e->getMessage());
+        setOperationalSettingsCache($default);
+        return $default;
+    }
+}
+
+function saveOperationalSettings(array $settings, ?string $updatedBy = null): array
+{
+    global $pdo;
+
+    $scannerEnabled = !empty($settings['scanner_enabled']);
+    $h24Mode = !empty($settings['h24_mode']);
+    $windows = normalizeScannerWindows(is_array($settings['windows'] ?? null) ? $settings['windows'] : []);
+
+    if ($h24Mode) {
+        $windows = buildH24ScannerWindows();
+    }
+
+    $payload = [
+        'scanner_enabled' => $scannerEnabled,
+        'h24_mode' => $h24Mode,
+        'windows' => $windows,
+    ];
+
+    ensureOperationalSettingsTable();
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO impostazioni_operative (id, scanner_enabled, h24_mode, schedule_json, updated_by, updated_at)
+         VALUES (1, ?, ?, ?, ?, NOW())
+         ON DUPLICATE KEY UPDATE
+           scanner_enabled = VALUES(scanner_enabled),
+           h24_mode = VALUES(h24_mode),
+           schedule_json = VALUES(schedule_json),
+           updated_by = VALUES(updated_by),
+           updated_at = NOW()'
+    );
+    $stmt->execute([
+        $scannerEnabled ? 1 : 0,
+        $h24Mode ? 1 : 0,
+        json_encode($windows, JSON_UNESCAPED_UNICODE),
+        $updatedBy !== null && $updatedBy !== '' ? $updatedBy : null,
+    ]);
+
+    setOperationalSettingsCache($payload);
+    return $payload;
+}
+
+function getIngressScheduleConfig(): array
+{
+    return getOperationalSettings();
 }
 
 function getIngressScheduleSummary(): string
 {
-    return 'Lunedi, Mercoledi, Venerdi - 06:30-09:00 e 13:00-14:00';
+    $config = getIngressScheduleConfig();
+    if (empty($config['scanner_enabled'])) {
+        return 'Scanner check-in disattivato';
+    }
+    if (!empty($config['h24_mode'])) {
+        return 'Tutti i giorni - 00:00-23:59';
+    }
+
+    $windows = normalizeScannerWindows(is_array($config['windows'] ?? null) ? $config['windows'] : []);
+    if (!$windows) {
+        return 'Nessuna finestra oraria configurata';
+    }
+
+    $dayLabels = [
+        1 => 'Lunedi',
+        2 => 'Martedi',
+        3 => 'Mercoledi',
+        4 => 'Giovedi',
+        5 => 'Venerdi',
+        6 => 'Sabato',
+        7 => 'Domenica',
+    ];
+
+    $grouped = [];
+    foreach ($windows as $window) {
+        $day = (int)$window['day'];
+        $grouped[$day][] = (string)$window['start'] . '-' . (string)$window['end'];
+    }
+
+    $chunks = [];
+    foreach ($grouped as $day => $slots) {
+        $chunks[] = ($dayLabels[$day] ?? ('Giorno ' . $day)) . ' ' . implode(', ', $slots);
+    }
+
+    return implode('; ', $chunks);
 }
 
 function resolveIngressFasciaForDateTime(DateTimeInterface $dateTime): ?string
 {
     $config = getIngressScheduleConfig();
-    $isoDay = (int)$dateTime->format('N');
-    if (!in_array($isoDay, $config['days'], true)) {
+    if (empty($config['scanner_enabled'])) {
         return null;
     }
 
-    $minutes = ((int)$dateTime->format('H') * 60) + (int)$dateTime->format('i');
+    $isoDay = (int)$dateTime->format('N');
+    $minutesNow = ((int)$dateTime->format('H') * 60) + (int)$dateTime->format('i');
+    $windows = normalizeScannerWindows(is_array($config['windows'] ?? null) ? $config['windows'] : []);
 
-    $mattinaStart = 6 * 60 + 30;  // 06:30
-    $mattinaEnd = 9 * 60;         // 09:00
-    if ($minutes >= $mattinaStart && $minutes <= $mattinaEnd) {
-        return 'mattina';
-    }
+    foreach ($windows as $window) {
+        if ((int)$window['day'] !== $isoDay) {
+            continue;
+        }
 
-    $pomeriggioStart = 13 * 60;   // 13:00
-    $pomeriggioEnd = 14 * 60;     // 14:00
-    if ($minutes >= $pomeriggioStart && $minutes <= $pomeriggioEnd) {
-        return 'pomeriggio';
+        $startMinutes = scannerTimeToMinutes((string)$window['start']);
+        $endMinutes = scannerTimeToMinutes((string)$window['end']);
+        if ($minutesNow >= $startMinutes && $minutesNow <= $endMinutes) {
+            return getFasciaOraria($dateTime->format('H:i'));
+        }
     }
 
     return null;
@@ -873,6 +1113,71 @@ function resolveIngressFasciaForDateTime(DateTimeInterface $dateTime): ?string
 function getCurrentIngressFasciaOraria(): ?string
 {
     return resolveIngressFasciaForDateTime(new DateTimeImmutable('now'));
+}
+
+function getProjectSiteMode(): string
+{
+    $mode = strtolower(trim((string)(getenv('SITE_MODE') ?: 'full')));
+    return in_array($mode, ['landing', 'full'], true) ? $mode : 'full';
+}
+
+function setProjectEnvValue(string $key, string $value): bool
+{
+    if (!preg_match('/^[A-Z0-9_]+$/', $key)) {
+        return false;
+    }
+
+    $sanitizedValue = str_replace(["\r", "\n"], '', trim($value));
+    $envPath = PROJECT_ROOT . '/.env';
+
+    $lines = [];
+    if (is_file($envPath)) {
+        $existing = file($envPath, FILE_IGNORE_NEW_LINES);
+        if (is_array($existing)) {
+            $lines = $existing;
+        }
+    }
+
+    $found = false;
+    foreach ($lines as $index => $line) {
+        $trim = trim((string)$line);
+        if ($trim === '' || str_starts_with($trim, '#')) {
+            continue;
+        }
+
+        $parts = explode('=', $trim, 2);
+        if (count($parts) !== 2) {
+            continue;
+        }
+
+        $currentKey = trim((string)$parts[0]);
+        if ($currentKey !== $key) {
+            continue;
+        }
+
+        $lines[$index] = $key . '=' . $sanitizedValue;
+        $found = true;
+        break;
+    }
+
+    if (!$found) {
+        $lines[] = $key . '=' . $sanitizedValue;
+    }
+
+    $content = implode(PHP_EOL, $lines);
+    if ($content !== '' && !str_ends_with($content, PHP_EOL)) {
+        $content .= PHP_EOL;
+    }
+
+    if (@file_put_contents($envPath, $content, LOCK_EX) === false) {
+        return false;
+    }
+
+    putenv($key . '=' . $sanitizedValue);
+    $_ENV[$key] = $sanitizedValue;
+    $_SERVER[$key] = $sanitizedValue;
+
+    return true;
 }
 
 function getFasciaOraria(string $ora): string

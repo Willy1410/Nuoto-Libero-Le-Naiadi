@@ -20,6 +20,12 @@ if ($method === 'GET' && preg_match('#/admin/users/([a-zA-Z0-9\\-]{8,64})$#', $r
 
 if ($method === 'GET' && $action === 'users') {
     listUsers();
+} elseif ($method === 'GET' && $action === 'operational-settings') {
+    getOperationalSettingsForStaff();
+} elseif ($method === 'PATCH' && $action === 'save-operational-settings') {
+    saveOperationalSettingsForStaff($staff);
+} elseif ($method === 'PATCH' && $action === 'set-site-mode') {
+    setSiteModeForStaff($staff);
 } elseif ($method === 'GET' && $action === 'profile-update-requests') {
     listProfileUpdateRequests();
 } elseif ($method === 'PATCH' && $action === 'review-profile-update-request') {
@@ -28,6 +34,8 @@ if ($method === 'GET' && $action === 'users') {
     getUserDetail();
 } elseif ($method === 'POST' && $action === 'send-doc-reminder') {
     sendDocumentReminder($staff);
+} elseif ($method === 'POST' && $action === 'send-password-reset') {
+    sendPasswordResetRequest($staff);
 } elseif ($method === 'POST' && $action === 'create-user') {
     createUser($staff);
 } elseif ($method === 'PATCH' && $action === 'update-user') {
@@ -149,6 +157,106 @@ function listUsers(): void
         error_log('listUsers error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore caricamento utenti']);
     }
+}
+
+function getOperationalSettingsForStaff(): void
+{
+    try {
+        $settings = getOperationalSettings();
+        sendJson(200, [
+            'success' => true,
+            'site_mode' => getProjectSiteMode(),
+            'scanner' => [
+                'enabled' => !empty($settings['scanner_enabled']),
+                'h24_mode' => !empty($settings['h24_mode']),
+                'windows' => is_array($settings['windows'] ?? null) ? $settings['windows'] : [],
+                'summary' => getIngressScheduleSummary(),
+            ],
+        ]);
+    } catch (Throwable $e) {
+        error_log('getOperationalSettingsForStaff error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento impostazioni operative']);
+    }
+}
+
+function saveOperationalSettingsForStaff(array $staff): void
+{
+    enforceRateLimit('admin-save-operational-settings', 60, 900, getClientIp() . '|' . (string)$staff['user_id']);
+
+    $data = getJsonInput();
+    $scanner = is_array($data['scanner'] ?? null) ? $data['scanner'] : [];
+    $scannerEnabled = !empty($scanner['enabled']);
+    $h24Mode = !empty($scanner['h24_mode']);
+    $windows = normalizeScannerWindows(is_array($scanner['windows'] ?? null) ? $scanner['windows'] : []);
+
+    if ($scannerEnabled && !$h24Mode && !$windows) {
+        sendJson(400, ['success' => false, 'message' => 'Configura almeno una finestra oraria quando lo scanner e attivo']);
+    }
+
+    try {
+        $saved = saveOperationalSettings([
+            'scanner_enabled' => $scannerEnabled,
+            'h24_mode' => $h24Mode,
+            'windows' => $windows,
+        ], (string)$staff['user_id']);
+    } catch (Throwable $e) {
+        error_log('saveOperationalSettingsForStaff error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore salvataggio impostazioni scanner']);
+    }
+
+    logActivity(
+        (string)$staff['user_id'],
+        'aggiornamento_impostazioni_scanner',
+        'Aggiornate impostazioni scanner QR',
+        'impostazioni_operative',
+        '1'
+    );
+
+    sendJson(200, [
+        'success' => true,
+        'message' => 'Impostazioni scanner aggiornate',
+        'scanner' => [
+            'enabled' => !empty($saved['scanner_enabled']),
+            'h24_mode' => !empty($saved['h24_mode']),
+            'windows' => is_array($saved['windows'] ?? null) ? $saved['windows'] : [],
+            'summary' => getIngressScheduleSummary(),
+        ],
+    ]);
+}
+
+function setSiteModeForStaff(array $staff): void
+{
+    enforceRateLimit('admin-set-site-mode', 30, 900, getClientIp() . '|' . (string)$staff['user_id']);
+
+    $data = getJsonInput();
+    $mode = strtolower(sanitizeText((string)($data['mode'] ?? ''), 20));
+    $confirm1 = !empty($data['confirm_step_one']);
+    $confirm2 = !empty($data['confirm_step_two']);
+
+    if (!in_array($mode, ['landing', 'full'], true)) {
+        sendJson(400, ['success' => false, 'message' => 'Modalita sito non valida']);
+    }
+    if (!$confirm1 || !$confirm2) {
+        sendJson(400, ['success' => false, 'message' => 'Conferma doppia obbligatoria per cambiare modalita sito']);
+    }
+
+    if (!setProjectEnvValue('SITE_MODE', $mode)) {
+        sendJson(500, ['success' => false, 'message' => 'Impossibile aggiornare .env SITE_MODE']);
+    }
+
+    logActivity(
+        (string)$staff['user_id'],
+        'aggiornamento_site_mode',
+        'SITE_MODE impostato a ' . $mode,
+        'env',
+        'SITE_MODE'
+    );
+
+    sendJson(200, [
+        'success' => true,
+        'message' => 'Modalita sito aggiornata a ' . $mode,
+        'site_mode' => $mode,
+    ]);
 }
 
 function listProfileUpdateRequests(): void
@@ -668,6 +776,112 @@ function sendDocumentReminder(array $staff): void
     }
 }
 
+function createPasswordResetTokenForUser(string $userId, string $ipAddress = '', string $userAgent = ''): string
+{
+    global $pdo;
+
+    $token = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $token);
+    $tokenId = generateUuid();
+
+    $pdo->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL')
+        ->execute([$userId]);
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO password_reset_tokens
+        (id, user_id, token_hash, expires_at, requested_ip, requested_user_agent)
+        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 MINUTE), ?, ?)'
+    );
+    $stmt->execute([
+        $tokenId,
+        $userId,
+        $tokenHash,
+        $ipAddress,
+        $userAgent,
+    ]);
+
+    return $token;
+}
+
+function sendResetEmailToUser(array $target, string $resetToken, string $subject, string $title, string $introText): bool
+{
+    $fullName = trim((string)$target['nome'] . ' ' . (string)$target['cognome']);
+    $resetLink = localAppBaseUrl() . '/reset-password.php?token=' . urlencode($resetToken);
+
+    $body = '<p>Ciao <strong>' . htmlspecialchars((string)$target['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
+        . '<p>' . htmlspecialchars($introText, ENT_QUOTES, 'UTF-8') . '</p>'
+        . '<p><a href="' . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:10px 16px;background:#00a8e8;color:#fff;text-decoration:none;border-radius:6px;">Imposta password</a></p>'
+        . '<p>Il link scade tra 60 minuti ed e utilizzabile una sola volta.</p>';
+
+    return sendTemplateEmail(
+        (string)$target['email'],
+        $fullName,
+        $subject,
+        $title,
+        $body,
+        'Impostazione password account'
+    );
+}
+
+function sendPasswordResetRequest(array $staff): void
+{
+    global $pdo;
+
+    enforceRateLimit('admin-send-password-reset', 80, 900, getClientIp() . '|' . (string)$staff['user_id']);
+
+    $userId = sanitizeText((string)($_GET['id'] ?? ''), 36);
+    if ($userId === '') {
+        sendJson(400, ['success' => false, 'message' => 'ID utente mancante']);
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.nome, p.cognome, p.email, p.attivo
+             FROM profili p
+             WHERE p.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $target = $stmt->fetch();
+        if (!$target || (int)$target['attivo'] !== 1) {
+            sendJson(404, ['success' => false, 'message' => 'Utente non trovato o non attivo']);
+        }
+
+        $token = createPasswordResetTokenForUser(
+            (string)$target['id'],
+            (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+            (string)($_SERVER['HTTP_USER_AGENT'] ?? '')
+        );
+
+        $sent = sendResetEmailToUser(
+            $target,
+            $token,
+            'Richiesta cambio password - Gli Squaletti',
+            'Cambio password richiesto',
+            'La segreteria ti ha inviato un link per impostare una nuova password.'
+        );
+
+        logActivity(
+            (string)$staff['user_id'],
+            'invio_reset_password',
+            'Invio reset password a ' . (string)$target['email'],
+            'password_reset_tokens',
+            (string)$target['id']
+        );
+
+        sendJson(200, [
+            'success' => true,
+            'message' => $sent
+                ? 'Email reset password inviata'
+                : 'Token creato ma invio email non riuscito (verifica configurazione SMTP/log)',
+            'mail_sent' => $sent,
+        ]);
+    } catch (Throwable $e) {
+        error_log('sendPasswordResetRequest error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore invio reset password']);
+    }
+}
+
 function createUser(array $staff): void
 {
     global $pdo;
@@ -675,22 +889,17 @@ function createUser(array $staff): void
     $data = getJsonInput();
 
     $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
-    $password = (string)($data['password'] ?? '');
     $nome = sanitizeText((string)($data['nome'] ?? ''), 100);
     $cognome = sanitizeText((string)($data['cognome'] ?? ''), 100);
     $telefono = sanitizeText((string)($data['telefono'] ?? ''), 30);
     $ruolo = sanitizeText((string)($data['ruolo'] ?? 'utente'), 30);
 
-    if ($email === '' || $password === '' || $nome === '' || $cognome === '') {
+    if ($email === '' || $nome === '' || $cognome === '') {
         sendJson(400, ['success' => false, 'message' => 'Compila i campi obbligatori']);
     }
 
     if (!validateEmail($email)) {
         sendJson(400, ['success' => false, 'message' => 'Email non valida']);
-    }
-
-    if (!validatePasswordStrength($password)) {
-        sendJson(400, ['success' => false, 'message' => 'Password troppo debole (minimo 8 caratteri)']);
     }
 
     try {
@@ -708,17 +917,44 @@ function createUser(array $staff): void
         }
 
         $userId = generateUuid();
-        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $tempPassword = bin2hex(random_bytes(12));
+        $hash = password_hash($tempPassword, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare(
-            'INSERT INTO profili (id, ruolo_id, email, password_hash, nome, cognome, telefono, attivo, email_verificata)
-             VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ""), 1, 1)'
+            'INSERT INTO profili (id, ruolo_id, email, password_hash, nome, cognome, telefono, attivo, email_verificata, force_password_change)
+             VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ""), 1, 1, 0)'
         );
         $stmt->execute([$userId, $roleRow['id'], $email, $hash, $nome, $cognome, $telefono]);
 
+        $token = createPasswordResetTokenForUser(
+            $userId,
+            (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+            (string)($_SERVER['HTTP_USER_AGENT'] ?? '')
+        );
+
+        $mailSent = sendResetEmailToUser(
+            [
+                'id' => $userId,
+                'nome' => $nome,
+                'cognome' => $cognome,
+                'email' => $email,
+            ],
+            $token,
+            'Attiva il tuo account - Gli Squaletti',
+            'Imposta la tua password',
+            'Il tuo account e stato creato dalla segreteria. Clicca il link per impostare la password di accesso.'
+        );
+
         logActivity((string)$staff['user_id'], 'crea_utente', 'Creato utente: ' . $email, 'profili', $userId);
 
-        sendJson(201, ['success' => true, 'message' => 'Utente creato', 'user_id' => $userId]);
+        sendJson(201, [
+            'success' => true,
+            'message' => $mailSent
+                ? 'Utente creato e invito password inviato via email'
+                : 'Utente creato, ma email invito non inviata (verifica configurazione SMTP/log)',
+            'user_id' => $userId,
+            'mail_sent' => $mailSent,
+        ]);
     } catch (Throwable $e) {
         error_log('createUser error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore creazione utente']);
