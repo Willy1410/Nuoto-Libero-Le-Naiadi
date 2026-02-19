@@ -191,7 +191,6 @@ function showNotification(message, type) {
         window.GliSqualettiUI.toast(message, type || 'info');
         return;
     }
-    console.warn('Notification:', message);
 }
 
 function validateFormData(data) {

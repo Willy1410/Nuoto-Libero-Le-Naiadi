@@ -347,7 +347,6 @@ function initContactForm() {
                 formMessage.className = 'form-message error';
                 formMessage.textContent = error.message || 'Si e verificato un errore. Riprova piu tardi o contattaci direttamente.';
             }
-            console.error('Form submission error:', error);
         } finally {
             // Re-enable submit button
             if (submitButton) {
