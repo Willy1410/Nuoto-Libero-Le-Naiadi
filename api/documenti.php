@@ -294,6 +294,7 @@ function uploadDocument(): void
     global $pdo;
 
     $currentUser = requireAuth();
+    enforceRateLimit('documenti-upload', 25, 900, getClientIp() . '|' . (string)$currentUser['user_id']);
 
     if (!isset($_FILES['file']) || !isset($_POST['tipo_documento_id'])) {
         sendJson(400, ['success' => false, 'message' => 'File o tipo documento mancante']);
@@ -443,6 +444,7 @@ function reviewDocument(): void
     global $pdo;
 
     $staff = requireRole(3);
+    enforceRateLimit('documenti-review', 120, 900, getClientIp() . '|' . (string)$staff['user_id']);
 
     $documentId = sanitizeText((string)($_GET['id'] ?? ''), 36);
     $data = getJsonInput();

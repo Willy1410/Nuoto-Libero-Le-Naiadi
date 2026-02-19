@@ -16,14 +16,15 @@ if (appIsLandingMode()) {
     <title>Dashboard Utente - Gli Squaletti</title>
     <style>
         :root {
-            --primary: #00a8e8;
-            --primary-dark: #0077b6;
-            --bg: #f3f6f9;
-            --text: #1f2937;
+            --primary: #0284c7;
+            --primary-dark: #075985;
+            --bg: #f1f5f9;
+            --text: #0f172a;
             --muted: #64748b;
-            --white: #ffffff;
-            --success: #16a34a;
-            --warning: #d97706;
+            --card: #ffffff;
+            --line: #e2e8f0;
+            --ok: #15803d;
+            --warn: #d97706;
             --danger: #dc2626;
             --radius: 12px;
         }
@@ -33,128 +34,30 @@ if (appIsLandingMode()) {
 
         .header {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: var(--white);
+            color: #fff;
             padding: 18px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
-
         .header h1 { font-size: 24px; }
-        .header small { opacity: 0.92; }
+        .header small { opacity: 0.95; }
 
         .btn {
-            border: none;
+            border: 0;
             border-radius: 8px;
             padding: 10px 14px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
         }
-        .btn-logout { background: rgba(255,255,255,0.2); color: #fff; }
-        .btn-primary { background: var(--primary-dark); color: #fff; }
-        .btn-success { background: var(--success); color: #fff; }
-        .btn-warning { background: var(--warning); color: #fff; }
-        .btn-secondary { background: #475569; color: #fff; }
-        .btn-light { background: #e2e8f0; color: #0f172a; }
-        .btn-sm { padding: 8px 10px; font-size: 12px; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-secondary { background: #334155; color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
 
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .stat {
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-            padding: 16px;
-            text-align: center;
-        }
-
-        .stat h2 { color: var(--primary-dark); font-size: 32px; margin-bottom: 6px; }
-        .stat p { color: var(--muted); font-size: 13px; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .card {
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-
-        .card h3 { margin-bottom: 12px; color: #0f172a; }
-
-        .qr-wrap {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
-        }
-
-        .qr-box {
-            width: 220px;
-            min-height: 220px;
-            border: 1px solid #dbe2ea;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
-        }
-        .qr-box img {
-            max-width: 100%;
-            width: 200px;
-            height: 200px;
-            display: block;
-            object-fit: contain;
-            border-radius: 8px;
-            background: #fff;
-        }
-
-        .muted { color: var(--muted); font-size: 14px; }
-        .small { font-size: 12px; color: var(--muted); }
-
-        .package-list { display: grid; gap: 10px; }
-        .package-item {
-            border: 1px solid #dbe2ea;
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .package-meta strong { display: block; margin-bottom: 4px; }
-        .package-meta p { font-size: 13px; color: var(--muted); }
-
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 13px; }
-        th { background: #f8fafc; }
-
-        .badge {
-            display: inline-block;
-            border-radius: 999px;
-            padding: 4px 8px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .badge-success { background: #dcfce7; color: #166534; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .container { max-width: 1060px; margin: 20px auto; padding: 0 16px; }
 
         .alert {
             display: none;
@@ -162,167 +65,181 @@ if (appIsLandingMode()) {
             padding: 10px 12px;
             border-radius: 8px;
             font-size: 14px;
+            font-weight: 600;
         }
-
         .alert.ok { display: block; background: #dcfce7; color: #166534; }
         .alert.err { display: block; background: #fee2e2; color: #991b1b; }
 
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            display: none;
-            align-items: center;
-            justify-content: center;
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
             padding: 16px;
-            z-index: 999;
+            margin-bottom: 16px;
         }
-
-        .overlay.open { display: flex; }
-
-        .modal {
-            width: 100%;
-            max-width: 560px;
-            background: #fff;
-            border-radius: 12px;
-            padding: 18px;
-        }
-
-        .modal h4 { margin-bottom: 10px; }
-        .modal .row { margin-bottom: 10px; }
-        .modal label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-        .modal textarea,
-        .modal input {
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 14px;
-        }
-
-        .payment-options {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .payment-option {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .profile-form {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .profile-field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .profile-field.full {
-            grid-column: 1 / -1;
-        }
-
-        .profile-field label {
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .profile-field input {
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 14px;
-        }
-
-        .profile-actions {
-            margin-top: 10px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .documents-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
-            margin-top: 10px;
-        }
-
-        .doc-column h4 {
-            margin-bottom: 8px;
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
             color: #0f172a;
-            font-size: 15px;
         }
+        .muted { color: var(--muted); font-size: 13px; }
 
-        .doc-list {
+        .status-grid {
             display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 10px;
+            margin-top: 8px;
         }
-
-        .doc-item {
-            border: 1px solid #dbe2ea;
+        .status-item {
+            border: 1px solid var(--line);
             border-radius: 10px;
             padding: 10px;
             background: #fff;
         }
-
-        .doc-item h5 {
-            margin-bottom: 4px;
-            font-size: 14px;
-            color: #0f172a;
-        }
-
-        .doc-item p {
-            margin: 0 0 6px;
-            font-size: 13px;
+        .status-item h3 {
+            font-size: 12px;
+            margin-bottom: 6px;
             color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+        .status-item p {
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .doc-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+        .badge {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-ok { background: #dcfce7; color: #166534; }
+        .badge-warn { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-neutral { background: #e2e8f0; color: #334155; }
+
+        .qr-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 14px;
             align-items: center;
         }
-
-        .doc-upload {
+        .qr-box {
+            width: 220px;
+            height: 220px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .doc-upload input[type="file"] {
-            flex: 1 1 220px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 6px;
+            align-items: center;
+            justify-content: center;
             background: #fff;
+        }
+        .qr-box img {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+        }
+        .qr-meta p { margin: 0 0 6px; font-size: 14px; }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .profile-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 9px;
+            background: #fff;
+        }
+        .profile-item h3 {
+            margin: 0 0 4px;
             font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+        .profile-item p { font-size: 14px; font-weight: 600; word-break: break-word; }
+
+        .profile-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        @media (max-width: 900px) {
-            .grid { grid-template-columns: 1fr; }
-            .payment-options { grid-template-columns: 1fr; }
-            .profile-form { grid-template-columns: 1fr; }
-            .documents-grid { grid-template-columns: 1fr; }
+        .requests-list {
+            margin-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+        .request-row {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 13px;
+            background: #fff;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            z-index: 1000;
+        }
+        .modal.open { display: flex; }
+        .modal-panel {
+            width: 100%;
+            max-width: 700px;
+            max-height: 92vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .modal h3 { margin-bottom: 10px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .field label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+        }
+        .field input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-size: 13px;
+        }
+
+        .modal-actions {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 860px) {
+            .status-grid { grid-template-columns: 1fr; }
+            .qr-layout { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .profile-grid { grid-template-columns: 1fr; }
+            .qr-box { width: 100%; max-width: 220px; }
         }
     </style>
 </head>
@@ -330,188 +247,139 @@ if (appIsLandingMode()) {
     <div class="header">
         <div>
             <h1>Dashboard Utente</h1>
-            <small id="userName"></small>
+            <small id="userName">Utente</small>
         </div>
-        <button class="btn btn-logout" onclick="logout()">Esci</button>
+        <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
     </div>
 
     <div class="container">
         <div id="alertBox" class="alert"></div>
 
-        <div class="stats">
-            <div class="stat">
-                <h2 id="statIngressi">0</h2>
-                <p>Ingressi rimanenti</p>
-            </div>
-            <div class="stat">
-                <h2 id="statCheckin">0</h2>
-                <p>Check-in totali</p>
-            </div>
-            <div class="stat">
-                <h2 id="statScadenza">-</h2>
-                <p>Giorni a scadenza</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3>I tuoi dati</h3>
-            <p class="small">Aggiorna recapiti e dati anagrafici quando cambiano. I documenti precompilati useranno questi dati.</p>
-            <form id="profileForm" class="profile-form">
-                <div class="profile-field">
-                    <label for="profileNome">Nome</label>
-                    <input id="profileNome" type="text" maxlength="100" required>
+        <section class="card">
+            <h2>Stato account</h2>
+            <p class="muted">Qui trovi lo stato iscrizione e l'ultima richiesta di modifica dati.</p>
+            <div class="status-grid">
+                <div class="status-item">
+                    <h3>Stato iscrizione</h3>
+                    <p id="enrollmentStatus">-</p>
                 </div>
-                <div class="profile-field">
-                    <label for="profileCognome">Cognome</label>
-                    <input id="profileCognome" type="text" maxlength="100" required>
+                <div class="status-item">
+                    <h3>Ultima richiesta modifica</h3>
+                    <p id="lastProfileRequestStatus">Nessuna</p>
                 </div>
-                <div class="profile-field">
-                    <label for="profileEmail">Email</label>
-                    <input id="profileEmail" type="email" maxlength="255" required>
-                </div>
-                <div class="profile-field">
-                    <label for="profileTelefono">Telefono</label>
-                    <input id="profileTelefono" type="text" maxlength="30">
-                </div>
-                <div class="profile-field">
-                    <label for="profileDataNascita">Data di nascita</label>
-                    <input id="profileDataNascita" type="date">
-                </div>
-                <div class="profile-field">
-                    <label for="profileCodiceFiscale">Codice fiscale</label>
-                    <input id="profileCodiceFiscale" type="text" maxlength="16" style="text-transform:uppercase;">
-                </div>
-                <div class="profile-field full">
-                    <label for="profileIndirizzo">Indirizzo</label>
-                    <input id="profileIndirizzo" type="text" maxlength="255">
-                </div>
-                <div class="profile-field">
-                    <label for="profileCitta">Citta</label>
-                    <input id="profileCitta" type="text" maxlength="100">
-                </div>
-                <div class="profile-field">
-                    <label for="profileCap">CAP</label>
-                    <input id="profileCap" type="text" maxlength="10">
-                </div>
-                <div class="profile-actions profile-field full">
-                    <button id="saveProfileBtn" class="btn btn-primary" type="submit">Salva dati profilo</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="grid">
-            <div>
-                <div class="card">
-                    <h3>Il tuo QR code</h3>
-                    <div id="qrSection" class="muted">Nessun QR disponibile. La segreteria attivera il pacchetto dopo approvazione iscrizione.</div>
-                </div>
-
-        <div class="card">
-                    <h3>Richiedi pacchetto</h3>
-                    <div id="packageList" class="package-list">Caricamento pacchetti...</div>
+                <div class="status-item">
+                    <h3>Data ultima richiesta</h3>
+                    <p id="lastProfileRequestDate">-</p>
                 </div>
             </div>
+        </section>
 
-            <div>
-                <div class="card">
-                    <h3>I miei acquisti</h3>
-                    <div style="overflow:auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Pacchetto</th>
-                                    <th>Data</th>
-                                    <th>Stato</th>
-                                    <th>Ingressi</th>
-                                    <th>Azione</th>
-                                </tr>
-                            </thead>
-                            <tbody id="purchasesBody"></tbody>
-                        </table>
-                    </div>
-                </div>
+        <section class="card">
+            <h2>Il tuo QR</h2>
+            <div id="qrSection" class="muted">Caricamento QR in corso...</div>
+        </section>
 
-                <div class="card">
-                    <h3>Storico check-in</h3>
-                    <div style="overflow:auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data/Ora</th>
-                                    <th>Fascia</th>
-                                    <th>Pacchetto</th>
-                                    <th>Bagnino</th>
-                                </tr>
-                            </thead>
-                            <tbody id="checkinBody"></tbody>
-                        </table>
-                    </div>
-                </div>
+        <section class="card">
+            <h2>Il mio profilo</h2>
+            <p class="muted">Per modificare i dati invia una richiesta: sara approvata da ufficio/admin.</p>
+            <div id="profileGrid" class="profile-grid"></div>
+            <div class="profile-actions">
+                <button class="btn btn-primary" id="openRequestModalBtn" type="button">Richiedi modifica dati</button>
             </div>
-        </div>
-
-        <div class="card">
-            <h3>Documenti</h3>
-            <p class="muted">Documenti obbligatori mancanti: <strong id="missingDocs">0</strong></p>
-            <div class="documents-grid">
-                <div class="doc-column">
-                    <h4>Documenti caricati</h4>
-                    <div id="uploadedDocsList" class="doc-list"></div>
-                </div>
-                <div class="doc-column">
-                    <h4>Documenti mancanti / da completare</h4>
-                    <div id="missingDocsList" class="doc-list"></div>
-                </div>
-            </div>
-        </div>
+            <div id="profileRequestsList" class="requests-list"></div>
+        </section>
     </div>
 
-    <div id="purchaseOverlay" class="overlay">
-        <div class="modal">
-            <h4 id="purchaseTitle">Finalizza iscrizione in struttura</h4>
-            <p class="small" id="purchaseMeta"></p>
-
-            <div class="row">
-                <label>Modalita</label>
-                <p class="small">La finalizzazione avviene in struttura con verifica segreteria.</p>
-            </div>
-
-            <div class="row">
-                <label for="paymentNote">Note</label>
-                <textarea id="paymentNote" placeholder="Note aggiuntive (facoltative)"></textarea>
-            </div>
-
-            <p class="small" id="paymentHint"></p>
-
-            <div class="modal-actions">
-                <button class="btn" type="button" onclick="closePurchaseModal()">Annulla</button>
-                <button class="btn btn-success" id="confirmPurchaseBtn" type="button" onclick="confirmPurchase()">Finalizza in struttura</button>
-            </div>
+    <div id="profileRequestModal" class="modal" aria-hidden="true">
+        <div class="modal-panel">
+            <h3>Richiesta modifica dati</h3>
+            <p class="muted" style="margin-bottom:10px;">Aggiorna solo i campi da modificare e invia la richiesta.</p>
+            <form id="profileRequestForm">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="rqNome">Nome *</label>
+                        <input id="rqNome" maxlength="100" required>
+                    </div>
+                    <div class="field">
+                        <label for="rqCognome">Cognome *</label>
+                        <input id="rqCognome" maxlength="100" required>
+                    </div>
+                    <div class="field">
+                        <label for="rqEmail">Email *</label>
+                        <input id="rqEmail" type="email" maxlength="255" required>
+                    </div>
+                    <div class="field">
+                        <label for="rqTelefono">Telefono</label>
+                        <input id="rqTelefono" maxlength="30">
+                    </div>
+                    <div class="field">
+                        <label for="rqDataNascita">Data di nascita</label>
+                        <input id="rqDataNascita" type="date">
+                    </div>
+                    <div class="field">
+                        <label for="rqCodiceFiscale">Codice fiscale</label>
+                        <input id="rqCodiceFiscale" maxlength="16" style="text-transform:uppercase;">
+                    </div>
+                    <div class="field">
+                        <label for="rqIndirizzo">Indirizzo</label>
+                        <input id="rqIndirizzo" maxlength="255">
+                    </div>
+                    <div class="field">
+                        <label for="rqCitta">Citta</label>
+                        <input id="rqCitta" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="rqCap">CAP</label>
+                        <input id="rqCap" maxlength="10">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" type="button" id="closeRequestModalBtn">Annulla</button>
+                    <button class="btn btn-primary" type="submit" id="sendRequestBtn">Invia richiesta</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
         const API_URL = '../api';
         let token = localStorage.getItem('token');
-        let user = JSON.parse(localStorage.getItem('user') || 'null');
-
-        let selectedPackage = null;
-        let myPurchases = [];
+        let user = null;
+        let profile = null;
+        let latestConfirmedPurchase = null;
         let activeQrBlobUrl = '';
+
+        try {
+            user = JSON.parse(localStorage.getItem('user') || 'null');
+        } catch (_) {
+            user = null;
+        }
 
         if (!token || !user) {
             window.location.href = '../login.php';
         }
 
-        function updateHeaderUserName() {
-            const displayName = `${user?.nome || ''} ${user?.cognome || ''}`.trim();
-            document.getElementById('userName').textContent = displayName;
+        function byId(id) {
+            return document.getElementById(id);
         }
 
-        updateHeaderUserName();
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         function showAlert(message, type = 'ok') {
-            const box = document.getElementById('alertBox');
+            const box = byId('alertBox');
+            if (!box) return;
+            if (!message) {
+                box.className = 'alert';
+                box.textContent = '';
+                return;
+            }
             box.className = `alert ${type === 'error' ? 'err' : 'ok'}`;
             box.textContent = message;
             if (type !== 'error') {
@@ -522,30 +390,8 @@ if (appIsLandingMode()) {
             }
         }
 
-        function escapeHtml(value) {
-            return String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function normalizeDateInput(value) {
-            const raw = String(value || '').trim();
-            if (!raw) return '';
-            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-                return raw.slice(0, 10);
-            }
-            const parsed = new Date(raw);
-            if (Number.isNaN(parsed.getTime())) {
-                return '';
-            }
-            return parsed.toISOString().slice(0, 10);
-        }
-
-        async function fetchJson(url, options = {}) {
-            const response = await fetch(url, {
+        async function apiJson(path, options = {}) {
+            const response = await fetch(`${API_URL}/${path}`, {
                 ...options,
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -553,16 +399,18 @@ if (appIsLandingMode()) {
                     ...(options.headers || {})
                 }
             });
-            const rawText = await response.text();
+
+            const rawText = (await response.text()).replace(/^\uFEFF/, '');
             let data = {};
-            if (rawText) {
+            if (rawText.trim() !== '') {
                 try {
                     data = JSON.parse(rawText);
                 } catch (_) {
-                    data = { success: false, message: rawText };
+                    data = { success: false, message: 'Risposta API non valida' };
                 }
             }
-            if (!response.ok || !data.success) {
+
+            if (!response.ok || data.success === false) {
                 throw new Error(data.message || 'Errore richiesta API');
             }
             return data;
@@ -571,23 +419,109 @@ if (appIsLandingMode()) {
         function formatDate(value) {
             if (!value) return '-';
             const d = new Date(value);
-            if (Number.isNaN(d.getTime())) return value;
+            if (Number.isNaN(d.getTime())) return String(value);
             return d.toLocaleDateString('it-IT');
         }
 
         function formatDateTime(value) {
             if (!value) return '-';
             const d = new Date(value);
-            if (Number.isNaN(d.getTime())) return value;
+            if (Number.isNaN(d.getTime())) return String(value);
             return `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
         }
 
-        function formatCurrency(value) {
-            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
+        function statusBadge(status) {
+            const raw = String(status || '').toLowerCase();
+            if (raw === 'approved' || raw === 'confirmed' || raw === 'active') {
+                return '<span class="badge badge-ok">approvato</span>';
+            }
+            if (raw === 'pending') {
+                return '<span class="badge badge-warn">pending</span>';
+            }
+            if (raw === 'rejected' || raw === 'cancelled') {
+                return '<span class="badge badge-danger">rifiutato</span>';
+            }
+            return `<span class="badge badge-neutral">${escapeHtml(raw || '-')}</span>`;
         }
 
-        async function fetchBlobWithAuth(url, fallbackMessage = 'Errore download file') {
-            const response = await fetch(url, {
+        function setHeaderUser() {
+            const fullName = `${user?.nome || ''} ${user?.cognome || ''}`.trim() || (user?.email || 'Utente');
+            byId('userName').textContent = fullName;
+        }
+
+        function populateProfileForm() {
+            if (!profile) return;
+            byId('rqNome').value = profile.nome || '';
+            byId('rqCognome').value = profile.cognome || '';
+            byId('rqEmail').value = profile.email || '';
+            byId('rqTelefono').value = profile.telefono || '';
+            byId('rqDataNascita').value = String(profile.data_nascita || '').slice(0, 10);
+            byId('rqCodiceFiscale').value = String(profile.codice_fiscale || '').toUpperCase();
+            byId('rqIndirizzo').value = profile.indirizzo || '';
+            byId('rqCitta').value = profile.citta || '';
+            byId('rqCap').value = profile.cap || '';
+        }
+
+        function renderProfileCards() {
+            const grid = byId('profileGrid');
+            if (!grid || !profile) return;
+
+            const items = [
+                ['Nome', profile.nome || '-'],
+                ['Cognome', profile.cognome || '-'],
+                ['Email', profile.email || '-'],
+                ['Telefono', profile.telefono || '-'],
+                ['Data di nascita', profile.data_nascita ? formatDate(profile.data_nascita) : '-'],
+                ['Codice fiscale', profile.codice_fiscale || '-'],
+                ['Indirizzo', profile.indirizzo || '-'],
+                ['Citta', profile.citta || '-'],
+                ['CAP', profile.cap || '-'],
+            ];
+
+            grid.innerHTML = items.map(([label, value]) => `
+                <div class="profile-item">
+                    <h3>${escapeHtml(label)}</h3>
+                    <p>${escapeHtml(value)}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderQrSection() {
+            const section = byId('qrSection');
+            if (!section) return;
+
+            if (!latestConfirmedPurchase || !latestConfirmedPurchase.id || !latestConfirmedPurchase.qr_code) {
+                section.innerHTML = '<p class="muted">Nessun QR disponibile. Verifica con la segreteria lo stato dell\'iscrizione.</p>';
+                return;
+            }
+
+            section.innerHTML = `
+                <div class="qr-layout">
+                    <div class="qr-box" id="qrBox"><span class="muted">Generazione QR...</span></div>
+                    <div class="qr-meta">
+                        <p><strong>Codice QR:</strong> <code>${escapeHtml(latestConfirmedPurchase.qr_code)}</code></p>
+                        <p><strong>Pacchetto:</strong> ${escapeHtml(latestConfirmedPurchase.pacchetto_nome || '-')}</p>
+                        <p><strong>Scadenza:</strong> ${escapeHtml(formatDate(latestConfirmedPurchase.data_scadenza))}</p>
+                        <p><strong>Ingressi rimanenti:</strong> ${escapeHtml(String(latestConfirmedPurchase.ingressi_rimanenti || 0))}</p>
+                        <p style="margin-top:10px;">
+                            <button class="btn btn-primary" id="downloadQrBtn" type="button">Scarica PDF QR</button>
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            const downloadBtn = byId('downloadQrBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => downloadQrPdf(latestConfirmedPurchase.id));
+            }
+
+            loadQrImage(latestConfirmedPurchase.id, latestConfirmedPurchase.qr_code).catch((error) => {
+                showAlert(error.message || 'Errore generazione QR', 'error');
+            });
+        }
+
+        async function loadQrImage(acquistoId, qrCode) {
+            const response = await fetch(`${API_URL}/qr.php?action=svg&acquisto_id=${encodeURIComponent(acquistoId)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -595,126 +529,48 @@ if (appIsLandingMode()) {
             });
 
             if (!response.ok) {
-                let message = fallbackMessage;
-                try {
-                    const text = (await response.text()).replace(/^\uFEFF/, '');
-                    if (text) {
-                        try {
-                            const json = JSON.parse(text);
-                            message = json.message || message;
-                        } catch (_) {
-                            message = text || message;
-                        }
-                    }
-                } catch (_) {
-                    // fallback: mantieni messaggio standard
-                }
-                throw new Error(message);
+                throw new Error('Errore generazione QR');
             }
 
             const blob = await response.blob();
-            return { blob, response };
-        }
-
-        function sanitizeFilePart(value) {
-            return String(value || 'QR').replace(/[^A-Za-z0-9-_]/g, '-');
-        }
-
-        function extractFilenameFromDisposition(disposition) {
-            if (!disposition) {
-                return '';
+            if (activeQrBlobUrl) {
+                URL.revokeObjectURL(activeQrBlobUrl);
+                activeQrBlobUrl = '';
             }
 
-            const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-            if (utf8Match && utf8Match[1]) {
-                try {
-                    return decodeURIComponent(utf8Match[1]).replace(/"/g, '').trim();
-                } catch (_) {
-                    return utf8Match[1].replace(/"/g, '').trim();
+            activeQrBlobUrl = URL.createObjectURL(blob);
+            const qrBox = byId('qrBox');
+            if (qrBox) {
+                qrBox.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR ${escapeHtml(qrCode)}">`;
+            }
+        }
+
+        async function downloadQrPdf(acquistoId) {
+            const response = await fetch(`${API_URL}/qr.php?action=download&acquisto_id=${encodeURIComponent(acquistoId)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
+            });
+
+            if (!response.ok) {
+                throw new Error('Errore download QR');
             }
 
-            const plainMatch = disposition.match(/filename="?([^\";]+)"?/i);
-            if (plainMatch && plainMatch[1]) {
-                return plainMatch[1].trim();
-            }
-
-            return '';
-        }
-
-        async function downloadQrPdf(acquistoId, qrCode = 'QR') {
-            if (!acquistoId) {
-                showAlert('ID acquisto non valido per download QR.', 'error');
-                return;
-            }
-
-            try {
-                const { blob, response } = await fetchBlobWithAuth(
-                    `${API_URL}/qr.php?action=download&acquisto_id=${encodeURIComponent(acquistoId)}`,
-                    'Errore download QR'
-                );
-                const disposition = response.headers.get('Content-Disposition') || '';
-                const fallbackName = `QR_${sanitizeFilePart(qrCode)}.pdf`;
-                const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
-                triggerBlobDownload(blob, fileName);
-            } catch (error) {
-                showAlert(error.message || 'Errore download QR PDF', 'error');
-            }
-        }
-
-        function triggerBlobDownload(blob, filename) {
+            const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = blobUrl;
-            a.download = filename;
+            a.download = `QR_${acquistoId}.pdf`;
             document.body.appendChild(a);
             a.click();
             a.remove();
             URL.revokeObjectURL(blobUrl);
         }
 
-        async function downloadProtectedDocument(documentId, fallbackName = 'documento.pdf') {
-            if (!documentId) {
-                showAlert('Documento non valido.', 'error');
-                return;
-            }
-
-            try {
-                const { blob, response } = await fetchBlobWithAuth(
-                    `${API_URL}/documenti-download.php?id=${encodeURIComponent(documentId)}`,
-                    'Errore download documento'
-                );
-                const disposition = response.headers.get('Content-Disposition') || '';
-                const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
-                triggerBlobDownload(blob, fileName);
-            } catch (error) {
-                showAlert(error.message || 'Errore download documento', 'error');
-            }
-        }
-
-        async function downloadPrefilledDocument(typeId, typeName = 'documento') {
-            if (!typeId) {
-                showAlert('Tipo documento non valido.', 'error');
-                return;
-            }
-
-            try {
-                const { blob, response } = await fetchBlobWithAuth(
-                    `${API_URL}/documenti-prefill.php?tipo_documento_id=${encodeURIComponent(typeId)}`,
-                    'Errore generazione PDF precompilato'
-                );
-                const disposition = response.headers.get('Content-Disposition') || '';
-                const fallbackName = `prefill_${sanitizeFilePart(typeName)}.pdf`;
-                const fileName = extractFilenameFromDisposition(disposition) || fallbackName;
-                triggerBlobDownload(blob, fileName);
-            } catch (error) {
-                showAlert(error.message || 'Errore download PDF precompilato', 'error');
-            }
-        }
-
         async function loadProfile() {
-            const data = await fetchJson(`${API_URL}/auth.php?action=me`, { method: 'GET' });
-            const profile = data.user || {};
+            const data = await apiJson('auth.php?action=me', { method: 'GET' });
+            profile = data.user || {};
 
             user = {
                 ...(user || {}),
@@ -726,446 +582,105 @@ if (appIsLandingMode()) {
                 livello: Number(profile.ruolo_livello || user?.livello || 1),
             };
             localStorage.setItem('user', JSON.stringify(user));
-            updateHeaderUserName();
 
-            document.getElementById('profileNome').value = profile.nome || '';
-            document.getElementById('profileCognome').value = profile.cognome || '';
-            document.getElementById('profileEmail').value = profile.email || '';
-            document.getElementById('profileTelefono').value = profile.telefono || '';
-            document.getElementById('profileDataNascita').value = normalizeDateInput(profile.data_nascita);
-            document.getElementById('profileCodiceFiscale').value = (profile.codice_fiscale || '').toUpperCase();
-            document.getElementById('profileIndirizzo').value = profile.indirizzo || '';
-            document.getElementById('profileCitta').value = profile.citta || '';
-            document.getElementById('profileCap').value = profile.cap || '';
+            setHeaderUser();
+            renderProfileCards();
+            populateProfileForm();
+
+            const enrollment = profile.stato_iscrizione || 'approved';
+            byId('enrollmentStatus').innerHTML = statusBadge(enrollment);
         }
 
-        async function saveProfile(event) {
-            event.preventDefault();
+        async function loadProfileRequests() {
+            const data = await apiJson('auth.php?action=profile-update-requests', { method: 'GET' });
+            const rows = Array.isArray(data.requests) ? data.requests : [];
+            const list = byId('profileRequestsList');
 
-            const button = document.getElementById('saveProfileBtn');
+            if (!rows.length) {
+                byId('lastProfileRequestStatus').textContent = 'Nessuna';
+                byId('lastProfileRequestDate').textContent = '-';
+                if (list) {
+                    list.innerHTML = '<div class="request-row">Nessuna richiesta modifica dati inviata.</div>';
+                }
+                return;
+            }
+
+            const latest = rows[0];
+            byId('lastProfileRequestStatus').innerHTML = statusBadge(latest.status || 'pending');
+            byId('lastProfileRequestDate').textContent = formatDateTime(latest.created_at || '');
+
+            if (!list) return;
+            list.innerHTML = rows.slice(0, 5).map((row) => {
+                const changes = row.changes && typeof row.changes === 'object'
+                    ? Object.keys(row.changes).map((key) => `${key}: ${row.changes[key]}`).join(' | ')
+                    : '-';
+                return `
+                    <div class="request-row">
+                        <div><strong>Stato:</strong> ${statusBadge(row.status || '')}</div>
+                        <div><strong>Data:</strong> ${escapeHtml(formatDateTime(row.created_at || ''))}</div>
+                        <div><strong>Modifiche:</strong> ${escapeHtml(changes || '-')}</div>
+                        ${row.review_note ? `<div><strong>Nota revisione:</strong> ${escapeHtml(row.review_note)}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadMyPurchases() {
+            const data = await apiJson('pacchetti.php?action=my-purchases', { method: 'GET' });
+            const rows = Array.isArray(data.acquisti) ? data.acquisti : [];
+            const confirmed = rows
+                .filter((row) => String(row.stato_pagamento || '').toLowerCase() === 'confirmed' && row.qr_code)
+                .sort((a, b) => new Date(b.data_conferma || b.data_acquisto) - new Date(a.data_conferma || a.data_acquisto));
+
+            latestConfirmedPurchase = confirmed[0] || null;
+            renderQrSection();
+        }
+
+        function openRequestModal() {
+            byId('profileRequestModal').classList.add('open');
+            byId('profileRequestModal').setAttribute('aria-hidden', 'false');
+            populateProfileForm();
+        }
+
+        function closeRequestModal() {
+            byId('profileRequestModal').classList.remove('open');
+            byId('profileRequestModal').setAttribute('aria-hidden', 'true');
+        }
+
+        async function submitProfileRequest(event) {
+            event.preventDefault();
+            const button = byId('sendRequestBtn');
+            const original = button.textContent;
+
             const payload = {
-                nome: document.getElementById('profileNome').value.trim(),
-                cognome: document.getElementById('profileCognome').value.trim(),
-                email: document.getElementById('profileEmail').value.trim().toLowerCase(),
-                telefono: document.getElementById('profileTelefono').value.trim(),
-                data_nascita: document.getElementById('profileDataNascita').value.trim(),
-                indirizzo: document.getElementById('profileIndirizzo').value.trim(),
-                citta: document.getElementById('profileCitta').value.trim(),
-                cap: document.getElementById('profileCap').value.trim(),
-                codice_fiscale: document.getElementById('profileCodiceFiscale').value.trim().toUpperCase(),
+                nome: byId('rqNome').value.trim(),
+                cognome: byId('rqCognome').value.trim(),
+                email: byId('rqEmail').value.trim().toLowerCase(),
+                telefono: byId('rqTelefono').value.trim(),
+                data_nascita: byId('rqDataNascita').value.trim(),
+                codice_fiscale: byId('rqCodiceFiscale').value.trim().toUpperCase(),
+                indirizzo: byId('rqIndirizzo').value.trim(),
+                citta: byId('rqCitta').value.trim(),
+                cap: byId('rqCap').value.trim(),
             };
 
             button.disabled = true;
-            button.textContent = 'Salvataggio...';
+            button.textContent = 'Invio in corso...';
 
             try {
-                const data = await fetchJson(`${API_URL}/auth.php?action=update-profile`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(payload)
+                const data = await apiJson('auth.php?action=profile-update-request', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
                 });
 
-                if (data.token) {
-                    token = data.token;
-                    localStorage.setItem('token', token);
-                }
-                if (data.user) {
-                    user = { ...(user || {}), ...data.user };
-                    localStorage.setItem('user', JSON.stringify(user));
-                    updateHeaderUserName();
-                }
-
-                showAlert(data.message || 'Profilo aggiornato.', 'ok');
-                await loadDocuments();
+                closeRequestModal();
+                showAlert(data.message || 'Richiesta inviata', 'ok');
+                await Promise.all([loadProfile(), loadProfileRequests()]);
             } catch (error) {
-                showAlert(error.message || 'Errore aggiornamento profilo', 'error');
+                showAlert(error.message || 'Errore invio richiesta', 'error');
             } finally {
                 button.disabled = false;
-                button.textContent = 'Salva dati profilo';
-            }
-        }
-
-        function getStatusBadge(status) {
-            if (status === 'confirmed') {
-                return '<span class="badge badge-success">confermato</span>';
-            }
-            if (status === 'pending') {
-                return '<span class="badge badge-warning">pending</span>';
-            }
-            return '<span class="badge badge-danger">annullato</span>';
-        }
-
-        function getLatestConfirmedPurchase() {
-            const confirmed = myPurchases
-                .filter(item => item.stato_pagamento === 'confirmed' && item.qr_code)
-                .sort((a, b) => new Date(b.data_conferma || b.data_acquisto) - new Date(a.data_conferma || a.data_acquisto));
-            return confirmed[0] || null;
-        }
-
-        function renderQrSection(purchase) {
-            const section = document.getElementById('qrSection');
-            if (!purchase) {
-                section.innerHTML = '<p class="muted">Nessun QR disponibile. Le richieste vengono attivate dalla segreteria dopo verifica iscrizione.</p>';
-                document.getElementById('statScadenza').textContent = '-';
-                return;
-            }
-
-            const daysToExpire = purchase.data_scadenza
-                ? Math.max(0, Math.ceil((new Date(purchase.data_scadenza) - new Date()) / 86400000))
-                : '-';
-            document.getElementById('statScadenza').textContent = daysToExpire;
-
-            section.innerHTML = `
-                <div class="qr-wrap">
-                    <div class="qr-box" id="qrBox"></div>
-                    <div>
-                        <p><strong>Codice:</strong> <code>${escapeHtml(purchase.qr_code)}</code></p>
-                        <p><strong>Pacchetto:</strong> ${escapeHtml(purchase.pacchetto_nome)}</p>
-                        <p><strong>Scadenza:</strong> ${formatDate(purchase.data_scadenza)}</p>
-                        <p><strong>Ingressi rimanenti:</strong> ${Number(purchase.ingressi_rimanenti || 0)}</p>
-                        <p style="margin-top:10px;">
-                            <button class="btn btn-primary" id="downloadQrBtn" type="button">Scarica PDF QR</button>
-                        </p>
-                    </div>
-                </div>
-            `;
-            const downloadBtn = document.getElementById('downloadQrBtn');
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', () => downloadQrPdf(purchase.id, purchase.qr_code));
-            }
-
-            const qrTarget = document.getElementById('qrBox');
-            if (!qrTarget) {
-                return;
-            }
-
-            qrTarget.innerHTML = '<span class="small">Generazione QR in corso...</span>';
-
-            if (activeQrBlobUrl) {
-                URL.revokeObjectURL(activeQrBlobUrl);
-                activeQrBlobUrl = '';
-            }
-
-            fetchBlobWithAuth(
-                `${API_URL}/qr.php?action=svg&acquisto_id=${encodeURIComponent(purchase.id)}`,
-                'Errore generazione QR'
-            )
-                .then(({ blob }) => {
-                    activeQrBlobUrl = URL.createObjectURL(blob);
-                    qrTarget.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR code ${escapeHtml(purchase.qr_code)}">`;
-                })
-                .catch((error) => {
-                    console.error(error);
-                    qrTarget.innerHTML = '<span class="small">Errore durante la generazione del QR.</span>';
-                    showAlert(error.message || 'Errore generazione QR', 'error');
-                });
-        }
-
-        async function loadPackages() {
-            const data = await fetchJson(`${API_URL}/pacchetti.php`, { method: 'GET' });
-            const list = document.getElementById('packageList');
-
-            if (!Array.isArray(data.pacchetti) || !data.pacchetti.length) {
-                list.innerHTML = '<p class="muted">Nessun pacchetto disponibile.</p>';
-                return;
-            }
-
-            list.innerHTML = data.pacchetti.map(pkg => `
-                <div class="package-item">
-                    <div class="package-meta">
-                        <strong>${escapeHtml(pkg.nome)}</strong>
-                        <p>${escapeHtml(pkg.descrizione || 'Pacchetto nuoto libero')}</p>
-                        <p>${pkg.num_ingressi} ingressi - validita ${pkg.validita_giorni} giorni</p>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-weight:700; margin-bottom:8px;">${formatCurrency(pkg.prezzo)}</div>
-                        <button
-                            class="btn btn-success js-buy-btn"
-                            data-id="${pkg.id}"
-                            data-name="${encodeURIComponent(pkg.nome)}"
-                            data-price="${Number(pkg.prezzo)}"
-                            type="button"
-                        >Finalizza in struttura</button>
-                    </div>
-                </div>
-            `).join('');
-
-            list.querySelectorAll('.js-buy-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    openPurchaseModal(
-                        Number(button.dataset.id),
-                        decodeURIComponent(button.dataset.name || ''),
-                        Number(button.dataset.price || 0)
-                    );
-                });
-            });
-        }
-
-        async function loadPurchases() {
-            const data = await fetchJson(`${API_URL}/pacchetti.php?action=my-purchases`, { method: 'GET' });
-            myPurchases = Array.isArray(data.acquisti) ? data.acquisti : [];
-
-            const body = document.getElementById('purchasesBody');
-            if (!myPurchases.length) {
-                body.innerHTML = '<tr><td colspan="5">Nessun acquisto registrato.</td></tr>';
-                renderQrSection(null);
-                document.getElementById('statIngressi').textContent = '0';
-                return;
-            }
-
-            body.innerHTML = myPurchases.map(item => {
-                const downloadAction = item.stato_pagamento === 'confirmed' && item.qr_code
-                    ? `<button class="btn btn-primary js-download-qr" type="button" data-id="${escapeHtml(item.id)}" data-code="${escapeHtml(item.qr_code)}">PDF QR</button>`
-                    : '-';
-
-                return `
-                    <tr>
-                        <td>${escapeHtml(item.pacchetto_nome)}</td>
-                        <td>${formatDate(item.data_acquisto)}</td>
-                        <td>${getStatusBadge(item.stato_pagamento)}</td>
-                        <td>${item.ingressi_rimanenti} / ${item.num_ingressi || '-'}</td>
-                        <td>${downloadAction}</td>
-                    </tr>
-                `;
-            }).join('');
-            body.querySelectorAll('.js-download-qr').forEach((button) => {
-                button.addEventListener('click', () => {
-                    downloadQrPdf(button.dataset.id || '', button.dataset.code || 'QR');
-                });
-            });
-
-            const totalRemaining = myPurchases
-                .filter(item => item.stato_pagamento === 'confirmed')
-                .reduce((sum, item) => sum + Number(item.ingressi_rimanenti || 0), 0);
-
-            document.getElementById('statIngressi').textContent = String(totalRemaining);
-            renderQrSection(getLatestConfirmedPurchase());
-        }
-
-        async function loadCheckins() {
-            const data = await fetchJson(`${API_URL}/checkin.php?action=history`, { method: 'GET' });
-            const rows = Array.isArray(data.checkins) ? data.checkins : [];
-            document.getElementById('statCheckin').textContent = String(rows.length);
-
-            const body = document.getElementById('checkinBody');
-            if (!rows.length) {
-                body.innerHTML = '<tr><td colspan="4">Nessun check-in registrato.</td></tr>';
-                return;
-            }
-
-            body.innerHTML = rows.slice(0, 15).map(row => `
-                <tr>
-                    <td>${formatDateTime(row.timestamp)}</td>
-                    <td>${escapeHtml(row.fascia_oraria || '-')}</td>
-                    <td>${escapeHtml(row.pacchetto_nome || '-')}</td>
-                    <td>${escapeHtml((row.bagnino_nome || '-') + ' ' + (row.bagnino_cognome || ''))}</td>
-                </tr>
-            `).join('');
-        }
-
-        function getDocumentStatusBadge(status) {
-            if (status === 'approved') {
-                return '<span class="badge badge-success">approvato</span>';
-            }
-            if (status === 'pending') {
-                return '<span class="badge badge-warning">in verifica</span>';
-            }
-            return '<span class="badge badge-danger">da correggere</span>';
-        }
-
-        function renderUploadedDocuments(rows) {
-            const list = document.getElementById('uploadedDocsList');
-            if (!Array.isArray(rows) || !rows.length) {
-                list.innerHTML = '<p class="muted">Nessun documento caricato.</p>';
-                return;
-            }
-
-            list.innerHTML = rows.map((row) => `
-                <div class="doc-item">
-                    <h5>${escapeHtml(row.tipo_nome || 'Documento')}</h5>
-                    <p>Caricato: ${formatDate(row.data_caricamento)}</p>
-                    ${row.note_revisione ? `<p>Note revisione: ${escapeHtml(row.note_revisione)}</p>` : ''}
-                    <div class="doc-actions">
-                        ${getDocumentStatusBadge(row.stato)}
-                        <button
-                            class="btn btn-primary btn-sm js-download-doc-btn"
-                            type="button"
-                            data-doc-id="${escapeHtml(row.id)}"
-                            data-file-name="${encodeURIComponent(row.file_name || 'documento.pdf')}"
-                        >Scarica</button>
-                    </div>
-                </div>
-            `).join('');
-
-            list.querySelectorAll('.js-download-doc-btn').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const fileName = decodeURIComponent(button.dataset.fileName || 'documento.pdf');
-                    downloadProtectedDocument(button.dataset.docId || '', fileName);
-                });
-            });
-        }
-
-        function renderMissingDocuments(rows) {
-            const list = document.getElementById('missingDocsList');
-            if (!Array.isArray(rows) || !rows.length) {
-                list.innerHTML = '<p class="muted">Ottimo: non risultano documenti obbligatori mancanti.</p>';
-                return;
-            }
-
-            list.innerHTML = rows.map((row) => {
-                const typeId = Number(row.id || 0);
-                const inputId = `docUploadType${typeId}`;
-                const moduloButton = (!row.is_medical && row.modulo_download_url)
-                    ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(row.modulo_download_url)}" target="_blank" rel="noopener">Scarica modulo</a>`
-                    : '';
-                const prefillButton = (!row.is_medical && row.prefill_download_url)
-                    ? `<button class="btn btn-light btn-sm js-prefill-btn" type="button" data-type-id="${typeId}" data-type-name="${encodeURIComponent(row.nome || 'documento')}">PDF precompilato</button>`
-                    : '';
-                const noteText = row.is_medical
-                    ? '<p>Certificato medico: deve essere rilasciato dal medico e poi caricato.</p>'
-                    : '<p>Scarica, compila online o a mano, firma e carica il documento.</p>';
-
-                return `
-                    <div class="doc-item">
-                        <h5>${escapeHtml(row.nome || 'Documento')}</h5>
-                        <p>${escapeHtml(row.descrizione || '')}</p>
-                        ${noteText}
-                        <div class="doc-actions">
-                            ${moduloButton}
-                            ${prefillButton}
-                        </div>
-                        <div class="doc-upload">
-                            <input id="${inputId}" type="file" accept=".pdf,.jpg,.jpeg,.png">
-                            <button
-                                class="btn btn-success btn-sm js-upload-doc-btn"
-                                type="button"
-                                data-type-id="${typeId}"
-                                data-type-name="${encodeURIComponent(row.nome || 'documento')}"
-                                data-input-id="${inputId}"
-                            >Carica firmato</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            list.querySelectorAll('.js-upload-doc-btn').forEach((button) => {
-                button.addEventListener('click', () => {
-                    uploadDocumentForType(
-                        Number(button.dataset.typeId || 0),
-                        button.dataset.inputId || '',
-                        decodeURIComponent(button.dataset.typeName || 'documento')
-                    );
-                });
-            });
-
-            list.querySelectorAll('.js-prefill-btn').forEach((button) => {
-                button.addEventListener('click', () => {
-                    downloadPrefilledDocument(
-                        Number(button.dataset.typeId || 0),
-                        decodeURIComponent(button.dataset.typeName || 'documento')
-                    );
-                });
-            });
-        }
-
-        async function uploadDocumentForType(typeId, inputId, typeName) {
-            if (!typeId || !inputId) {
-                showAlert('Tipo documento non valido.', 'error');
-                return;
-            }
-
-            const input = document.getElementById(inputId);
-            const file = input?.files?.[0];
-            if (!file) {
-                showAlert(`Seleziona prima il file per "${typeName}".`, 'error');
-                return;
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                showAlert('File troppo grande (max 5MB).', 'error');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('tipo_documento_id', String(typeId));
-            formData.append('file', file);
-
-            try {
-                const response = await fetch(`${API_URL}/documenti.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                });
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Errore upload documento');
-                }
-
-                showAlert(data.message || 'Documento caricato con successo.', 'ok');
-                input.value = '';
-                await loadDocuments();
-            } catch (error) {
-                showAlert(error.message || 'Errore upload documento', 'error');
-            }
-        }
-
-        async function loadDocuments() {
-            const data = await fetchJson(`${API_URL}/documenti.php`, { method: 'GET' });
-            const uploadedRows = Array.isArray(data.documenti) ? data.documenti : [];
-            const missingRows = Array.isArray(data.documenti_mancanti) ? data.documenti_mancanti : [];
-
-            document.getElementById('missingDocs').textContent = String(
-                Number(data.documenti_obbligatori_mancanti || missingRows.length || 0)
-            );
-
-            renderUploadedDocuments(uploadedRows);
-            renderMissingDocuments(missingRows);
-        }
-
-        function openPurchaseModal(id, name, price) {
-            selectedPackage = { id, name, price };
-            document.getElementById('purchaseTitle').textContent = `Finalizza in struttura: ${name}`;
-            document.getElementById('purchaseMeta').textContent = `Totale ${formatCurrency(price)}. Finalizzazione presso la segreteria.`;
-            document.getElementById('paymentNote').value = '';
-            document.getElementById('paymentHint').textContent = 'Con questa richiesta verranno avviate le verifiche amministrative.';
-            document.getElementById('purchaseOverlay').classList.add('open');
-        }
-
-        function closePurchaseModal() {
-            document.getElementById('purchaseOverlay').classList.remove('open');
-            selectedPackage = null;
-        }
-
-        async function confirmPurchase() {
-            if (!selectedPackage) return;
-
-            const note = document.getElementById('paymentNote').value.trim();
-            const button = document.getElementById('confirmPurchaseBtn');
-
-            button.disabled = true;
-            button.textContent = 'Elaborazione...';
-
-            try {
-                const payload = {
-                    pacchetto_id: selectedPackage.id,
-                    metodo_pagamento: 'contanti',
-                    note_pagamento: note
-                };
-
-                const data = await fetchJson(`${API_URL}/pacchetti.php`, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-
-                showAlert(data.message || 'Richiesta registrata.', 'ok');
-                closePurchaseModal();
-                await loadPurchases();
-            } catch (error) {
-                showAlert(error.message, 'error');
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Finalizza in struttura';
+                button.textContent = original;
             }
         }
 
@@ -1178,36 +693,38 @@ if (appIsLandingMode()) {
             window.location.href = '../login.php';
         }
 
-        document.getElementById('profileForm').addEventListener('submit', saveProfile);
+        function bindEvents() {
+            byId('logoutBtn').addEventListener('click', logout);
+            byId('openRequestModalBtn').addEventListener('click', openRequestModal);
+            byId('closeRequestModalBtn').addEventListener('click', closeRequestModal);
+            byId('profileRequestForm').addEventListener('submit', submitProfileRequest);
 
-        document.getElementById('purchaseOverlay').addEventListener('click', (event) => {
-            if (event.target.id === 'purchaseOverlay') {
-                closePurchaseModal();
-            }
-        });
+            byId('profileRequestModal').addEventListener('click', (event) => {
+                if (event.target.id === 'profileRequestModal') {
+                    closeRequestModal();
+                }
+            });
 
-        async function refreshRuntimeData() {
-            await Promise.allSettled([loadPurchases(), loadCheckins(), loadDocuments()]);
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeRequestModal();
+                }
+            });
         }
 
-        Promise.all([loadProfile(), loadPackages(), loadPurchases(), loadCheckins(), loadDocuments()])
-            .catch(error => showAlert(error.message, 'error'));
+        async function bootstrap() {
+            setHeaderUser();
+            bindEvents();
+            await Promise.all([loadProfile(), loadProfileRequests(), loadMyPurchases()]);
+        }
 
-        setInterval(() => {
-            refreshRuntimeData();
-        }, 30000);
-
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                refreshRuntimeData();
-            }
+        bootstrap().catch((error) => {
+            showAlert(error.message || 'Errore caricamento dashboard', 'error');
         });
 
-        window.openPurchaseModal = openPurchaseModal;
-        window.closePurchaseModal = closePurchaseModal;
-        window.confirmPurchase = confirmPurchase;
-        window.downloadQrPdf = downloadQrPdf;
-        window.logout = logout;
+        setInterval(() => {
+            Promise.allSettled([loadProfileRequests(), loadMyPurchases()]);
+        }, 45000);
     </script>
 </body>
 </html>

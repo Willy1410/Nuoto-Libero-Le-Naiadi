@@ -291,7 +291,6 @@ if (appIsLandingMode()) {
             <small id="userName">Utente</small>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" id="goCmsBtn" type="button">CMS Contenuti</button>
             <button class="btn btn-secondary" id="goCmsBuilderBtn" type="button">CMS Builder-ready</button>
             <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
         </div>
@@ -430,6 +429,23 @@ if (appIsLandingMode()) {
                             </tr>
                         </thead>
                         <tbody id="pendingPurchasesBody"></tbody>
+                    </table>
+                </div>
+
+                <h4 style="margin:12px 0 8px;">Richieste modifica dati profilo</h4>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Utente</th>
+                                <th>Email</th>
+                                <th>Modifiche richieste</th>
+                                <th>Stato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="profileRequestsBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -756,7 +772,6 @@ if (appIsLandingMode()) {
             theme: 'admin',
             title: 'Dashboard Admin',
             allowedRoles: ['admin'],
-            cmsUrl: 'dashboard-contenuti.php',
             cmsBuilderUrl: 'dashboard-cms-builder.php'
         };
     </script>

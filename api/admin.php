@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config.php';
 
 $staff = requireRole(3);
+ensureProfileUpdateRequestsTable();
 $method = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
 $action = (string)($_GET['action'] ?? 'users');
 $requestPath = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
@@ -19,6 +20,10 @@ if ($method === 'GET' && preg_match('#/admin/users/([a-zA-Z0-9\\-]{8,64})$#', $r
 
 if ($method === 'GET' && $action === 'users') {
     listUsers();
+} elseif ($method === 'GET' && $action === 'profile-update-requests') {
+    listProfileUpdateRequests();
+} elseif ($method === 'PATCH' && $action === 'review-profile-update-request') {
+    reviewProfileUpdateRequest($staff);
 } elseif ($method === 'GET' && $action === 'user-detail') {
     getUserDetail();
 } elseif ($method === 'POST' && $action === 'send-doc-reminder') {
@@ -33,6 +38,63 @@ if ($method === 'GET' && $action === 'users') {
     deleteUser($staff);
 } else {
     sendJson(400, ['success' => false, 'message' => 'Azione non valida']);
+}
+
+function ensureProfileUpdateRequestsTable(): void
+{
+    global $pdo;
+
+    static $bootstrapped = false;
+    if ($bootstrapped) {
+        return;
+    }
+    $bootstrapped = true;
+
+    try {
+        $exists = $pdo->query("SHOW TABLES LIKE 'profile_update_requests'");
+        if ($exists && $exists->fetch()) {
+            return;
+        }
+
+        $pdo->exec(
+            'CREATE TABLE profile_update_requests (
+                id CHAR(36) PRIMARY KEY,
+                user_id CHAR(36) NOT NULL,
+                status ENUM("pending","approved","rejected") NOT NULL DEFAULT "pending",
+                requested_changes_json LONGTEXT NOT NULL,
+                current_snapshot_json LONGTEXT NULL,
+                review_note TEXT NULL,
+                reviewed_by CHAR(36) NULL,
+                reviewed_at DATETIME NULL,
+                ip_address VARCHAR(45) NULL,
+                user_agent TEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT fk_profile_update_requests_user
+                    FOREIGN KEY (user_id) REFERENCES profili(id) ON DELETE CASCADE,
+                CONSTRAINT fk_profile_update_requests_reviewer
+                    FOREIGN KEY (reviewed_by) REFERENCES profili(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+
+        $pdo->exec('CREATE INDEX idx_profile_update_requests_user ON profile_update_requests(user_id)');
+        $pdo->exec('CREATE INDEX idx_profile_update_requests_status ON profile_update_requests(status)');
+        $pdo->exec('CREATE INDEX idx_profile_update_requests_created_at ON profile_update_requests(created_at)');
+    } catch (Throwable $e) {
+        error_log('ensureProfileUpdateRequestsTable(admin) error: ' . $e->getMessage());
+    }
+}
+
+function normalizeProfileFieldValue(string $field, string $value): string
+{
+    $clean = trim($value);
+    if ($field === 'email') {
+        return strtolower($clean);
+    }
+    if ($field === 'codice_fiscale') {
+        return strtoupper($clean);
+    }
+    return $clean;
 }
 
 function listUsers(): void
@@ -86,6 +148,255 @@ function listUsers(): void
     } catch (Throwable $e) {
         error_log('listUsers error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore caricamento utenti']);
+    }
+}
+
+function listProfileUpdateRequests(): void
+{
+    global $pdo;
+
+    $status = strtolower(sanitizeText((string)($_GET['status'] ?? ''), 20));
+    $limit = max(1, min(200, (int)($_GET['limit'] ?? 100)));
+
+    $where = '';
+    $params = [];
+    if (in_array($status, ['pending', 'approved', 'rejected'], true)) {
+        $where = 'WHERE r.status = ?';
+        $params[] = $status;
+    }
+
+    $sql = 'SELECT r.id, r.user_id, r.status, r.requested_changes_json, r.current_snapshot_json, r.review_note,
+                   r.created_at, r.reviewed_at,
+                   u.nome AS user_nome, u.cognome AS user_cognome, u.email AS user_email,
+                   rv.nome AS reviewer_nome, rv.cognome AS reviewer_cognome
+            FROM profile_update_requests r
+            JOIN profili u ON u.id = r.user_id
+            LEFT JOIN profili rv ON rv.id = r.reviewed_by
+            ' . $where . '
+            ORDER BY FIELD(r.status, "pending", "approved", "rejected"), r.created_at DESC
+            LIMIT ' . $limit;
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        $requests = [];
+        foreach ($rows as $row) {
+            $requests[] = [
+                'id' => (string)$row['id'],
+                'user_id' => (string)$row['user_id'],
+                'status' => (string)$row['status'],
+                'requested_changes' => json_decode((string)$row['requested_changes_json'], true) ?: [],
+                'current_snapshot' => json_decode((string)$row['current_snapshot_json'], true) ?: [],
+                'review_note' => (string)($row['review_note'] ?? ''),
+                'created_at' => $row['created_at'],
+                'reviewed_at' => $row['reviewed_at'],
+                'user_nome' => (string)($row['user_nome'] ?? ''),
+                'user_cognome' => (string)($row['user_cognome'] ?? ''),
+                'user_email' => (string)($row['user_email'] ?? ''),
+                'reviewer_nome' => (string)($row['reviewer_nome'] ?? ''),
+                'reviewer_cognome' => (string)($row['reviewer_cognome'] ?? ''),
+            ];
+        }
+
+        sendJson(200, ['success' => true, 'requests' => $requests]);
+    } catch (Throwable $e) {
+        error_log('listProfileUpdateRequests error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento richieste modifica dati']);
+    }
+}
+
+function reviewProfileUpdateRequest(array $staff): void
+{
+    global $pdo;
+
+    $requestId = sanitizeText((string)($_GET['id'] ?? ''), 36);
+    if ($requestId === '') {
+        sendJson(400, ['success' => false, 'message' => 'ID richiesta mancante']);
+    }
+
+    $data = getJsonInput();
+    $status = strtolower(sanitizeText((string)($data['status'] ?? ''), 20));
+    $reviewNote = sanitizeText((string)($data['review_note'] ?? ''), 2000);
+
+    if (!in_array($status, ['approved', 'rejected'], true)) {
+        sendJson(400, ['success' => false, 'message' => 'Stato revisione non valido']);
+    }
+
+    enforceRateLimit('admin-review-profile-request', 120, 900, getClientIp() . '|' . (string)$staff['user_id']);
+
+    try {
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare(
+            'SELECT r.*
+             FROM profile_update_requests r
+             WHERE r.id = ?
+             LIMIT 1
+             FOR UPDATE'
+        );
+        $stmt->execute([$requestId]);
+        $request = $stmt->fetch();
+
+        if (!$request) {
+            $pdo->rollBack();
+            sendJson(404, ['success' => false, 'message' => 'Richiesta non trovata']);
+        }
+
+        if ((string)$request['status'] !== 'pending') {
+            $pdo->rollBack();
+            sendJson(409, ['success' => false, 'message' => 'Richiesta gia revisionata']);
+        }
+
+        $targetUserId = (string)$request['user_id'];
+        if ($targetUserId === '') {
+            $pdo->rollBack();
+            sendJson(400, ['success' => false, 'message' => 'Utente richiesta non valido']);
+        }
+
+        if ($status === 'approved') {
+            $requestedChanges = json_decode((string)$request['requested_changes_json'], true);
+            if (!is_array($requestedChanges) || !$requestedChanges) {
+                $pdo->rollBack();
+                sendJson(400, ['success' => false, 'message' => 'Payload modifica non valido']);
+            }
+
+            $profileStmt = $pdo->prepare(
+                'SELECT id, email, nome, cognome, telefono, data_nascita, indirizzo, citta, cap, codice_fiscale
+                 FROM profili
+                 WHERE id = ?
+                 LIMIT 1
+                 FOR UPDATE'
+            );
+            $profileStmt->execute([$targetUserId]);
+            $profile = $profileStmt->fetch();
+            if (!$profile) {
+                $pdo->rollBack();
+                sendJson(404, ['success' => false, 'message' => 'Utente collegato alla richiesta non trovato']);
+            }
+
+            $fieldMap = [
+                'email' => 255,
+                'nome' => 100,
+                'cognome' => 100,
+                'telefono' => 30,
+                'data_nascita' => 10,
+                'indirizzo' => 255,
+                'citta' => 100,
+                'cap' => 10,
+                'codice_fiscale' => 16,
+            ];
+
+            $final = [];
+            foreach ($fieldMap as $field => $maxLen) {
+                $final[$field] = normalizeProfileFieldValue($field, (string)($profile[$field] ?? ''));
+            }
+
+            foreach ($requestedChanges as $field => $value) {
+                if (!array_key_exists($field, $fieldMap)) {
+                    continue;
+                }
+                $cleanValue = sanitizeText((string)$value, $fieldMap[$field]);
+                $final[$field] = normalizeProfileFieldValue($field, $cleanValue);
+            }
+
+            if ($final['email'] === '' || $final['nome'] === '' || $final['cognome'] === '') {
+                $pdo->rollBack();
+                sendJson(400, ['success' => false, 'message' => 'Nome, cognome ed email sono obbligatori']);
+            }
+            if (!validateEmail($final['email'])) {
+                $pdo->rollBack();
+                sendJson(400, ['success' => false, 'message' => 'Email non valida']);
+            }
+
+            if ($final['data_nascita'] !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $final['data_nascita'])) {
+                $pdo->rollBack();
+                sendJson(400, ['success' => false, 'message' => 'Data di nascita non valida']);
+            }
+
+            if ($final['codice_fiscale'] !== '' && !validateCodiceFiscale($final['codice_fiscale'])) {
+                $pdo->rollBack();
+                sendJson(400, ['success' => false, 'message' => 'Codice fiscale non valido']);
+            }
+
+            $emailStmt = $pdo->prepare('SELECT id FROM profili WHERE email = ? AND id <> ? LIMIT 1');
+            $emailStmt->execute([$final['email'], $targetUserId]);
+            if ($emailStmt->fetch()) {
+                $pdo->rollBack();
+                sendJson(409, ['success' => false, 'message' => 'Email gia in uso']);
+            }
+
+            if ($final['codice_fiscale'] !== '') {
+                $cfStmt = $pdo->prepare('SELECT id FROM profili WHERE codice_fiscale = ? AND id <> ? LIMIT 1');
+                $cfStmt->execute([$final['codice_fiscale'], $targetUserId]);
+                if ($cfStmt->fetch()) {
+                    $pdo->rollBack();
+                    sendJson(409, ['success' => false, 'message' => 'Codice fiscale gia in uso']);
+                }
+            }
+
+            $updateProfileStmt = $pdo->prepare(
+                'UPDATE profili
+                 SET email = ?,
+                     nome = ?,
+                     cognome = ?,
+                     telefono = NULLIF(?, ""),
+                     data_nascita = NULLIF(?, ""),
+                     indirizzo = NULLIF(?, ""),
+                     citta = NULLIF(?, ""),
+                     cap = NULLIF(?, ""),
+                     codice_fiscale = NULLIF(?, "")
+                 WHERE id = ?'
+            );
+            $updateProfileStmt->execute([
+                $final['email'],
+                $final['nome'],
+                $final['cognome'],
+                $final['telefono'],
+                $final['data_nascita'],
+                $final['indirizzo'],
+                $final['citta'],
+                $final['cap'],
+                $final['codice_fiscale'],
+                $targetUserId,
+            ]);
+        }
+
+        $reviewStmt = $pdo->prepare(
+            'UPDATE profile_update_requests
+             SET status = ?,
+                 review_note = NULLIF(?, ""),
+                 reviewed_by = ?,
+                 reviewed_at = NOW()
+             WHERE id = ?'
+        );
+        $reviewStmt->execute([$status, $reviewNote, $staff['user_id'], $requestId]);
+
+        $pdo->commit();
+
+        $logAction = $status === 'approved' ? 'approvazione_modifica_dati' : 'rifiuto_modifica_dati';
+        $logMessage = $status === 'approved'
+            ? 'Richiesta modifica dati approvata'
+            : 'Richiesta modifica dati rifiutata';
+
+        logActivity((string)$staff['user_id'], $logAction, $logMessage, 'profile_update_requests', $requestId);
+        logActivity($targetUserId, $logAction, $logMessage, 'profile_update_requests', $requestId);
+
+        sendJson(200, [
+            'success' => true,
+            'message' => $status === 'approved'
+                ? 'Richiesta approvata e profilo aggiornato'
+                : 'Richiesta rifiutata',
+            'request_id' => $requestId,
+            'status' => $status,
+        ]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('reviewProfileUpdateRequest error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore revisione richiesta modifica dati']);
     }
 }
 
@@ -154,8 +465,26 @@ function getUserDetail(): void
             ];
         }
 
+        $hasFileMime = false;
+        $hasFileSize = false;
+        try {
+            $colMime = $pdo->query("SHOW COLUMNS FROM documenti_utente LIKE 'file_mime'");
+            $hasFileMime = (bool)($colMime && $colMime->fetch());
+        } catch (Throwable $e) {
+            $hasFileMime = false;
+        }
+        try {
+            $colSize = $pdo->query("SHOW COLUMNS FROM documenti_utente LIKE 'file_size'");
+            $hasFileSize = (bool)($colSize && $colSize->fetch());
+        } catch (Throwable $e) {
+            $hasFileSize = false;
+        }
+
+        $fileMimeSelect = $hasFileMime ? 'd.file_mime' : 'NULL AS file_mime';
+        $fileSizeSelect = $hasFileSize ? 'd.file_size' : 'NULL AS file_size';
+
         $stmt = $pdo->prepare(
-            'SELECT d.id, d.tipo_documento_id, d.file_name, d.file_url, d.file_mime, d.file_size, d.stato,
+            'SELECT d.id, d.tipo_documento_id, d.file_name, d.file_url, ' . $fileMimeSelect . ', ' . $fileSizeSelect . ', d.stato,
                     d.note_revisione, d.data_caricamento, d.data_revisione, d.scadenza,
                     t.nome AS tipo_nome, t.obbligatorio
              FROM documenti_utente d
@@ -178,6 +507,35 @@ function getUserDetail(): void
             }
         }
 
+        $profileUpdateRequests = [];
+        $profileUpdatesPending = 0;
+        try {
+            $reqStmt = $pdo->prepare(
+                'SELECT id, status, requested_changes_json, review_note, created_at, reviewed_at
+                 FROM profile_update_requests
+                 WHERE user_id = ?
+                 ORDER BY created_at DESC
+                 LIMIT 20'
+            );
+            $reqStmt->execute([$userId]);
+            foreach ($reqStmt->fetchAll() as $reqRow) {
+                if ((string)$reqRow['status'] === 'pending') {
+                    $profileUpdatesPending++;
+                }
+                $profileUpdateRequests[] = [
+                    'id' => (string)$reqRow['id'],
+                    'status' => (string)$reqRow['status'],
+                    'requested_changes' => json_decode((string)$reqRow['requested_changes_json'], true) ?: [],
+                    'review_note' => (string)($reqRow['review_note'] ?? ''),
+                    'created_at' => $reqRow['created_at'],
+                    'reviewed_at' => $reqRow['reviewed_at'],
+                ];
+            }
+        } catch (Throwable $e) {
+            $profileUpdateRequests = [];
+            $profileUpdatesPending = 0;
+        }
+
         sendJson(200, [
             'success' => true,
             'user' => $user,
@@ -186,6 +544,7 @@ function getUserDetail(): void
             'pagamenti' => $payments,
             'documenti' => $documents,
             'documenti_mancanti' => $missingDocs,
+            'profile_update_requests' => $profileUpdateRequests,
             'summary' => [
                 'totale_pacchetti' => count($purchases),
                 'totale_checkin' => count($checkins),
@@ -193,6 +552,7 @@ function getUserDetail(): void
                 'documenti_pending' => $pendingDocs,
                 'documenti_approved' => $approvedDocs,
                 'documenti_mancanti' => count($missingDocs),
+                'profile_updates_pending' => $profileUpdatesPending,
             ],
         ]);
     } catch (Throwable $e) {

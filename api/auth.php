@@ -9,6 +9,7 @@ require_once __DIR__ . '/config.php';
 
 $action = (string)($_GET['action'] ?? '');
 ensureAuthSchemaColumns();
+ensureProfileUpdateRequestsTable();
 
 switch ($action) {
     case 'register':
@@ -22,6 +23,12 @@ switch ($action) {
         break;
     case 'me':
         handleMe();
+        break;
+    case 'profile-update-request':
+        handleProfileUpdateRequest();
+        break;
+    case 'profile-update-requests':
+        handleProfileUpdateRequests();
         break;
     case 'update-profile':
         handleUpdateProfile();
@@ -264,9 +271,20 @@ function handleMe(): void
     $currentUser = requireAuth();
 
     try {
+        $statoSelect = '"approved" AS stato_iscrizione';
+        try {
+            $hasStato = $pdo->query("SHOW COLUMNS FROM profili LIKE 'stato_iscrizione'");
+            if ($hasStato && $hasStato->fetch()) {
+                $statoSelect = 'p.stato_iscrizione';
+            }
+        } catch (Throwable $e) {
+            $statoSelect = '"approved" AS stato_iscrizione';
+        }
+
         $stmt = $pdo->prepare(
             'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
-                    p.codice_fiscale, p.attivo, p.email_verificata, p.force_password_change, p.ultimo_accesso,
+                    p.codice_fiscale, p.attivo, p.email_verificata, ' . $statoSelect . ',
+                    p.force_password_change, p.ultimo_accesso,
                     r.nome AS ruolo_nome, r.livello AS ruolo_livello
              FROM profili p
              JOIN ruoli r ON p.ruolo_id = r.id
@@ -310,6 +328,274 @@ function ensureAuthSchemaColumns(): void
     }
 }
 
+function ensureProfileUpdateRequestsTable(): void
+{
+    global $pdo;
+
+    static $bootstrapped = false;
+    if ($bootstrapped) {
+        return;
+    }
+    $bootstrapped = true;
+
+    try {
+        $exists = $pdo->query("SHOW TABLES LIKE 'profile_update_requests'");
+        if ($exists && $exists->fetch()) {
+            return;
+        }
+
+        $pdo->exec(
+            'CREATE TABLE profile_update_requests (
+                id CHAR(36) PRIMARY KEY,
+                user_id CHAR(36) NOT NULL,
+                status ENUM("pending","approved","rejected") NOT NULL DEFAULT "pending",
+                requested_changes_json LONGTEXT NOT NULL,
+                current_snapshot_json LONGTEXT NULL,
+                review_note TEXT NULL,
+                reviewed_by CHAR(36) NULL,
+                reviewed_at DATETIME NULL,
+                ip_address VARCHAR(45) NULL,
+                user_agent TEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT fk_profile_update_requests_user
+                    FOREIGN KEY (user_id) REFERENCES profili(id) ON DELETE CASCADE,
+                CONSTRAINT fk_profile_update_requests_reviewer
+                    FOREIGN KEY (reviewed_by) REFERENCES profili(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+
+        $pdo->exec('CREATE INDEX idx_profile_update_requests_user ON profile_update_requests(user_id)');
+        $pdo->exec('CREATE INDEX idx_profile_update_requests_status ON profile_update_requests(status)');
+        $pdo->exec('CREATE INDEX idx_profile_update_requests_created_at ON profile_update_requests(created_at)');
+    } catch (Throwable $e) {
+        error_log('ensureProfileUpdateRequestsTable error: ' . $e->getMessage());
+    }
+}
+
+function getProfileUpdatableFieldsMap(): array
+{
+    return [
+        'email' => ['max' => 255, 'required' => true],
+        'nome' => ['max' => 100, 'required' => true],
+        'cognome' => ['max' => 100, 'required' => true],
+        'telefono' => ['max' => 30, 'required' => false],
+        'data_nascita' => ['max' => 10, 'required' => false],
+        'indirizzo' => ['max' => 255, 'required' => false],
+        'citta' => ['max' => 100, 'required' => false],
+        'cap' => ['max' => 10, 'required' => false],
+        'codice_fiscale' => ['max' => 16, 'required' => false],
+    ];
+}
+
+function normalizeProfileFieldValue(string $field, string $value): string
+{
+    $clean = trim($value);
+    if ($field === 'email') {
+        return strtolower($clean);
+    }
+    if ($field === 'codice_fiscale') {
+        return strtoupper($clean);
+    }
+    return $clean;
+}
+
+function handleProfileUpdateRequest(): void
+{
+    global $pdo;
+
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($method !== 'POST') {
+        sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
+    }
+
+    $currentUser = requireAuth();
+    enforceRateLimit('auth-profile-update-request', 10, 900, getClientIp() . '|' . (string)$currentUser['user_id']);
+
+    $data = getJsonInput();
+    $fieldsMap = getProfileUpdatableFieldsMap();
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
+                    p.codice_fiscale, r.nome AS ruolo_nome, r.livello AS ruolo_livello
+             FROM profili p
+             JOIN ruoli r ON r.id = p.ruolo_id
+             WHERE p.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $existing = $stmt->fetch();
+        if (!$existing) {
+            sendJson(404, ['success' => false, 'message' => 'Utente non trovato']);
+        }
+
+        if ((int)($existing['ruolo_livello'] ?? 0) > 1) {
+            sendJson(403, ['success' => false, 'message' => 'Richiesta non consentita per questo ruolo']);
+        }
+
+        $pendingStmt = $pdo->prepare(
+            'SELECT id
+             FROM profile_update_requests
+             WHERE user_id = ? AND status = "pending"
+             ORDER BY created_at DESC
+             LIMIT 1'
+        );
+        $pendingStmt->execute([$currentUser['user_id']]);
+        $pending = $pendingStmt->fetch();
+        if ($pending) {
+            sendJson(409, [
+                'success' => false,
+                'message' => 'Hai gia una richiesta di modifica dati in attesa di approvazione',
+                'request_id' => $pending['id'],
+            ]);
+        }
+
+        $currentSnapshot = [];
+        $requestedChanges = [];
+        $finalValues = [];
+
+        foreach ($fieldsMap as $field => $config) {
+            $existingValue = normalizeProfileFieldValue($field, (string)($existing[$field] ?? ''));
+            $currentSnapshot[$field] = $existingValue;
+            $finalValues[$field] = $existingValue;
+
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+
+            $incoming = sanitizeText((string)$data[$field], (int)$config['max']);
+            $incoming = normalizeProfileFieldValue($field, $incoming);
+            $finalValues[$field] = $incoming;
+
+            if ($incoming !== $existingValue) {
+                $requestedChanges[$field] = $incoming;
+            }
+        }
+
+        if (!$requestedChanges) {
+            sendJson(400, ['success' => false, 'message' => 'Nessuna modifica rilevata']);
+        }
+
+        foreach ($fieldsMap as $field => $config) {
+            if (!empty($config['required']) && trim((string)($finalValues[$field] ?? '')) === '') {
+                sendJson(400, ['success' => false, 'message' => 'I campi nome, cognome ed email sono obbligatori']);
+            }
+        }
+
+        if (!validateEmail((string)$finalValues['email'])) {
+            sendJson(400, ['success' => false, 'message' => 'Email non valida']);
+        }
+
+        $dataNascita = (string)($finalValues['data_nascita'] ?? '');
+        if ($dataNascita !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataNascita)) {
+            sendJson(400, ['success' => false, 'message' => 'Data di nascita non valida']);
+        }
+
+        $codiceFiscale = (string)($finalValues['codice_fiscale'] ?? '');
+        if ($codiceFiscale !== '' && !validateCodiceFiscale($codiceFiscale)) {
+            sendJson(400, ['success' => false, 'message' => 'Codice fiscale non valido']);
+        }
+
+        if (array_key_exists('email', $requestedChanges)) {
+            $stmt = $pdo->prepare('SELECT id FROM profili WHERE email = ? AND id <> ? LIMIT 1');
+            $stmt->execute([(string)$finalValues['email'], $currentUser['user_id']]);
+            if ($stmt->fetch()) {
+                sendJson(409, ['success' => false, 'message' => 'Email gia in uso']);
+            }
+        }
+
+        if (array_key_exists('codice_fiscale', $requestedChanges) && $codiceFiscale !== '') {
+            $stmt = $pdo->prepare('SELECT id FROM profili WHERE codice_fiscale = ? AND id <> ? LIMIT 1');
+            $stmt->execute([$codiceFiscale, $currentUser['user_id']]);
+            if ($stmt->fetch()) {
+                sendJson(409, ['success' => false, 'message' => 'Codice fiscale gia in uso']);
+            }
+        }
+
+        $requestId = generateUuid();
+        $insert = $pdo->prepare(
+            'INSERT INTO profile_update_requests
+             (id, user_id, status, requested_changes_json, current_snapshot_json, ip_address, user_agent)
+             VALUES (?, ?, "pending", ?, ?, ?, ?)'
+        );
+        $insert->execute([
+            $requestId,
+            $currentUser['user_id'],
+            json_encode($requestedChanges, JSON_UNESCAPED_UNICODE),
+            json_encode($currentSnapshot, JSON_UNESCAPED_UNICODE),
+            (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+            (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
+        ]);
+
+        logActivity(
+            (string)$currentUser['user_id'],
+            'richiesta_modifica_dati',
+            'Richiesta modifica dati profilo inviata',
+            'profile_update_requests',
+            $requestId
+        );
+
+        sendJson(201, [
+            'success' => true,
+            'message' => 'Richiesta inviata. La segreteria la esaminera a breve.',
+            'request' => [
+                'id' => $requestId,
+                'status' => 'pending',
+                'changes' => $requestedChanges,
+            ],
+        ]);
+    } catch (Throwable $e) {
+        error_log('handleProfileUpdateRequest error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore invio richiesta modifica dati']);
+    }
+}
+
+function handleProfileUpdateRequests(): void
+{
+    global $pdo;
+
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($method !== 'GET') {
+        sendJson(405, ['success' => false, 'message' => 'Metodo non consentito']);
+    }
+
+    $currentUser = requireAuth();
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT id, status, requested_changes_json, current_snapshot_json, review_note, reviewed_at, created_at
+             FROM profile_update_requests
+             WHERE user_id = ?
+             ORDER BY created_at DESC
+             LIMIT 20'
+        );
+        $stmt->execute([$currentUser['user_id']]);
+        $rows = $stmt->fetchAll();
+
+        $requests = [];
+        foreach ($rows as $row) {
+            $requests[] = [
+                'id' => (string)$row['id'],
+                'status' => (string)$row['status'],
+                'changes' => json_decode((string)$row['requested_changes_json'], true) ?: [],
+                'snapshot' => json_decode((string)$row['current_snapshot_json'], true) ?: [],
+                'review_note' => (string)($row['review_note'] ?? ''),
+                'reviewed_at' => $row['reviewed_at'],
+                'created_at' => $row['created_at'],
+            ];
+        }
+
+        sendJson(200, [
+            'success' => true,
+            'requests' => $requests,
+        ]);
+    } catch (Throwable $e) {
+        error_log('handleProfileUpdateRequests error: ' . $e->getMessage());
+        sendJson(500, ['success' => false, 'message' => 'Errore caricamento richieste modifica dati']);
+    }
+}
+
 function handleUpdateProfile(): void
 {
     global $pdo;
@@ -337,6 +623,13 @@ function handleUpdateProfile(): void
         $existing = $stmt->fetch();
         if (!$existing) {
             sendJson(404, ['success' => false, 'message' => 'Utente non trovato']);
+        }
+
+        if ((int)($existing['ruolo_livello'] ?? 0) <= 1) {
+            sendJson(403, [
+                'success' => false,
+                'message' => 'Per il ruolo utente e obbligatoria la richiesta modifica dati con approvazione staff',
+            ]);
         }
 
         $email = array_key_exists('email', $data)

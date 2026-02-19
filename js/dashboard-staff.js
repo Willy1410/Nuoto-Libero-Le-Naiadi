@@ -92,6 +92,31 @@
         return 'Dataset';
     }
 
+    function getProfileFieldLabel(field) {
+        const map = {
+            email: 'Email',
+            nome: 'Nome',
+            cognome: 'Cognome',
+            telefono: 'Telefono',
+            data_nascita: 'Data nascita',
+            indirizzo: 'Indirizzo',
+            citta: 'Citta',
+            cap: 'CAP',
+            codice_fiscale: 'Codice fiscale',
+        };
+        return map[field] || field;
+    }
+
+    function formatProfileChanges(changes) {
+        if (!changes || typeof changes !== 'object') {
+            return '-';
+        }
+        const entries = Object.keys(changes)
+            .filter((key) => key && Object.prototype.hasOwnProperty.call(changes, key))
+            .map((key) => `${getProfileFieldLabel(key)}: ${String(changes[key] ?? '-')}`);
+        return entries.length ? entries.join(' | ') : '-';
+    }
+
     function setStatus(message, type) {
         const box = el('globalStatus');
         if (!box) return;
@@ -286,7 +311,7 @@
                     <td>${escapeHtml(String(row.totale_checkin || 0))}</td>
                     <td>${escapeHtml(formatDate(row.created_at))}</td>
                     <td>
-                        <button class="btn btn-primary" data-action="view-user" data-id="${escapeHtml(row.id)}" type="button">Apri</button>
+                        <button class="btn btn-primary" data-action="view-user" data-user-id="${escapeHtml(row.id)}" type="button">Apri</button>
                         <button class="btn ${row.attivo == 1 ? 'btn-warn' : 'btn-ok'}" data-action="toggle-user" data-id="${escapeHtml(row.id)}" type="button">${row.attivo == 1 ? 'Disattiva' : 'Attiva'}</button>
                     </td>
                 </tr>
@@ -315,6 +340,37 @@
                 <td>${escapeHtml(row.riferimento_pagamento || '-')}</td>
                 <td><code>${escapeHtml(row.qr_code || '-')}</code></td>
                 <td><button class="btn btn-ok" data-action="confirm-purchase" data-id="${escapeHtml(row.id)}" type="button">Conferma pratica</button></td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadProfileRequests() {
+        const body = el('profileRequestsBody');
+        if (!body) return;
+
+        const data = await apiJson('admin.php?action=profile-update-requests&status=pending&limit=200', { method: 'GET' });
+        const rows = Array.isArray(data.requests) ? data.requests : [];
+
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="6">Nessuna richiesta modifica dati pending</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map((row) => `
+            <tr>
+                <td>${escapeHtml(formatDateTime(row.created_at))}</td>
+                <td>
+                    <button class="btn btn-primary" data-action="view-user" data-user-id="${escapeHtml(row.user_id)}" type="button">
+                        ${escapeHtml(`${row.user_nome || ''} ${row.user_cognome || ''}`.trim())}
+                    </button>
+                </td>
+                <td>${escapeHtml(row.user_email || '-')}</td>
+                <td>${escapeHtml(formatProfileChanges(row.requested_changes || {}))}</td>
+                <td><span class="badge badge-warn">pending</span></td>
+                <td>
+                    <button class="btn btn-ok" data-action="approve-profile-request" data-id="${escapeHtml(row.id)}" type="button">Approva</button>
+                    <button class="btn btn-danger" data-action="reject-profile-request" data-id="${escapeHtml(row.id)}" type="button">Rifiuta</button>
+                </td>
             </tr>
         `).join('');
     }
@@ -419,7 +475,7 @@
             return;
         }
         if (state.activeTab === 'purchases') {
-            await Promise.all([loadPendingEnrollments(), loadPendingPurchases()]);
+            await Promise.all([loadPendingEnrollments(), loadPendingPurchases(), loadProfileRequests()]);
             return;
         }
         if (state.activeTab === 'documents') {
@@ -701,6 +757,7 @@
                 <p><strong>Pratiche:</strong> ${escapeHtml(String(summary.totale_pagamenti || purchases.length || 0))}</p>
                 <p><strong>Documenti pending:</strong> ${escapeHtml(String(summary.documenti_pending || 0))}</p>
                 <p><strong>Documenti mancanti:</strong> ${escapeHtml(String(summary.documenti_mancanti || missing.length || 0))}</p>
+                <p><strong>Richieste modifica pending:</strong> ${escapeHtml(String(summary.profile_updates_pending || 0))}</p>
                 <p><strong>Registrazione:</strong> ${escapeHtml(formatDate(userInfo.created_at))}</p>
                 <p><strong>Ultimo accesso:</strong> ${escapeHtml(formatDateTime(userInfo.ultimo_accesso))}</p>
             `;
@@ -961,6 +1018,34 @@
         await Promise.all([loadStats(), loadPendingEnrollments(), loadPendingPurchases(), loadUsers()]);
     }
 
+    async function handleReviewProfileRequest(requestId, approve) {
+        if (!requestId) return;
+
+        let note = '';
+        if (!approve) {
+            const promptValue = await modalPrompt('Motivo rifiuto richiesta (facoltativo):', {
+                title: 'Rifiuta richiesta modifica dati',
+                defaultValue: '',
+                placeholder: 'Inserisci eventuale motivazione'
+            });
+            note = promptValue === null ? '' : promptValue;
+        }
+
+        const data = await apiJson(`admin.php?action=review-profile-update-request&id=${encodeURIComponent(requestId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                status: approve ? 'approved' : 'rejected',
+                review_note: note,
+            }),
+        });
+
+        setStatus(data.message || 'Richiesta modifica dati aggiornata', 'ok');
+        await Promise.all([loadUsers(), loadProfileRequests()]);
+        if (state.selectedUserId) {
+            await openUserDetail(state.selectedUserId);
+        }
+    }
+
     async function handleTogglePackage(packageId) {
         if (!packageId) return;
         const data = await apiJson(`pacchetti.php?action=admin-toggle-package&id=${encodeURIComponent(packageId)}`, {
@@ -1113,12 +1198,6 @@
             el('logoutBtn').addEventListener('click', () => {
                 localStorage.clear();
                 window.location.href = '../login.php';
-            });
-        }
-
-        if (el('goCmsBtn')) {
-            el('goCmsBtn').addEventListener('click', () => {
-                window.location.href = config.cmsUrl || 'dashboard-contenuti.php';
             });
         }
 
@@ -1353,6 +1432,16 @@
 
             if (action === 'reject-enrollment') {
                 handleReviewEnrollment(id, false).catch((error) => setStatus(error.message, 'error'));
+                return;
+            }
+
+            if (action === 'approve-profile-request') {
+                handleReviewProfileRequest(id, true).catch((error) => setStatus(error.message, 'error'));
+                return;
+            }
+
+            if (action === 'reject-profile-request') {
+                handleReviewProfileRequest(id, false).catch((error) => setStatus(error.message, 'error'));
                 return;
             }
 

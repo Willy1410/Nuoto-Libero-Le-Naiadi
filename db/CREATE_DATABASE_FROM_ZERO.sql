@@ -205,7 +205,31 @@ CREATE INDEX idx_activity_user ON activity_log(user_id);
 CREATE INDEX idx_activity_timestamp ON activity_log(timestamp);
 
 -- =====================================================
--- 9) TOKEN RESET PASSWORD
+-- 9) RICHIESTE MODIFICA PROFILO
+-- =====================================================
+CREATE TABLE profile_update_requests (
+  id CHAR(36) PRIMARY KEY,
+  user_id CHAR(36) NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  requested_changes_json LONGTEXT NOT NULL,
+  current_snapshot_json LONGTEXT NULL,
+  review_note TEXT NULL,
+  reviewed_by CHAR(36) NULL,
+  reviewed_at DATETIME NULL,
+  ip_address VARCHAR(45) NULL,
+  user_agent TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_profile_update_requests_user FOREIGN KEY (user_id) REFERENCES profili(id) ON DELETE CASCADE,
+  CONSTRAINT fk_profile_update_requests_reviewer FOREIGN KEY (reviewed_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_profile_update_requests_user ON profile_update_requests(user_id);
+CREATE INDEX idx_profile_update_requests_status ON profile_update_requests(status);
+CREATE INDEX idx_profile_update_requests_created_at ON profile_update_requests(created_at);
+
+-- =====================================================
+-- 10) TOKEN RESET PASSWORD
 -- =====================================================
 CREATE TABLE password_reset_tokens (
   id CHAR(36) PRIMARY KEY,
@@ -223,7 +247,7 @@ CREATE INDEX idx_reset_user ON password_reset_tokens(user_id);
 CREATE INDEX idx_reset_expires ON password_reset_tokens(expires_at);
 
 -- =====================================================
--- 10) LOG NOTIFICHE EMAIL
+-- 11) LOG NOTIFICHE EMAIL
 -- =====================================================
 CREATE TABLE notifiche_email (
   id CHAR(36) PRIMARY KEY,
@@ -235,7 +259,7 @@ CREATE TABLE notifiche_email (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 11) CONTENUTI CMS (supporto)
+-- 12) CONTENUTI CMS (supporto)
 -- =====================================================
 CREATE TABLE contenuti_sito (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -252,7 +276,7 @@ CREATE TABLE contenuti_sito (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 12) GALLERY (supporto)
+-- 13) GALLERY (supporto)
 -- =====================================================
 CREATE TABLE gallery (
   id CHAR(36) PRIMARY KEY,
@@ -271,7 +295,7 @@ CREATE TABLE gallery (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 13) MODULI SCARICABILI CMS
+-- 14) MODULI SCARICABILI CMS
 -- =====================================================
 CREATE TABLE moduli (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
