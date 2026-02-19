@@ -19,6 +19,66 @@ if (!function_exists('appIsLandingMode')) {
     }
 }
 
+if (!function_exists('appLandingStaffBypassCookieName')) {
+    function appLandingStaffBypassCookieName(): string
+    {
+        return 'nl_staff_access';
+    }
+}
+
+if (!function_exists('appLandingStaffBypassCookieOptions')) {
+    function appLandingStaffBypassCookieOptions(int $expiresAt): array
+    {
+        return [
+            'expires' => $expiresAt,
+            'path' => '/',
+            'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ];
+    }
+}
+
+if (!function_exists('appGrantLandingStaffBypass')) {
+    function appGrantLandingStaffBypass(int $ttlSeconds = 1800): void
+    {
+        $expiresAt = time() + max(60, $ttlSeconds);
+        $name = appLandingStaffBypassCookieName();
+        if (!headers_sent()) {
+            setcookie($name, '1', appLandingStaffBypassCookieOptions($expiresAt));
+        }
+        $_COOKIE[$name] = '1';
+    }
+}
+
+if (!function_exists('appClearLandingStaffBypass')) {
+    function appClearLandingStaffBypass(): void
+    {
+        $name = appLandingStaffBypassCookieName();
+        if (!headers_sent()) {
+            setcookie($name, '', appLandingStaffBypassCookieOptions(time() - 3600));
+        }
+        unset($_COOKIE[$name]);
+    }
+}
+
+if (!function_exists('appLandingStaffBypassActive')) {
+    function appLandingStaffBypassActive(): bool
+    {
+        if (!appIsLandingMode()) {
+            return false;
+        }
+
+        $requested = (string)($_GET['staff_access'] ?? '') === '1';
+        if ($requested) {
+            appGrantLandingStaffBypass();
+            return true;
+        }
+
+        return (string)($_COOKIE[appLandingStaffBypassCookieName()] ?? '') === '1';
+    }
+}
+
 if (!function_exists('appBaseUrl')) {
     function appBaseUrl(): string
     {

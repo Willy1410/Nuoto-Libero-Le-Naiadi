@@ -329,6 +329,7 @@ $currentBlock = $demoBlocks[$demo];
             <a href="landing.php">Torna alla home</a>
             <a href="landing.php#landingContactForm">Richiedi contatto</a>
             <a href="landing-privacy.php">Privacy vetrina</a>
+            <a href="login.php?staff_access=1">Accesso staff</a>
         </div>
 
         <nav class="switcher" aria-label="Selettore pannelli demo">
@@ -384,4 +385,3 @@ $currentBlock = $demoBlocks[$demo];
 </script>
 </body>
 </html>
-

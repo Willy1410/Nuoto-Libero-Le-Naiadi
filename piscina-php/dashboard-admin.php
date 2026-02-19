@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-if (appIsLandingMode()) {
+if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     header('Location: ../area-riservata.php', true, 302);
     exit;
 }

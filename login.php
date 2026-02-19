@@ -5,7 +5,11 @@ require_once __DIR__ . '/bootstrap.php';
 
 $homeHref = 'landing.php';
 
-if (appIsLandingMode()) {
+if ((string)($_GET['clear_staff_access'] ?? '') === '1') {
+    appClearLandingStaffBypass();
+}
+
+if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     header('Location: area-riservata.php', true, 302);
     exit;
 }
@@ -95,8 +99,9 @@ if (appIsLandingMode()) {
         </div>
     </div>
     <script src="js/ui-modal.js"></script>
-    <script>
+<script>
         const API_URL = 'api';
+        const LANDING_STAFF_ONLY = <?= appIsLandingMode() ? 'true' : 'false'; ?>;
         const ROLE_REDIRECTS = {
             admin: 'piscina-php/dashboard-admin.php',
             ufficio: 'piscina-php/dashboard-ufficio.php',
@@ -171,6 +176,12 @@ if (appIsLandingMode()) {
 
                 if (!response.ok || !data.success) {
                     throw new Error(data.message || 'Credenziali non valide');
+                }
+
+                const roleName = String(data?.user?.ruolo || '').toLowerCase();
+                const isStaffRole = roleName === 'admin' || roleName === 'ufficio' || roleName === 'segreteria';
+                if (LANDING_STAFF_ONLY && !isStaffRole) {
+                    throw new Error('In modalita landing l\'accesso reale e riservato a admin/ufficio.');
                 }
 
                 localStorage.setItem('token', data.token);

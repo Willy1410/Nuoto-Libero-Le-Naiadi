@@ -387,7 +387,7 @@
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         sessionStorage.clear();
-        window.location.href = '../login.php';
+        window.location.href = '../login.php?clear_staff_access=1';
     }
 
     function openModal(id) {
@@ -1544,7 +1544,7 @@
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     sessionStorage.clear();
-                    window.location.href = '../login.php';
+                    window.location.href = '../login.php?clear_staff_access=1';
                 });
             });
         }
