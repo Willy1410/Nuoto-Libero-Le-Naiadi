@@ -79,7 +79,7 @@ INSERT INTO tipi_documento (nome, descrizione, obbligatorio, template_url, ordin
   ('Modulo Iscrizione', 'Modulo compilato e firmato', 1, '/assets/modulo-iscrizione.html', 1),
   ('Certificato Medico', 'Certificato medico valido', 1, '/assets/regolamento-piscina.html', 2),
   ('Regolamento Interno', 'Regolamento accettato', 1, '/assets/regolamento-piscina.html', 3),
-  ('Privacy GDPR', 'Consenso privacy', 1, '/privacy.html', 4),
+  ('Privacy GDPR', 'Consenso privacy', 1, '/privacy.php', 4),
   ('Documento Identita', 'Documento identita valido', 1, NULL, 5);
 
 -- =====================================================
@@ -359,3 +359,4 @@ UNION ALL SELECT 'acquisti', COUNT(*) FROM acquisti
 UNION ALL SELECT 'check_ins', COUNT(*) FROM check_ins
 UNION ALL SELECT 'documenti_utente', COUNT(*) FROM documenti_utente
 UNION ALL SELECT 'moduli', COUNT(*) FROM moduli;
+

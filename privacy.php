@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Privacy policy per iscrizione e gestione utenti nuoto libero Gli Squaletti.">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="/privacy.php">
+    <title>Privacy Policy - Gli Squaletti</title>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-wrapper">
+                    <a href="index.php" class="logo">
+                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <span>Gli Squaletti</span>
+                    </a>
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
+                        <li><a href="moduli.php">Moduli</a></li>
+                        <li><a href="pacchetti.php">Pacchetti Ingressi</a></li>
+                        <li><a href="contatti.php">Contatti</a></li>
+                    </ul>
+                    <a href="pacchetti.php" class="btn btn-primary btn-header">Richiedi Iscrizione</a>
+                    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <section class="page-hero">
+        <div class="container">
+            <h1><i class="fas fa-shield-alt"></i> Privacy Policy</h1>
+            <p>Informativa sul trattamento dei dati personali</p>
+        </div>
+    </section>
+
+    <section class="legal-content">
+        <div class="container">
+            <div class="legal-box">
+                <p><em>Ultimo aggiornamento: 18/02/2026</em></p>
+
+                <h2>1. Titolare del trattamento</h2>
+                <p>Gli Squaletti è titolare del trattamento dei dati personali raccolti tramite sito web, area riservata e attività amministrative correlate all'iscrizione.</p>
+
+                <h2>2. Dati trattati</h2>
+                <ul>
+                    <li>Dati anagrafici e di contatto (nome, cognome, email, telefono, indirizzo).</li>
+                    <li>Dati amministrativi e documentali necessari all'iscrizione.</li>
+                    <li>Dati di utilizzo servizi (ingressi, stato pacchetti, comunicazioni operative).</li>
+                    <li>Dati tecnici di navigazione e sicurezza applicativa.</li>
+                </ul>
+
+                <h2>3. Finalità del trattamento</h2>
+                <ul>
+                    <li>Gestione iscrizioni, documenti e accessi in struttura.</li>
+                    <li>Gestione amministrativa dei pacchetti ingressi.</li>
+                    <li>Comunicazioni informative, promemoria e supporto utenti.</li>
+                    <li>Adempimenti normativi, fiscali e di sicurezza.</li>
+                </ul>
+
+                <h2>4. Base giuridica</h2>
+                <ul>
+                    <li>Esecuzione del rapporto associativo/contrattuale di servizio.</li>
+                    <li>Adempimento di obblighi di legge.</li>
+                    <li>Legittimo interesse alla sicurezza e continuità operativa.</li>
+                    <li>Consenso espresso, ove richiesto (es. comunicazioni promozionali).</li>
+                </ul>
+
+                <h2>5. Conservazione</h2>
+                <p>I dati sono conservati per il tempo necessario alle finalità indicate e ai termini previsti da norme applicabili e procedure interne di conservazione.</p>
+
+                <h2>6. Destinatari e fornitori</h2>
+                <p>I dati possono essere trattati da personale autorizzato e da fornitori tecnici/organizzativi incaricati (hosting, email, consulenza amministrativa), con misure di sicurezza adeguate.</p>
+
+                <h2>7. Diritti dell'interessato</h2>
+                <p>Puoi richiedere accesso, rettifica, aggiornamento, limitazione o cancellazione dei dati nei limiti di legge, scrivendo ai contatti sotto indicati.</p>
+
+                <h2>8. Sicurezza</h2>
+                <p>Adottiamo misure tecniche e organizzative per proteggere i dati: controllo accessi per ruolo, log attività, protezioni applicative e gestione sicura upload documenti.</p>
+
+                <h2>9. Contatti privacy</h2>
+                <p><strong>Email:</strong> privacy@glisqualetti.it<br>
+                <strong>Telefono:</strong> +39 320 300 9040</p>
+
+                <div class="legal-actions">
+                    <a href="index.php" class="btn btn-primary">Torna alla Home</a>
+                    <a href="contatti.php" class="btn btn-secondary">Contattaci</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Gli Squaletti. Tutti i diritti riservati. | <a href="privacy.php">Privacy</a> | <a href="cookie.php">Cookie</a> | <a href="termini.php">Termini</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/cms-loader.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
+

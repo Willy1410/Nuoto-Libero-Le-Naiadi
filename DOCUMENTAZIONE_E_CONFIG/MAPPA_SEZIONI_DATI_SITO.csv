@@ -1,22 +1,23 @@
-﻿Sezione;Pagina/Area;Dati richiesti all'utente;Cosa devi inserire/gestire nel CMS o dashboard;Output del sistema;Note operative
-Home;index.html;Nessun dato obbligatorio;Headline hero, CTA, testi introduttivi, blocchi vantaggi;Pagina vetrina aggiornata;Contenuti puramente editoriali
-Chi siamo;chi-siamo.html;Nessun dato obbligatorio;Storia impianto, staff, missione, foto;Pagina istituzionale;Testi brand e fiducia
-Orari e Tariffe;orari-tariffe.html;Nessun dato obbligatorio;Fasce orarie, prezzi, note stagionali;Tabella orari/tariffe leggibile;Aggiornare ad ogni variazione reale
-Moduli pubblici;moduli.html;Nessun dato obbligatorio;Elenco moduli scaricabili (slug), descrizioni, aggiornamenti versione;Download documenti da sito;Coerente con api/moduli.php
-Pacchetti (pubblico);pacchetti.html;Nessun dato obbligatorio per sola consultazione;Schede pacchetti, prezzo, ingressi, validita;Catalogo offerte;Acquisto effettivo da area riservata
-Contatti;contatti.html;Nome, email, telefono (facoltativo), messaggio;Email destinatari, testo automatico conferma;Invio richiesta a segreteria;Richiede SMTP funzionante
-Login;login.html;Email, password;Nessun contenuto CMS tecnico;Autenticazione e redirect dashboard ruolo;Token JWT in localStorage
-Registrazione;login.html (tab registrazione);Nome, cognome, email, password, telefono, data nascita, indirizzo, citta, cap, codice fiscale;Validazioni campi e policy;Creazione profilo utente;Codice fiscale univoco se presente
-Reset password;reset-password.html + api/auth.php;Token reset, nuova password;Template email reset e sicurezza token;Password aggiornata;Token monouso con scadenza
-Dashboard utente - Profilo;piscina-php/dashboard-utente.html;Nome, cognome, email, telefono, data nascita, indirizzo, citta, cap, codice fiscale;Gestione aggiornamento dati utente;Profilo aggiornato + token rinnovato;Dati usati per PDF precompilati
-Dashboard utente - Acquisti;piscina-php/dashboard-utente.html;Metodo pagamento, riferimento, note;Catalogo pacchetti attivi;Ordine creato confirmed o pending;Bonifico/contanti restano pending
-Dashboard utente - QR;piscina-php/dashboard-utente.html;Nessun dato manuale dopo acquisto;Nessun contenuto CMS tecnico;QR visualizzato e PDF scaricabile;Valido per check-in bagnino
-Dashboard utente - Documenti caricati;piscina-php/dashboard-utente.html;Upload file PDF/JPG/PNG;Tipi documento obbligatori/facoltativi;Storico documenti con stato approved/pending/rejected;Download protetto via API
-Dashboard utente - Documenti mancanti;piscina-php/dashboard-utente.html + api/documenti.php;Selezione file da caricare per tipo documento;Mappatura modulo scaricabile e istruzioni;Lista documenti mancanti con azioni;Certificato medico escluso da precompilazione
+Sezione;Pagina/Area;Dati richiesti all'utente;Cosa devi inserire/gestire nel CMS o dashboard;Output del sistema;Note operative
+Home;index.php;Nessun dato obbligatorio;Headline hero, CTA, testi introduttivi, blocchi vantaggi;Pagina vetrina aggiornata;Contenuti puramente editoriali
+Chi siamo;chi-siamo.php;Nessun dato obbligatorio;Storia impianto, staff, missione, foto;Pagina istituzionale;Testi brand e fiducia
+Orari e Tariffe;orari-tariffe.php;Nessun dato obbligatorio;Fasce orarie, prezzi, note stagionali;Tabella orari/tariffe leggibile;Aggiornare ad ogni variazione reale
+Moduli pubblici;moduli.php;Nessun dato obbligatorio;Elenco moduli scaricabili (slug), descrizioni, aggiornamenti versione;Download documenti da sito;Coerente con api/moduli.php
+Pacchetti (pubblico);pacchetti.php;Nessun dato obbligatorio per sola consultazione;Schede pacchetti, prezzo, ingressi, validita;Catalogo offerte;Acquisto effettivo da area riservata
+Contatti;contatti.php;Nome, email, telefono (facoltativo), messaggio;Email destinatari, testo automatico conferma;Invio richiesta a segreteria;Richiede SMTP funzionante
+Login;login.php;Email, password;Nessun contenuto CMS tecnico;Autenticazione e redirect dashboard ruolo;Token JWT in localStorage
+Registrazione;login.php (tab registrazione);Nome, cognome, email, password, telefono, data nascita, indirizzo, citta, cap, codice fiscale;Validazioni campi e policy;Creazione profilo utente;Codice fiscale univoco se presente
+Reset password;reset-password.php + api/auth.php;Token reset, nuova password;Template email reset e sicurezza token;Password aggiornata;Token monouso con scadenza
+Dashboard utente - Profilo;piscina-php/dashboard-utente.php;Nome, cognome, email, telefono, data nascita, indirizzo, citta, cap, codice fiscale;Gestione aggiornamento dati utente;Profilo aggiornato + token rinnovato;Dati usati per PDF precompilati
+Dashboard utente - Acquisti;piscina-php/dashboard-utente.php;Metodo pagamento, riferimento, note;Catalogo pacchetti attivi;Ordine creato confirmed o pending;Bonifico/contanti restano pending
+Dashboard utente - QR;piscina-php/dashboard-utente.php;Nessun dato manuale dopo acquisto;Nessun contenuto CMS tecnico;QR visualizzato e PDF scaricabile;Valido per check-in bagnino
+Dashboard utente - Documenti caricati;piscina-php/dashboard-utente.php;Upload file PDF/JPG/PNG;Tipi documento obbligatori/facoltativi;Storico documenti con stato approved/pending/rejected;Download protetto via API
+Dashboard utente - Documenti mancanti;piscina-php/dashboard-utente.php + api/documenti.php;Selezione file da caricare per tipo documento;Mappatura modulo scaricabile e istruzioni;Lista documenti mancanti con azioni;Certificato medico escluso da precompilazione
 Documenti precompilati;api/documenti-prefill.php;Usa dati gia presenti nel profilo utente;Template testo per tipo documento (iscrizione/privacy/regolamento/generico);PDF precompilato scaricabile;Firma digitale o stampa + firma a mano
-Dashboard bagnino - Scanner QR;piscina-php/dashboard-bagnino.html;Uso camera dispositivo o inserimento codice manuale;Regole check-in e fallback;Check-in automatico con validazione pacchetto;Serve HTTPS o localhost per camera mobile
-Dashboard ufficio - Gestione utenti/clienti;piscina-php/dashboard-ufficio.html + api/admin.php;Dati cliente, stato documenti, pagamenti, ingressi;Filtri, dettaglio cliente, promemoria email;Vista operativa segreteria;Prevista evoluzione CRM completo
-Dashboard admin - Report e controlli;piscina-php/dashboard-admin.html + api/stats.php;Filtri data/utente/stato;KPI, pending, esportazioni;Report operativo direzione;Preferire export CSV/PDF strutturato
-CMS contenuti;piscina-php/dashboard-contenuti.html + api/contenuti.php;Contenuti testuali/HTML per sezioni mappate;Editor visuale e salvataggio;Aggiornamento pagine senza toccare codice;Mostrare sempre sezione in modifica
-Privacy e Cookie;privacy.html cookie.html termini.html;Nessun dato form;Testi legali e revisioni;Pagine compliance pubbliche;Aggiornare con consulente legale
+Dashboard bagnino - Scanner QR;piscina-php/dashboard-bagnino.php;Uso camera dispositivo o inserimento codice manuale;Regole check-in e fallback;Check-in automatico con validazione pacchetto;Serve HTTPS o localhost per camera mobile
+Dashboard ufficio - Gestione utenti/clienti;piscina-php/dashboard-ufficio.php + api/admin.php;Dati cliente, stato documenti, pagamenti, ingressi;Filtri, dettaglio cliente, promemoria email;Vista operativa segreteria;Prevista evoluzione CRM completo
+Dashboard admin - Report e controlli;piscina-php/dashboard-admin.php + api/stats.php;Filtri data/utente/stato;KPI, pending, esportazioni;Report operativo direzione;Preferire export CSV/PDF strutturato
+CMS contenuti;piscina-php/dashboard-contenuti.php + api/contenuti.php;Contenuti testuali/HTML per sezioni mappate;Editor visuale e salvataggio;Aggiornamento pagine senza toccare codice;Mostrare sempre sezione in modifica
+Privacy e Cookie;privacy.php cookie.php termini.php;Nessun dato form;Testi legali e revisioni;Pagine compliance pubbliche;Aggiornare con consulente legale
+
 

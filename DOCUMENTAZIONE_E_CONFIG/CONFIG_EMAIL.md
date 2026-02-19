@@ -8,7 +8,7 @@
 - `logs/mail.log`
 
 ## Configurazione SMTP Gmail (test locale)
-In `config/mail.php` è già impostato:
+In `config/mail.php` Ã¨ giÃ  impostato:
 - host: `smtp.gmail.com`
 - port: `587`
 - encryption: `tls`
@@ -23,8 +23,8 @@ $env:GMAIL_SMTP_USER='tuacasella@gmail.com'
 ```
 
 ## Test invio
-1. Compila form in `contatti.html`.
-2. Invia notifica bonifico da `pacchetti.html` (sezione bonifico).
+1. Compila form in `contatti.php`.
+2. Invia notifica bonifico da `pacchetti.php` (sezione bonifico).
 3. Verifica `logs/mail.log`.
 
 ## Note sicurezza

@@ -684,7 +684,7 @@ function sendActivationEmailWithAttachments(array $payload): bool
         $attachments[] = $instructionsAttachment;
     }
 
-    $loginUrl = localAppBaseUrl() . '/login.html';
+    $loginUrl = localAppBaseUrl() . '/login.php';
 
     $body = '<p>Ciao <strong>' . htmlspecialchars((string)$payload['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
         . '<p>la tua iscrizione e stata approvata. Il tuo account e ora attivo.</p>'
@@ -801,3 +801,4 @@ function buildInstructionsPdfAttachment(array $payload): ?array
         return null;
     }
 }
+

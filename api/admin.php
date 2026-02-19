@@ -262,8 +262,8 @@ function sendDocumentReminder(array $staff): void
         $missingListHtml .= '</ul>';
 
         $baseUrl = localAppBaseUrl();
-        $loginUrl = htmlspecialchars($baseUrl . '/login.html', ENT_QUOTES, 'UTF-8');
-        $moduliUrl = htmlspecialchars($baseUrl . '/moduli.html', ENT_QUOTES, 'UTF-8');
+        $loginUrl = htmlspecialchars($baseUrl . '/login.php', ENT_QUOTES, 'UTF-8');
+        $moduliUrl = htmlspecialchars($baseUrl . '/moduli.php', ENT_QUOTES, 'UTF-8');
 
         $body = '<p>Ciao <strong>' . htmlspecialchars((string)$target['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
             . '<p>per completare la tua posizione amministrativa risultano ancora mancanti i seguenti documenti obbligatori:</p>'
@@ -514,3 +514,4 @@ function deleteUser(array $staff): void
         sendJson(500, ['success' => false, 'message' => 'Errore eliminazione utente']);
     }
 }
+

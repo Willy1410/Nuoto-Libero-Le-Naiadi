@@ -10,7 +10,7 @@ Passi rapidi:
 1. Apri `http://localhost/phpmyadmin`
 2. Esegui tutto `db/CREATE_DATABASE_FROM_ZERO.sql`
 3. Verifica connessione in `api/config.php`
-4. Testa login da `login.html`
+4. Testa login da `login.php`
 
 Utenti test:
 - vedi `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`

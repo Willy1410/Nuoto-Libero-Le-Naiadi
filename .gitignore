@@ -1,0 +1,33 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+config/mail.php
+config/payments.php
+
+# Composer artifacts
+vendor/
+composer.phar
+.phpunit.result.cache
+
+# Runtime logs
+logs/*
+!logs/.gitkeep
+logs/mail_queue/*
+!logs/mail_queue/.gitkeep
+logs/ratelimit/*
+!logs/ratelimit/.gitkeep
+
+# Runtime uploads
+uploads/moduli/*
+!uploads/moduli/.htaccess
+!uploads/moduli/_archive/
+uploads/moduli/_archive/*
+!uploads/moduli/_archive/.gitkeep
+DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt

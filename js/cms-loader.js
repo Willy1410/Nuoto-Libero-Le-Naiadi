@@ -1,17 +1,17 @@
-﻿(function () {
+(function () {
     'use strict';
 
     function getPageSlug() {
-        var fileName = window.location.pathname.split('/').pop() || 'index.html';
+        var fileName = window.location.pathname.split('/').pop() || 'index.php';
         if (fileName === '' || fileName === '/') {
-            fileName = 'index.html';
+            fileName = 'index.php';
         }
 
-        if (fileName.toLowerCase() === 'index.html') {
+        if (fileName.toLowerCase() === 'index.php') {
             return 'index';
         }
 
-        return fileName.replace(/\.html$/i, '');
+        return fileName.replace(/\.(?:html|php)$/i, '');
     }
 
     function applyItem(item) {
@@ -69,3 +69,5 @@
         loadCmsContent();
     }
 })();
+
+

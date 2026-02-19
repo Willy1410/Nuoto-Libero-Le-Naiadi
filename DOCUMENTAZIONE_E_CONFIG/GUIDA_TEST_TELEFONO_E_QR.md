@@ -5,10 +5,10 @@ Guida pratica completa per testare QR + fotocamera telefono in locale.
 ## 1) Crea utente cliente
 Opzioni:
 - usa un utente seed (`mario.rossi@email.it`) oppure
-- crea utente nuovo da dashboard admin (`piscina-php/dashboard-admin.html`, tab Utenti).
+- crea utente nuovo da dashboard admin (`piscina-php/dashboard-admin.php`, tab Utenti).
 
 ## 2) Acquista un pacchetto
-Dal profilo utente (`piscina-php/dashboard-utente.html`):
+Dal profilo utente (`piscina-php/dashboard-utente.php`):
 1. sezione `Acquista pacchetto`
 2. clic `Acquista`
 3. il sistema registra acquisto con codice QR univoco
@@ -34,10 +34,10 @@ Metodo consigliato:
    - `ipconfig`
    - usa IPv4 della scheda attiva (es. `192.168.1.45`)
 3. sul telefono apri:
-   - `http://192.168.1.45/<NOME_CARTELLA_PROGETTO>/login.html`
+   - `http://192.168.1.45/<NOME_CARTELLA_PROGETTO>/login.php`
 4. login come bagnino:
    - `bagnino@piscina.it / password123`
-5. apri `piscina-php/dashboard-bagnino.html`
+5. apri `piscina-php/dashboard-bagnino.php`
 6. la camera prova ad avviarsi automaticamente (se HTTPS disponibile)
 7. inquadra il QR stampato: il sistema compila i dati utente in automatico
 8. premi solo `Conferma check-in`
@@ -55,14 +55,14 @@ Opzioni HTTPS gratuite:
 ## 6) Verifica regole permessi
 ### A) Non loggato
 Apri dal telefono:
-- `http://192.168.1.45/<NOME_CARTELLA_PROGETTO>/qr-view.html?qr=CODICE`
+- `http://192.168.1.45/<NOME_CARTELLA_PROGETTO>/qr-view.php?qr=CODICE`
 
 Risultato atteso:
 - solo dati utente/pacchetto in sola lettura
 - nessun check-in write
 
 ### B) Loggato bagnino
-Stessa pagina `qr-view.html?qr=CODICE` o dashboard bagnino.
+Stessa pagina `qr-view.php?qr=CODICE` o dashboard bagnino.
 
 Risultato atteso:
 - compare pulsante `Conferma check-in`
@@ -102,3 +102,4 @@ In dashboard bagnino:
 ## 9) Log utili durante test
 - errori backend: `logs/error.log`
 - invio email: `logs/mail.log`
+

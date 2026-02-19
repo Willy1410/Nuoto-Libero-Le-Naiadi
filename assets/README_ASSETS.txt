@@ -49,9 +49,9 @@ Crea i seguenti file PDF e inseriscili in questa cartella:
 
 ## Note Importanti
 
-⚠️ **I nomi dei file devono corrispondere ESATTAMENTE** a quelli elencati sopra, altrimenti i link nella pagina `moduli.html` non funzioneranno.
+âš ï¸ **I nomi dei file devono corrispondere ESATTAMENTE** a quelli elencati sopra, altrimenti i link nella pagina `moduli.php` non funzioneranno.
 
-✅ Per modificare i nomi dei file, edita anche i link in `moduli.html`:
+âœ… Per modificare i nomi dei file, edita anche i link in `moduli.php`:
 
 ```html
 <a href="assets/NOME-FILE.pdf" class="btn btn-primary" download>
@@ -65,12 +65,12 @@ Crea i seguenti file PDF e inseriscili in questa cartella:
 
 ## Privacy e Sicurezza
 
-❗ **Non includere nei PDF:**
+â— **Non includere nei PDF:**
 - Dati sensibili reali di utenti
 - Informazioni bancarie
 - Password o credenziali
 
-✅ **Puoi includere:**
+âœ… **Puoi includere:**
 - Logo e branding aziendale
 - Informazioni di contatto pubbliche
 - Istruzioni e linee guida generali
@@ -80,7 +80,7 @@ Crea i seguenti file PDF e inseriscili in questa cartella:
 Quando aggiorni un PDF:
 1. Sostituisci il file con la nuova versione
 2. Mantieni lo stesso nome file
-3. Aggiorna la data in `moduli.html` se necessario:
+3. Aggiorna la data in `moduli.php` se necessario:
 
 ```html
 <span><i class="fas fa-calendar"></i> Ultima revisione: GG/MM/AAAA</span>
@@ -90,3 +90,4 @@ Quando aggiorni un PDF:
 
 **Hai bisogno di aiuto per creare i PDF?**
 Consulta il README.md principale per maggiori informazioni o contatta il supporto tecnico.
+

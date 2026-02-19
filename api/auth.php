@@ -556,7 +556,7 @@ function handleForgotPassword(): void
             (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
         ]);
 
-        $resetLink = localAppBaseUrl() . '/reset-password.html?token=' . urlencode($token);
+        $resetLink = localAppBaseUrl() . '/reset-password.php?token=' . urlencode($token);
 
         $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
             . '<p>abbiamo ricevuto una richiesta di reset password.</p>'
@@ -688,3 +688,4 @@ function handleResetPassword(): void
         sendJson(500, ['success' => false, 'message' => 'Errore durante il reset password']);
     }
 }
+

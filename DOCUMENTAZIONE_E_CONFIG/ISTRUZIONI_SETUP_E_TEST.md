@@ -1,4 +1,4 @@
-﻿# ISTRUZIONI SETUP E TEST - Nuoto Libero (XAMPP)
+# ISTRUZIONI SETUP E TEST - Nuoto Libero (XAMPP)
 
 Data: 2026-02-16
 Ambiente: locale/test only
@@ -51,42 +51,42 @@ Se in XAMPP usi credenziali diverse, modifica questi valori (o variabili ambient
 
 ### URL base
 - Homepage: `http://localhost/<NOME_CARTELLA_PROGETTO>/`
-- Login area riservata: `http://localhost/<NOME_CARTELLA_PROGETTO>/login.html`
+- Login area riservata: `http://localhost/<NOME_CARTELLA_PROGETTO>/login.php`
 
 ### Login e redirect ruoli
-1. Apri `login.html`.
+1. Apri `login.php`.
 2. Usa credenziali test da:
    - `DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt`
 3. Verifica redirect:
-   - admin -> `piscina-php/dashboard-admin.html`
-   - ufficio -> `piscina-php/dashboard-ufficio.html`
-   - bagnino -> `piscina-php/dashboard-bagnino.html`
-   - utente -> `piscina-php/dashboard-utente.html`
+   - admin -> `piscina-php/dashboard-admin.php`
+   - ufficio -> `piscina-php/dashboard-ufficio.php`
+   - bagnino -> `piscina-php/dashboard-bagnino.php`
+   - utente -> `piscina-php/dashboard-utente.php`
 
 ### Test admin
-- In `piscina-php/dashboard-admin.html` verifica:
+- In `piscina-php/dashboard-admin.php` verifica:
   - statistiche dashboard
   - tab documenti pending
   - tab acquisti pending con bottone conferma pagamento
   - report giornaliero
-  - accesso a `CMS Contenuti` (pagina `piscina-php/dashboard-contenuti.html`)
+  - accesso a `CMS Contenuti` (pagina `piscina-php/dashboard-contenuti.php`)
 
 ### Test ufficio/segreteria
-- In `piscina-php/dashboard-ufficio.html` verifica:
+- In `piscina-php/dashboard-ufficio.php` verifica:
   - lista acquisti pending
   - conferma pagamento (genera QR e invia mail di conferma)
   - revisione documenti
   - accesso a `CMS Contenuti`
 
 ### Test QR / scansione (bagnino)
-- In `piscina-php/dashboard-bagnino.html` verifica:
+- In `piscina-php/dashboard-bagnino.php` verifica:
   - avvio camera da telefono/tablet
   - scansione QR automatica (fallback manuale disponibile)
   - registrazione check-in
   - storico check-in giornata
 
 ### Test area utente (acquisto + QR PDF)
-- In `piscina-php/dashboard-utente.html` verifica:
+- In `piscina-php/dashboard-utente.php` verifica:
   - scelta metodo pagamento prima dell'acquisto (carta/paypal/bonifico/in struttura)
   - comportamento stato:
     - carta/paypal => conferma immediata + QR disponibile
@@ -118,7 +118,7 @@ Dettaglio completo:
 - `DOCUMENTAZIONE_E_CONFIG/CONFIG_EMAIL.md`
 
 ### Test invio
-1. Apri `contatti.html` e invia un messaggio.
+1. Apri `contatti.php` e invia un messaggio.
 2. Verifica risposta positiva UI.
 3. Controlla log:
    - `logs/mail.log`
@@ -149,7 +149,7 @@ Webhook:
 2. Configura SMTP (fase email) per ricevere notifiche bonifico.
 
 ### Cosa vede l'utente
-1. In `pacchetti.html` seleziona metodo `Bonifico bancario`.
+1. In `pacchetti.php` seleziona metodo `Bonifico bancario`.
 2. Visualizza dati bonifico.
 3. Inserisce riferimento + data bonifico.
 4. Clicca `Ho effettuato il bonifico`.
@@ -184,3 +184,4 @@ Webhook:
 3. Dashboard vuote:
    - verifica token in localStorage
    - verifica seed utenti presenti nel DB
+

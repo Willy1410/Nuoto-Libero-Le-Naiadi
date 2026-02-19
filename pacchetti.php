@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pacchetti ingressi per nuoto libero in piscina 50 metri all'aperto d'estate. Richiesta iscrizione ad associazione sportiva non agonistica Gli Squaletti.">
+    <meta name="keywords" content="nuoto libero, piscina all'aperto, piscina 50 metri, associazione sportiva nuoto, nuoto non agonistico, ingressi piscina, iscrizione nuoto libero">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <link rel="canonical" href="/pacchetti.php">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="it_IT">
+    <meta property="og:site_name" content="Gli Squaletti">
+    <meta property="og:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
+    <meta property="og:description" content="Richiedi iscrizione e attivazione pacchetti ingressi per nuoto libero non agonistico in piscina.">
+    <meta property="og:url" content="/pacchetti.php">
+    <meta property="og:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
+    <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico: iscrizione e pacchetti ingressi.">
+    <meta name="twitter:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <title>Pacchetti Ingressi Nuoto Libero - Gli Squaletti</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SportsActivityLocation",
+      "name": "Gli Squaletti - Nuoto Libero",
+      "sport": "Swimming",
+      "description": "Associazione sportiva per nuoto libero non agonistico in piscina coperta e piscina 50 metri all'aperto in estate.",
+      "url": "/pacchetti.php"
+    }
+    </script>
+    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="cookieBanner" class="cookie-banner">
+        <div class="cookie-content">
+            <p><i class="fas fa-cookie-bite"></i> Questo sito utilizza cookie per migliorare l'esperienza utente. <a href="cookie.php">Maggiori informazioni</a></p>
+            <button id="acceptCookies" class="btn btn-primary">Accetta</button>
+        </div>
+    </div>
+
+    <header class="header" id="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-wrapper">
+                    <a href="index.php" class="logo">
+                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <span>Gli Squaletti</span>
+                    </a>
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="chi-siamo.php">Chi Siamo</a></li>
+                        <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
+                        <li><a href="moduli.php">Moduli</a></li>
+                        <li><a href="pacchetti.php" class="active">Pacchetti</a></li>
+                        <li><a href="contatti.php">Contatti</a></li>
+                        <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
+                    </ul>
+                    <a href="pacchetti.php" class="btn btn-primary btn-header">Richiedi Iscrizione</a>
+                    <button class="hamburger" id="hamburger" aria-label="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <section class="page-hero">
+        <div class="container">
+            <h1><i class="fas fa-id-card"></i> Pacchetti Ingressi</h1>
+            <p>Richiedi iscrizione e attivazione ingressi per nuoto libero non agonistico</p>
+        </div>
+    </section>
+
+    <section class="packages-section" id="packagesSection">
+        <div class="container">
+            <h2 class="section-title">Iscrizione e Pacchetto Ingressi</h2>
+            <p class="section-subtitle">Percorso in 2 step: quota iniziale obbligatoria + pacchetto ingressi</p>
+
+            <div class="pricing-grid package-offers-grid">
+                <div class="pricing-card package-step-card package-required-card">
+                    <div class="badge-popular package-step-badge package-step-badge-required">STEP 1 OBBLIGATORIO</div>
+                    <div class="pricing-header">
+                        <h3>Iscrizione EPS + Tesseramento</h3>
+                        <div class="price">
+                            <span class="currency">EUR</span>
+                            <span class="amount">20</span>
+                            <span class="period">/una tantum</span>
+                        </div>
+                        <span class="savings">Quota iniziale obbligatoria</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Iscrizione EPS</li>
+                        <li><i class="fas fa-check"></i> Tesseramento associativo</li>
+                        <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio</li>
+                        <li><i class="fas fa-calendar-check"></i> Attivazione in segreteria</li>
+                    </ul>
+                    <p class="package-note-inline">Questo passaggio è necessario prima di selezionare il pacchetto ingressi.</p>
+                </div>
+
+                <div class="pricing-card featured package-card package-step-card" data-package="10-ingressi" data-price="90.00" data-required-fee="20.00" data-name="Pacchetto 10 Ingressi">
+                    <div class="badge-popular package-step-badge package-step-badge-package">STEP 2</div>
+                    <div class="pricing-header">
+                        <h3>Pacchetto 10 Ingressi</h3>
+                        <div class="price">
+                            <span class="currency">EUR</span>
+                            <span class="amount">90</span>
+                            <span class="period">/pacchetto</span>
+                        </div>
+                        <span class="savings">Selezionabile solo con iscrizione attiva</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> 10 ingressi validi</li>
+                        <li><i class="fas fa-check"></i> Accesso corsie nuoto libero</li>
+                        <li><i class="fas fa-check"></i> Utilizzabile solo dopo STEP 1</li>
+                        <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio (validità 60 giorni)</li>
+                    </ul>
+                    <button class="btn btn-primary btn-block select-package">
+                        <i class="fas fa-check-circle"></i> Finalizza iscrizione in struttura
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="checkout-section" id="checkoutSection" style="display: none;">
+        <div class="container">
+            <div class="checkout-wrapper">
+                <div class="order-summary">
+                    <h3><i class="fas fa-receipt"></i> Riepilogo Iscrizione</h3>
+                    <div class="summary-item">
+                        <span>Pacchetto:</span>
+                        <strong id="summaryPackage">-</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Quota iscrizione EPS + tesseramento:</span>
+                        <strong id="summaryMandatoryFee">EUR 0,00</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Quota pacchetto 10 ingressi:</span>
+                        <strong id="summaryPackageFee">EUR 0,00</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Comprende:</span>
+                        <strong>Iscrizione EPS, Tesseramento, Pacchetto 10 ingressi, +2 ingressi promo</strong>
+                    </div>
+                    <div class="summary-total">
+                        <span>Totale:</span>
+                        <strong id="summaryTotal">EUR 0,00</strong>
+                    </div>
+                    <button class="btn btn-secondary btn-block" id="backToPackages">
+                        <i class="fas fa-arrow-left"></i> Cambia Pacchetto
+                    </button>
+                </div>
+
+                <div class="checkout-form">
+                    <h3><i class="fas fa-user"></i> Dati Richiedente</h3>
+                    <form id="checkoutForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">Nome *</label>
+                                <input type="text" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Cognome *</label>
+                                <input type="text" id="lastName" name="lastName" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Telefono *</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">Note (opzionale)</label>
+                            <textarea id="notes" name="notes" rows="3" placeholder="Eventuali richieste amministrative..."></textarea>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="termsAccept" required>
+                                <span>Accetto i <a href="termini.php" target="_blank">Termini e Condizioni</a> *</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="privacyAccept" required>
+                                <span>Accetto l'<a href="privacy.php" target="_blank">Informativa Privacy</a> *</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="marketingAccept">
+                                <span>Acconsento a ricevere comunicazioni informative (opzionale)</span>
+                            </label>
+                        </div>
+
+                        <div class="payment-method-section">
+                            <h3><i class="fas fa-building"></i> Finalizzazione in Struttura</h3>
+                            <div class="instore-info">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Nessun pagamento online. Invia la richiesta e completa iscrizione/tesseramento direttamente in struttura.</p>
+                            </div>
+                            <button type="submit" id="instore-submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-check"></i> Finalizza iscrizione in struttura
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="security-section">
+        <div class="container">
+            <h2 class="section-title">Trasparenza e Conformità</h2>
+            <div class="security-grid">
+                <div class="security-item">
+                    <i class="fas fa-id-card"></i>
+                    <h3>Tesseramento</h3>
+                    <p>Accesso riservato a utenti iscritti con documentazione valida.</p>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-file-signature"></i>
+                    <h3>Moduli Ufficiali</h3>
+                    <p>Documenti scaricabili, compilabili e verificabili da segreteria.</p>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>Dati Protetti</h3>
+                    <p>Gestione dati con policy privacy e controlli accesso per ruolo.</p>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h3>Conferma Manuale</h3>
+                    <p>Attivazione ingressi dopo verifica amministrativa.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq">
+        <div class="container">
+            <h2 class="section-title">Domande Frequenti sui Pacchetti</h2>
+
+            <div class="faq-container">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Quando viene attivato il pacchetto?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>L'attivazione avviene dopo verifica segreteria e primo accesso in struttura con documenti regolari.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Posso completare tutto in reception?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sì. Puoi inviare la richiesta online e finalizzare iscrizione, firma e quota direttamente in struttura.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Il certificato medico è obbligatorio?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sì, per nuoto non agonistico è richiesto certificato in corso di validità prima dell'attivazione.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Posso richiedere un pacchetto regalo?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sì, la segreteria può emettere pacchetti omaggio o buoni regalo intestati al beneficiario.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Dove trovo i moduli da firmare?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Tutti i moduli sono disponibili nella sezione <a href="moduli.php">Moduli</a>, scaricabili e compilabili in autonomia.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <h3>Gli Squaletti</h3>
+                    </div>
+                    <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Contatti</h4>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-map-marker-alt"></i> Via delle Piscine, 123 - 00100 Roma</li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+390612345678">+39 06 1234 5678</a></li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Link Rapidi</h4>
+                    <ul class="footer-links">
+                        <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
+                        <li><a href="moduli.php">Moduli</a></li>
+                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="contatti.php">Contatti</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Seguici</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    </div>
+                    <h4 style="margin-top: 20px;">Informazioni Legali</h4>
+                    <ul class="footer-links">
+                        <li><a href="privacy.php">Privacy Policy</a></li>
+                        <li><a href="cookie.php">Cookie Policy</a></li>
+                        <li><a href="termini.php">Termini e Condizioni</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Gli Squaletti. Tutti i diritti riservati.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/cms-loader.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/payment.js"></script>
+</body>
+</html>
+

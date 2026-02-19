@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Gli Squaletti - Flusso iscrizione in struttura (no pagamento online)
  */
 
@@ -250,8 +250,8 @@ function redirectToConfirmation(enrollmentId, orderData) {
                     <div class="row"><strong>Email</strong><span>${orderData.email}</span></div>
                 </div>
                 <div class="actions">
-                    <a href="index.html" class="btn btn-primary">Torna alla Home</a>
-                    <a href="moduli.html" class="btn btn-secondary">Apri Moduli</a>
+                    <a href="index.php" class="btn btn-primary">Torna alla Home</a>
+                    <a href="moduli.php" class="btn btn-secondary">Apri Moduli</a>
                 </div>
             </div>
         </body>
@@ -262,3 +262,4 @@ function redirectToConfirmation(enrollmentId, orderData) {
     confirmationWindow.document.write(confirmationHTML);
     confirmationWindow.document.close();
 }
+

@@ -1,4 +1,4 @@
-﻿
+
 (function () {
     const config = window.DASHBOARD_CONFIG || {};
     const API_URL = config.apiUrl || '../api';
@@ -15,7 +15,7 @@
     }
 
     if (!token || !user || !user.ruolo || !allowedRoles.includes(user.ruolo)) {
-        window.location.href = '../login.html';
+        window.location.href = '../login.php';
         return;
     }
 
@@ -1046,19 +1046,19 @@
         if (el('logoutBtn')) {
             el('logoutBtn').addEventListener('click', () => {
                 localStorage.clear();
-                window.location.href = '../login.html';
+                window.location.href = '../login.php';
             });
         }
 
         if (el('goCmsBtn')) {
             el('goCmsBtn').addEventListener('click', () => {
-                window.location.href = config.cmsUrl || 'dashboard-contenuti.html';
+                window.location.href = config.cmsUrl || 'dashboard-contenuti.php';
             });
         }
 
         if (el('goCmsBuilderBtn')) {
             el('goCmsBuilderBtn').addEventListener('click', () => {
-                window.location.href = config.cmsBuilderUrl || 'dashboard-cms-builder.html';
+                window.location.href = config.cmsBuilderUrl || 'dashboard-cms-builder.php';
             });
         }
 
@@ -1337,3 +1337,4 @@
         setStatus(error.message || 'Errore caricamento dashboard', 'error');
     });
 })();
+
