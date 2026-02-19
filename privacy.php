@@ -25,7 +25,7 @@
                         <li><a href="index.php">Home</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
                         <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti Ingressi</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                     <a href="pacchetti.php" class="btn btn-primary btn-header">Richiedi Iscrizione</a>
@@ -48,7 +48,9 @@
                 <p><em>Ultimo aggiornamento: 18/02/2026</em></p>
 
                 <h2>1. Titolare del trattamento</h2>
-                <p>Gli Squaletti &egrave; titolare del trattamento dei dati personali raccolti tramite sito web, area riservata e attivit&agrave; amministrative correlate all'iscrizione.</p>
+                <p><strong>CLADAM GROUP S.S.D. a r.l.</strong> &egrave; titolare del trattamento dei dati personali raccolti tramite sito web, area riservata e attivit&agrave; amministrative correlate all'iscrizione.<br>
+                <strong>Sede legale:</strong> Via Federico Fellini, 2 - 65010 Spoltore (PE)<br>
+                <strong>PEC:</strong> cladamgroup@pec.it</p>
 
                 <h2>2. Dati trattati</h2>
                 <ul>
@@ -87,10 +89,12 @@
                 <p>Adottiamo misure tecniche e organizzative per proteggere i dati: controllo accessi per ruolo, log attivit&agrave;, protezioni applicative e gestione sicura upload documenti.</p>
 
                 <h2>9. Contatti privacy</h2>
-                <p><strong>Email:</strong> privacy@glisqualetti.it<br>
-                <strong>Telefono:</strong> +39 320 300 9040</p>
+                <p><strong>PEC:</strong> cladamgroup@pec.it<br>
+                <strong>Telefono:</strong> +39 331 1931 737<br>
+                <strong>Sede legale:</strong> Via Federico Fellini, 2 - 65010 Spoltore (PE)</p>
 
                 <div class="legal-actions">
+                    <a href="assets/documenti/informativa-privacy-cladam.pdf" class="btn btn-primary" target="_blank" rel="noopener">Scarica Informativa Privacy (PDF)</a>
                     <a href="index.php" class="btn btn-primary">Torna alla Home</a>
                     <a href="contatti.php" class="btn btn-secondary">Contattaci</a>
                 </div>
@@ -111,3 +115,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

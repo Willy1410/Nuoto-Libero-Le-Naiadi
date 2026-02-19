@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-$homeHref = appIsLandingMode() ? 'landing.php' : 'index.php';
+$homeHref = 'landing.php';
 
 if (appIsLandingMode()) {
     header('Location: area-riservata.php', true, 302);

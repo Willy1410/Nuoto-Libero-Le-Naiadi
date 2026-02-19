@@ -43,7 +43,7 @@
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php" class="active">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                         <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
@@ -116,10 +116,10 @@
                     </div>
                     <div class="document-info">
                         <h3>Informativa Privacy</h3>
-                        <p>Informativa completa sul trattamento dei dati personali ai sensi del GDPR. Include modalit&agrave; di raccolta, conservazione e utilizzo dei tuoi dati.</p>
+                        <p>Informativa completa sul trattamento dei dati personali ai sensi del GDPR. Documento in versione professionale predisposta per validazione e firma del Titolare.</p>
                         <div class="document-meta">
-                            <span><i class="fas fa-calendar"></i> Ultima revisione: 01/01/2026</span>
-                            <span><i class="fas fa-file-pdf"></i> PDF - 220 KB</span>
+                            <span><i class="fas fa-calendar"></i> Ultima revisione: 19/02/2026</span>
+                            <span><i class="fas fa-file-pdf"></i> PDF ufficiale privacy</span>
                         </div>
                     </div>
                     <a href="api/moduli-download.php?slug=informativa-privacy" class="btn btn-primary" download>
@@ -288,9 +288,9 @@
                 <div class="footer-col">
                     <h4>Contatti</h4>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> Via delle Piscine, 123 - 00100 Roma</li>
-                        <li><i class="fas fa-phone"></i> <a href="tel:+393203009040">+39 320 300 9040</a></li>
-                        <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/393203009040" target="_blank" rel="noopener">WhatsApp +39 320 300 9040</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
+                        <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/393311931737" target="_blank" rel="noopener">WhatsApp +39 331 1931 737</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
                     </ul>
                 </div>
@@ -299,7 +299,7 @@
                     <ul class="footer-links">
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                 </div>
@@ -330,3 +330,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

@@ -48,8 +48,8 @@
                 <p style="margin: 0; color: #495057;">
                     <i class="fas fa-map-marker-alt" style="color: #00a8e8; margin-right: 0.5rem;"></i>
                     <strong>Piscina Naiadi</strong><br>
-                    Via Federico Fellini, 2 - Spoltore (PE)<br>
-                    Tel: <a href="tel:+393203009040" style="color: #00a8e8;">+39 320 300 9040</a>
+                    Viale della Riviera, 343, 65123 Pescara PE<br>
+                    Tel: <a href="tel:+393311931737" style="color: #00a8e8;">+39 331 1931 737</a>
                 </p>
             </div>
             
@@ -66,9 +66,10 @@
             </div>
             
             <p style="margin-top: 2rem; font-size: 0.9rem; color: #6c757d;">
-                Ti aspettiamo in piscina! ðŸŠâ€â™‚ï¸
+                Ti aspettiamo in piscina! Ã°Å¸ÂÅ Ã¢â‚¬ÂÃ¢â„¢â€šÃ¯Â¸Â
             </p>
         </div>
     </div>
 </body>
 </html>
+

@@ -25,7 +25,7 @@
                         <li><a href="index.php">Home</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
                         <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti Ingressi</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                     <a href="pacchetti.php" class="btn btn-primary btn-header">Richiedi Iscrizione</a>

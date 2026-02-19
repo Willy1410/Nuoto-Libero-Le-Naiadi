@@ -13,7 +13,7 @@ if (appIsLandingMode()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Bagnino - Gli Squaletti</title>
+    <title>Il mio profilo - Gli Squaletti</title>
     <style>
         :root {
             --primary: #10b981;
@@ -36,10 +36,13 @@ if (appIsLandingMode()) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .header h1 { font-size: 24px; }
         .header small { opacity: 0.9; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         .btn {
             border: none;
@@ -169,10 +172,13 @@ if (appIsLandingMode()) {
 <body>
     <div class="header">
         <div>
-            <h1>Dashboard Bagnino</h1>
+            <h1>Il mio profilo</h1>
             <small id="userName"></small>
         </div>
-        <button class="btn btn-danger" onclick="logout()">Esci</button>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="homeBtn" type="button">Home</button>
+            <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
+        </div>
     </div>
 
     <div class="container">
@@ -646,10 +652,28 @@ if (appIsLandingMode()) {
             }
         }
 
-        function logout() {
+        async function logout() {
             stopScanner();
-            localStorage.clear();
+
+            try {
+                await fetch(`${API_URL}/auth.php?action=logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (_) {
+            }
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
             window.location.href = '../login.php';
+        }
+
+        function goHome() {
+            window.location.href = '../landing.php';
         }
 
         document.getElementById('qrInput').addEventListener('keydown', (event) => {
@@ -691,6 +715,10 @@ if (appIsLandingMode()) {
         });
 
         loadToday();
+        document.getElementById('homeBtn').addEventListener('click', goHome);
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            logout();
+        });
         ensureScannerLibraryLoaded().then(async (ok) => {
             if (!ok) {
                 showAlert('Scanner camera non disponibile: usa il campo manuale QR.', 'error');
@@ -713,8 +741,7 @@ if (appIsLandingMode()) {
         window.clearCurrent = clearCurrent;
         window.triggerImageScan = triggerImageScan;
         window.logout = logout;
+        window.goHome = goHome;
     </script>
 </body>
 </html>
-
-

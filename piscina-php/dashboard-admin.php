@@ -13,7 +13,7 @@ if (appIsLandingMode()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - Gli Squaletti</title>
+    <title>Il mio profilo - Gli Squaletti</title>
     <style>
         :root {
             --accent: #dc2626;
@@ -287,10 +287,11 @@ if (appIsLandingMode()) {
 <body data-theme="admin">
     <div class="header">
         <div>
-            <h1 id="dashboardTitle">Dashboard Admin</h1>
+            <h1 id="dashboardTitle">Il mio profilo</h1>
             <small id="userName">Utente</small>
         </div>
         <div class="header-actions">
+            <button class="btn btn-secondary" id="goHomeBtn" type="button">Home</button>
             <button class="btn btn-secondary" id="goCmsBuilderBtn" type="button">CMS Builder-ready</button>
             <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
         </div>
@@ -822,9 +823,10 @@ if (appIsLandingMode()) {
     <script>
         window.DASHBOARD_CONFIG = {
             theme: 'admin',
-            title: 'Dashboard Admin',
+            title: 'Il mio profilo',
             allowedRoles: ['admin'],
-            cmsBuilderUrl: 'dashboard-cms-builder.php'
+            cmsBuilderUrl: 'dashboard-cms-builder.php',
+            homeUrl: '../landing.php'
         };
     </script>
     <script src="../js/ui-modal.js"></script>

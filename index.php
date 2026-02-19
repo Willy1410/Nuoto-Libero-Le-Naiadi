@@ -28,7 +28,7 @@ if (appIsLandingMode()) {
     <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico, piscina coperta e 50m all'aperto in estate.">
     <meta name="twitter:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
 
-    <title>Nuoto Libero in Piscina - Gli Squaletti</title>
+    <title>Nuoto Libero Le Naiadi</title>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -69,7 +69,7 @@ if (appIsLandingMode()) {
                     <!-- Logo -->
                     <a href="index.php" class="logo">
                         <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
-                        <span>Gli Squaletti</span>
+                        <span>Nuoto libero le Naiadi</span>
                     </a>
 
                     <!-- Menu Desktop -->
@@ -77,8 +77,8 @@ if (appIsLandingMode()) {
                         <li><a href="index.php" class="active">Home</a></li>
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
-<li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+						<li><a href="moduli.php">Moduli</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                         <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
@@ -105,8 +105,8 @@ if (appIsLandingMode()) {
         </div>
         <div class="hero-content">
             <div class="container">
-                <h1 class="hero-title">Nuoto Libero alla Piscina Naiadi di Pescara</h1>
-                <p class="hero-subtitle">Piscina olimpionica 50m all'aperto d'estate, piscina coperta d'inverno. Corsie dedicate, ambiente professionale</p>
+                <h1 class="hero-title">Nuoto libero Centro Sportivo le Naiadi Pescara</h1>
+              <!--  <p class="hero-subtitle">Piscina olimpionica 50m all'aperto d'estate, piscina coperta d'inverno. Corsie dedicate</p> -->
                 <div class="hero-buttons">
                     <a href="pacchetti.php" class="btn btn-primary btn-lg">
                         <i class="fas fa-ticket-alt"></i> Richiedi Iscrizione
@@ -126,7 +126,7 @@ if (appIsLandingMode()) {
     <!-- Vantaggi Section -->
     <section class="advantages">
         <div class="container">
-            <h2 class="section-title">Perch&eacute; Scegliere Gli Squaletti</h2>
+            <h2 class="section-title">Perch&eacute; scegliere il Centro Sportivo le Naiadi</h2>
             <p class="section-subtitle">I vantaggi del nuoto libero nella nostra struttura</p>
             
             <div class="advantages-grid">
@@ -142,8 +142,8 @@ if (appIsLandingMode()) {
                     <div class="advantage-icon">
                         <i class="fas fa-spa"></i>
                     </div>
-                    <h3>Spogliatoi Moderni</h3>
-                    <p>Ampi spogliatoi con armadietti, docce calde e asciugacapelli. Tutto il comfort che meriti.</p>
+                    <h3>Spogliatoi Confortevoli</h3>
+                    <p>Ampi spogliatoi, armadietti, docce e asciugacapelli con tessera dedicata ricaricabile.</p>
                 </div>
 
                 <div class="advantage-card">
@@ -169,8 +169,8 @@ if (appIsLandingMode()) {
                     <div class="step-icon">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
-                    <h3>Scegli il Pacchetto</h3>
-                    <p>Seleziona il pacchetto pi&ugrave; adatto alle tue esigenze: singolo ingresso o abbonamenti multipli</p>
+                    <h3>Scegli l'Abbonamento</h3>
+                    <p>Seleziona l'Abbonamento pi&ugrave; adatto alle tue esigenze: singolo ingresso o abbonamenti multipli</p>
                 </div>
 
                 <div class="step-arrow">
@@ -304,8 +304,8 @@ if (appIsLandingMode()) {
                 <div class="footer-col">
                     <h4>Contatti</h4>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> <a href="https://maps.google.com/?q=Piscina+Naiadi+Pescara" target="_blank" rel="noopener">Via Federico Fellini, 2 - Spoltore (PE)</a></li>
-                        <li><i class="fas fa-phone"></i> <a href="tel:+39123456789">123 456 789</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> <a href="https://maps.google.com/?q=Viale+della+Riviera+343,+65123+Pescara+PE" target="_blank" rel="noopener">Viale della Riviera, 343, 65123 Pescara PE</a></li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
                         <li><i class="fas fa-building"></i> Societ&agrave; Sportiva CLADAM GROUP</li>
                     </ul>
@@ -318,7 +318,7 @@ if (appIsLandingMode()) {
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                         <li><a href="login.php">Area Riservata</a></li>
                     </ul>
@@ -354,3 +354,4 @@ if (appIsLandingMode()) {
     <script src="js/main.js"></script>
 </body>
 </html>
+

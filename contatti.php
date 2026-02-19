@@ -43,7 +43,7 @@
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php" class="active">Contatti</a></li>
                         <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
@@ -73,8 +73,8 @@
                         <i class="fas fa-map-marker-alt"></i>
                     </div>
                     <h3>Indirizzo</h3>
-                    <p>Via delle Piscine, 123<br>00100 Roma (RM)</p>
-                    <a href="https://maps.google.com" target="_blank" class="btn btn-secondary btn-sm">
+                    <p>Viale della Riviera, 343<br>65123 Pescara (PE)</p>
+                    <a href="https://maps.google.com/?q=Viale+della+Riviera+343,+65123+Pescara+PE" target="_blank" class="btn btn-secondary btn-sm">
                         <i class="fas fa-directions"></i> Ottieni Indicazioni
                     </a>
                 </div>
@@ -84,9 +84,9 @@
                         <i class="fas fa-phone"></i>
                     </div>
                     <h3>Telefono</h3>
-                    <p><a href="tel:+393203009040">+39 320 300 9040</a></p>
+                    <p><a href="tel:+393311931737">+39 331 1931 737</a></p>
                     <p class="small-text">Lun-Ven: 09:00-20:00<br>Sab-Dom: 09:00-18:00</p>
-                    <a href="tel:+393203009040" class="btn btn-secondary btn-sm">
+                    <a href="tel:+393311931737" class="btn btn-secondary btn-sm">
                         <i class="fas fa-phone-alt"></i> Chiama Ora
                     </a>
                 </div>
@@ -108,9 +108,9 @@
                         <i class="fab fa-whatsapp"></i>
                     </div>
                     <h3>WhatsApp</h3>
-                    <p><a href="https://wa.me/393203009040">+39 320 300 9040</a></p>
+                    <p><a href="https://wa.me/393311931737">+39 331 1931 737</a></p>
                     <p class="small-text">Risposta rapida durante gli orari di apertura</p>
-                    <a href="https://wa.me/393203009040" target="_blank" class="btn btn-secondary btn-sm">
+                    <a href="https://wa.me/393311931737" target="_blank" class="btn btn-secondary btn-sm">
                         <i class="fab fa-whatsapp"></i> Chatta su WhatsApp
                     </a>
                 </div>
@@ -169,7 +169,7 @@
                     <div class="form-group checkbox-group">
                         <label class="checkbox-label">
                             <input type="checkbox" id="contactPrivacy" required>
-                            <span>Accetto l'<a href="privacy.php" target="_blank">Informativa Privacy</a> *</span>
+                            <span>Accetto l'<a href="assets/documenti/informativa-privacy-cladam.pdf" target="_blank" rel="noopener">Informativa Privacy (PDF)</a> *</span>
                         </label>
                     </div>
 
@@ -188,9 +188,8 @@
         <div class="container">
             <h2 class="section-title">Come Raggiungerci</h2>
             <div class="map-container">
-                <!-- Google Maps Embed - Sostituisci con il tuo indirizzo reale -->
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2970.1571886346256!2d12.482877615433447!3d41.89021097922145!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x132f61b6532013ad%3A0x28f1c82e908503c4!2sColosseo!5e0!3m2!1sit!2sit!4v1234567890123!5m2!1sit!2sit" 
+                    src="https://www.google.com/maps?q=Viale+della+Riviera+343,+65123+Pescara+PE&output=embed" 
                     width="100%" 
                     height="450" 
                     style="border:0;" 
@@ -204,17 +203,17 @@
                     <div class="map-info-item">
                         <i class="fas fa-car"></i>
                         <h4>In Auto</h4>
-                        <p>Parcheggio gratuito disponibile. Uscita autostrada A1 "Roma Centro", seguire indicazioni per "Piscine".</p>
+                        <p>Raggiungici in auto impostando l'indirizzo della sede. Parcheggi disponibili nelle aree limitrofe.</p>
                     </div>
                     <div class="map-info-item">
                         <i class="fas fa-bus"></i>
                         <h4>Con i Mezzi Pubblici</h4>
-                        <p>Linee bus: 75, 118, 628. Metro A fermata "Piscine" (5 min a piedi).</p>
+                        <p>La zona e servita da fermate autobus urbane. Verifica la linea piu comoda da "Viale della Riviera".</p>
                     </div>
                     <div class="map-info-item">
                         <i class="fas fa-bicycle"></i>
                         <h4>In Bicicletta</h4>
-                        <p>Rastrelliere per biciclette disponibili all'ingresso. Piste ciclabili su Via delle Piscine.</p>
+                        <p>Percorso comodo dalla ciclabile del lungomare. Disponibili punti di sosta nelle vicinanze.</p>
                     </div>
                 </div>
             </div>
@@ -316,8 +315,8 @@
                 <div class="footer-col">
                     <h4>Contatti</h4>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> Via delle Piscine, 123 - 00100 Roma</li>
-                        <li><i class="fas fa-phone"></i> <a href="tel:+393203009040">+39 320 300 9040</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
                     </ul>
                 </div>
@@ -326,7 +325,7 @@
                     <ul class="footer-links">
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                 </div>
@@ -357,3 +356,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

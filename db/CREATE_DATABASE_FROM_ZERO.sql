@@ -394,7 +394,7 @@ VALUES
 INSERT INTO contenuti_sito (sezione, chiave, valore_testo, tipo_campo, ordine) VALUES
   ('homepage', 'titolo_hero', 'Nuoto Libero alla Piscina Naiadi', 'text', 1),
   ('contatti', 'email', 'info@glisqualetti.it', 'text', 2),
-  ('contatti', 'telefono', '+39 320 300 9040', 'text', 3);
+  ('contatti', 'telefono', '+39 331 1931 737', 'text', 3);
 
 -- Verifica finale
 SELECT 'Database nuoto_libero creato con successo' AS esito;
@@ -405,4 +405,5 @@ UNION ALL SELECT 'acquisti', COUNT(*) FROM acquisti
 UNION ALL SELECT 'check_ins', COUNT(*) FROM check_ins
 UNION ALL SELECT 'documenti_utente', COUNT(*) FROM documenti_utente
 UNION ALL SELECT 'moduli', COUNT(*) FROM moduli;
+
 

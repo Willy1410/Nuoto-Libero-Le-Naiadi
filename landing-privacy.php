@@ -93,6 +93,12 @@ require_once __DIR__ . '/bootstrap.php';
     <p class="lead">Questa informativa sintetica riguarda il modulo di contatto rapido presente nella landing page.</p>
 
     <section class="box">
+        <strong>Titolare del trattamento:</strong> CLADAM GROUP S.S.D. a r.l.<br>
+        <strong>Sede legale:</strong> Via Federico Fellini, 2 - 65010 Spoltore (PE)<br>
+        <strong>PEC:</strong> <a href="mailto:cladamgroup@pec.it">cladamgroup@pec.it</a>
+    </section>
+
+    <section class="box">
         <strong>Dati raccolti:</strong> nome, email, telefono (facoltativo), oggetto e messaggio.<br>
         <strong>Finalita:</strong> rispondere alla tua richiesta di informazioni su iscrizioni e attivita.<br>
         <strong>Base giuridica:</strong> consenso espresso con spunta privacy e invio volontario del modulo.
@@ -104,10 +110,10 @@ require_once __DIR__ . '/bootstrap.php';
     </section>
 
     <div class="actions">
+        <a class="btn-primary" href="assets/documenti/informativa-privacy-cladam.pdf" target="_blank" rel="noopener">Scarica PDF Privacy</a>
         <a class="btn-primary" href="landing.php">Torna alla landing</a>
         <a class="btn-secondary" href="landing.php#landingContactForm">Torna al form</a>
     </div>
 </main>
 </body>
 </html>
-

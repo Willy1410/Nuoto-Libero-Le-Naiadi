@@ -83,6 +83,25 @@ require_once __DIR__ . '/bootstrap.php';
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.45);
         }
+        .brand-map {
+            margin-top: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 14px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .brand-map iframe {
+            width: 100%;
+            height: 170px;
+            border: 0;
+            border-radius: 10px;
+        }
+        .brand-map p {
+            margin: 8px 0 0;
+            font-size: 12px;
+            line-height: 1.45;
+            color: rgba(240, 249, 255, 0.92);
+        }
         .info-side {
             padding: 34px;
             display: flex;
@@ -130,6 +149,17 @@ require_once __DIR__ . '/bootstrap.php';
             color: #0f172a;
         }
         .hours-box p {
+            margin: 0 0 4px;
+            font-size: 13px;
+            color: #334155;
+        }
+        .hours-note {
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            background: #f0f9ff;
+            padding: 10px 12px;
+        }
+        .hours-note p {
             margin: 0 0 4px;
             font-size: 13px;
             color: #334155;
@@ -279,6 +309,7 @@ require_once __DIR__ . '/bootstrap.php';
         @media (max-width: 860px) {
             .landing-card { grid-template-columns: 1fr; }
             .brand-side, .info-side { padding: 24px; }
+            .brand-map iframe { height: 150px; }
             .info-side h1 { font-size: 24px; }
             .quick-form .row { grid-template-columns: 1fr; }
         }
@@ -297,35 +328,42 @@ require_once __DIR__ . '/bootstrap.php';
                 <span>Piscina Naiadi</span>
                 <span>Supporto diretto</span>
             </div>
+            <div class="brand-map" aria-label="Mappa sede piscina">
+                <iframe
+                    src="https://www.google.com/maps?q=Viale+della+Riviera+343,+65123+Pescara+PE&output=embed"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    title="Mappa Nuoto Libero Le Naiadi"></iframe>
+                <p>Viale della Riviera, 343, 65123 Pescara PE</p>
+            </div>
         </section>
         <section class="info-side" aria-label="Aggiornamento sito">
             <h1>Sito in aggiornamento</h1>
-            <p>La piattaforma completa sara online a breve. Nel frattempo puoi contattarci subito per iscrizioni, documenti e informazioni operative.</p>
+            <p>La piattaforma completa sara online a breve. Siamo presenti in piscina negli orari di nuoto libero indicati sotto; per altri orari riceviamo solo su appuntamento.</p>
             <ul class="contact-list">
                 <li><strong>Email</strong><a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></li>
-                <li><strong>Telefono</strong><a href="tel:+393203009040">+39 320 300 9040</a></li>
-                <li><strong>Sede</strong><span>Via Federico Fellini, 2 - Spoltore (PE)</span></li>
+                <li><strong>Telefono</strong><a href="tel:+393311931737">+39 331 1931 737</a></li>
+                <li><strong>WhatsApp</strong><a href="https://wa.me/393311931737" target="_blank" rel="noopener">+39 331 1931 737</a></li>
+                <li><strong>Sede</strong><span>Viale della Riviera, 343, 65123 Pescara PE</span></li>
             </ul>
             <div class="cta-row">
-                <a class="cta-btn cta-primary" href="https://wa.me/393203009040?text=Ciao%2C%20vorrei%20parlare%20subito%20con%20la%20segreteria%20di%20Nuoto%20Libero%20Le%20Naiadi." target="_blank" rel="noopener">Contattaci ora</a>
+                <a class="cta-btn cta-primary" href="https://wa.me/393311931737?text=Buongiorno%2C%20desidero%20ricevere%20informazioni%20su%20Nuoto%20Libero%20Le%20Naiadi%20e%20valutare%20un%20appuntamento.%20Resto%20in%20attesa%20di%20un%20vostro%20gentile%20riscontro." target="_blank" rel="noopener">Contattaci ora</a>
                 <a class="cta-btn cta-secondary" href="area-riservata.php">Area riservata</a>
             </div>
             <div class="hours-grid" aria-label="Giorni e orari di apertura">
                 <div class="hours-box">
-                    <h3>Nuoto libero in piscina</h3>
+                    <h3>Orari presenza in piscina (nuoto libero)</h3>
                     <p><strong>Lunedi, Mercoledi, Venerdi:</strong></p>
                     <p>06:30 - 09:00</p>
                     <p>13:00 - 14:00</p>
                 </div>
-                <div class="hours-box">
-                    <h3>Ufficio (solo su appuntamento)</h3>
-                    <p><strong>Martedi:</strong> 10:00 - 12:30</p>
-                    <p><strong>Giovedi:</strong> 16:00 - 19:00</p>
-                    <p><strong>Sabato:</strong> 09:00 - 11:00</p>
+                <div class="hours-note">
+                    <p><strong>Per tutti gli altri orari:</strong> riceviamo solo su appuntamento.</p>
+                    <p>Puoi usare "Contattaci ora" su WhatsApp oppure compilare il modulo qui sotto.</p>
                 </div>
             </div>
             <form id="landingContactForm" class="quick-form" novalidate>
-                <h3>Richiedi informazioni</h3>
+                <h3>Richiedi informazioni o appuntamento</h3>
                 <div class="row">
                     <div class="field">
                         <label for="landingName">Nome e cognome *</label>
@@ -346,8 +384,8 @@ require_once __DIR__ . '/bootstrap.php';
                         <select id="landingSubject" name="subject" required>
                             <option value="">Seleziona...</option>
                             <option value="informazioni-iscrizione">Informazioni iscrizione</option>
-                            <option value="orari-corsi">Orari corsi</option>
-                            <option value="costi">Costi</option>
+                            <option value="orari-corsi">Orari nuoto libero</option>
+                            <option value="costi">Costi e pacchetti</option>
                             <option value="problemi-account">Problemi con account</option>
                             <option value="altro">Altro</option>
                         </select>
@@ -359,12 +397,12 @@ require_once __DIR__ . '/bootstrap.php';
                 </div>
                 <div class="field">
                     <label for="landingMessage">Messaggio *</label>
-                    <textarea id="landingMessage" name="message" maxlength="4000" required></textarea>
+                    <textarea id="landingMessage" name="message" maxlength="4000" required placeholder="Scrivi qui la tua richiesta (informazioni, appuntamento, supporto documenti, ecc.)."></textarea>
                 </div>
                 <input class="hp-field" type="text" name="website" id="landingWebsite" tabindex="-1" autocomplete="off" aria-hidden="true">
                 <label class="privacy" for="landingPrivacy">
                     <input id="landingPrivacy" name="privacy" type="checkbox" required>
-                    <span>Accetto l'<a href="landing-privacy.php" target="_blank" rel="noopener">informativa privacy</a> *</span>
+                    <span>Accetto l'<a href="assets/documenti/informativa-privacy-cladam.pdf" target="_blank" rel="noopener">informativa privacy (PDF)</a> *</span>
                 </label>
                 <button id="landingSubmitBtn" class="submit-btn" type="submit">Invia richiesta</button>
                 <div id="landingFormFeedback" class="form-feedback" role="status" aria-live="polite"></div>

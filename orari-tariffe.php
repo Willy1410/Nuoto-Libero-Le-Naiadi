@@ -43,7 +43,7 @@
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php" class="active">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                         <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
@@ -68,7 +68,7 @@
     <section class="schedule-section">
         <div class="container">
             <h2 class="section-title">Orari Nuoto Libero</h2>
-            <p class="section-subtitle">Luned&igrave;, Mercoled&igrave; e Venerd&igrave; presso Piscina Naiadi - Spoltore (PE)</p>
+            <p class="section-subtitle">Luned&igrave;, Mercoled&igrave; e Venerd&igrave; presso Piscina Naiadi - Pescara (PE)</p>
 
             <div class="schedule-table-container">
                 <table class="schedule-table">
@@ -126,7 +126,7 @@
                     <li><i class="fas fa-calendar-times"></i> Chiusi il 25 dicembre, 1 gennaio e a Pasqua</li>
                     <li><i class="fas fa-swimming-pool"></i> Piscina olimpionica 50m scoperta d'estate, coperta d'inverno</li>
                     <li><i class="fas fa-clock"></i> Orari soggetti a modifiche durante i festivi - verifica sempre sul sito</li>
-                    <li><i class="fas fa-map-marker-alt"></i> Piscina Naiadi - Via Federico Fellini, 2, Spoltore (PE)</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Piscina Naiadi - Viale della Riviera, 343, 65123 Pescara PE</li>
                 </ul>
             </div>
         </div>
@@ -223,8 +223,8 @@
                 <div class="footer-col">
                     <h4>Contatti</h4>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> Via Federico Fellini, 2 - Spoltore (PE)</li>
-                        <li><i class="fas fa-phone"></i> <a href="tel:+39123456789">+39 123 456 789</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
                     </ul>
                 </div>
@@ -233,7 +233,7 @@
                     <ul class="footer-links">
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                 </div>
@@ -264,3 +264,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

@@ -43,7 +43,7 @@
                         <li><a href="chi-siamo.php" class="active">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                         <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
@@ -191,7 +191,7 @@
                         <i class="fas fa-map-marker-alt"></i>
                         <div>
                             <h4>Posizione Strategica</h4>
-                            <p>Via Federico Fellini, 2 - Spoltore (PE), facilmente raggiungibile</p>
+                            <p>Viale della Riviera, 343, 65123 Pescara PE, facilmente raggiungibile</p>
                         </div>
                     </div>
 
@@ -280,9 +280,9 @@
                 <div class="footer-col">
                     <h4>Contatti</h4>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> Via Federico Fellini, 2 - Spoltore (PE)</li>
-                        <li><i class="fas fa-phone"></i> <a href="tel:+393203009040">+39 320 300 9040</a></li>
-                        <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/393203009040" target="_blank" rel="noopener">WhatsApp +39 320 300 9040</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
+                        <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/393311931737" target="_blank" rel="noopener">WhatsApp +39 331 1931 737</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
                     </ul>
                 </div>
@@ -292,7 +292,7 @@
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
 <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                 </div>
@@ -323,3 +323,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

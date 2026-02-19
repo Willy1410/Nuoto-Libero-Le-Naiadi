@@ -55,7 +55,7 @@
                         <li><a href="chi-siamo.php">Chi Siamo</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
                         <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php" class="active">Pacchetti</a></li>
+                        <li><a href="pacchetti.php" class="active">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                         <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Area Riservata</a></li>
                     </ul>
@@ -70,45 +70,44 @@
 
     <section class="page-hero">
         <div class="container">
-            <h1><i class="fas fa-id-card"></i> Pacchetti Ingressi</h1>
+            <h1><i class="fas fa-id-card"></i>  ABBONAMENTI  </h1>
             <p>Richiedi iscrizione e attivazione ingressi per nuoto libero non agonistico</p>
         </div>
     </section>
 
     <section class="packages-section" id="packagesSection">
         <div class="container">
-            <h2 class="section-title">Iscrizione e Pacchetto Ingressi</h2>
-            <p class="section-subtitle">Percorso in 2 step: quota iniziale obbligatoria + pacchetto ingressi</p>
+            <h2 class="section-title">Iscrizione e Abbonamento Ingressi</h2>
 
             <div class="pricing-grid package-offers-grid">
                 <div class="pricing-card package-step-card package-required-card">
-                    <div class="badge-popular package-step-badge package-step-badge-required">STEP 1 OBBLIGATORIO</div>
+                    <div class="badge-popular package-step-badge package-step-badge-required">ISCRIZIONE OBBLIGATORIA</div>
+                    </label>
                     <div class="pricing-header">
-                        <h3>Iscrizione EPS + Tesseramento</h3>
+                        <h3>Iscrizione e Tesseramento </h3>
                         <div class="price">
                             <span class="currency">EUR</span>
                             <span class="amount">20</span>
-                            <span class="period">/una tantum</span>
                         </div>
                         <span class="savings">Quota iniziale obbligatoria</span>
                     </div>
                     <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> Iscrizione EPS</li>
-                        <li><i class="fas fa-check"></i> Tesseramento associativo</li>
+                        <li><i class="fas fa-check"></i> Iscrizione </li>
+                        <li><i class="fas fa-check"></i> Tesseramento EPS (C.S.E.N.) </li>
                         <li><i class="fas fa-gift"></i> +2 ingressi promo omaggio</li>
-                        <li><i class="fas fa-calendar-check"></i> Attivazione in segreteria</li>
+                        
                     </ul>
                     <p class="package-note-inline">Questo passaggio &egrave; necessario prima di selezionare il pacchetto ingressi.</p>
                 </div>
 
                 <div class="pricing-card featured package-card package-step-card" data-package="10-ingressi" data-price="90.00" data-required-fee="20.00" data-name="Pacchetto 10 Ingressi">
-                    <div class="badge-popular package-step-badge package-step-badge-package">STEP 2</div>
+                    <div class="badge-popular package-step-badge package-step-badge-package">ABBONAMENTI</div>
+                    </label>
                     <div class="pricing-header">
-                        <h3>Pacchetto 10 Ingressi</h3>
+                        <h3>Abbonamento 10 Ingressi</h3>
                         <div class="price">
                             <span class="currency">EUR</span>
-                            <span class="amount">90</span>
-                            <span class="period">/pacchetto</span>
+                            <span class="amount">90</span>                         
                         </div>
                         <span class="savings">Selezionabile solo con iscrizione attiva</span>
                     </div>
@@ -195,7 +194,7 @@
                         <div class="form-group checkbox-group">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="privacyAccept" required>
-                                <span>Accetto l'<a href="privacy.php" target="_blank">Informativa Privacy</a> *</span>
+                                <span>Accetto l'<a href="assets/documenti/informativa-privacy-cladam.pdf" target="_blank" rel="noopener">Informativa Privacy (PDF)</a> *</span>
                             </label>
                         </div>
 
@@ -321,8 +320,8 @@
                 <div class="footer-col">
                     <h4>Contatti</h4>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> Via delle Piscine, 123 - 00100 Roma</li>
-                        <li><i class="fas fa-phone"></i> <a href="tel:+390612345678">+39 06 1234 5678</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> Viale della Riviera, 343, 65123 Pescara PE</li>
+                        <li><i class="fas fa-phone"></i> <a href="tel:+393311931737">+39 331 1931 737</a></li>
                         <li><i class="fas fa-envelope"></i> <a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
                     </ul>
                 </div>
@@ -331,7 +330,7 @@
                     <ul class="footer-links">
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
                         <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                 </div>
@@ -363,3 +362,4 @@
     <script src="js/payment.js"></script>
 </body>
 </html>
+

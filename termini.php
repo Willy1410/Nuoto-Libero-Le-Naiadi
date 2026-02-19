@@ -25,7 +25,7 @@
                         <li><a href="index.php">Home</a></li>
                         <li><a href="orari-tariffe.php">Orari & Tariffe</a></li>
                         <li><a href="moduli.php">Moduli</a></li>
-                        <li><a href="pacchetti.php">Pacchetti Ingressi</a></li>
+                        <li><a href="pacchetti.php">Abbonamenti</a></li>
                         <li><a href="contatti.php">Contatti</a></li>
                     </ul>
                     <a href="pacchetti.php" class="btn btn-primary btn-header">Richiedi Iscrizione</a>
@@ -89,8 +89,8 @@
 
                 <h2>10. Contatti amministrativi</h2>
                 <p><strong>Email:</strong> info@glisqualetti.it<br>
-                <strong>Telefono:</strong> +39 320 300 9040<br>
-                <strong>Sede:</strong> Via delle Piscine, 123 - 00100 Roma</p>
+                <strong>Telefono:</strong> +39 331 1931 737<br>
+                <strong>Sede:</strong> Viale della Riviera, 343, 65123 Pescara PE</p>
 
                 <div class="legal-actions">
                     <a href="index.php" class="btn btn-primary">Torna alla Home</a>
@@ -113,3 +113,4 @@
     <script src="js/main.js"></script>
 </body>
 </html>
+

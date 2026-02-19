@@ -13,7 +13,7 @@ if (appIsLandingMode()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Utente - Gli Squaletti</title>
+    <title>Il mio profilo - Gli Squaletti</title>
     <style>
         :root {
             --primary: #0284c7;
@@ -44,6 +44,7 @@ if (appIsLandingMode()) {
         }
         .header h1 { font-size: 24px; }
         .header small { opacity: 0.95; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         .btn {
             border: 0;
@@ -246,10 +247,13 @@ if (appIsLandingMode()) {
 <body>
     <div class="header">
         <div>
-            <h1>Dashboard Utente</h1>
+            <h1>Il mio profilo</h1>
             <small id="userName">Utente</small>
         </div>
-        <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="homeBtn" type="button">Home</button>
+            <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
+        </div>
     </div>
 
     <div class="container">
@@ -347,7 +351,7 @@ if (appIsLandingMode()) {
         let user = null;
         let profile = null;
         let latestConfirmedPurchase = null;
-        let activeQrBlobUrl = '';
+        let activeQrImageSrc = '';
 
         try {
             user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -491,6 +495,7 @@ if (appIsLandingMode()) {
             if (!section) return;
 
             if (!latestConfirmedPurchase || !latestConfirmedPurchase.id || !latestConfirmedPurchase.qr_code) {
+                activeQrImageSrc = '';
                 section.innerHTML = '<p class="muted">Nessun QR disponibile. Verifica con la segreteria lo stato dell\'iscrizione.</p>';
                 return;
             }
@@ -532,16 +537,15 @@ if (appIsLandingMode()) {
                 throw new Error('Errore generazione QR');
             }
 
-            const blob = await response.blob();
-            if (activeQrBlobUrl) {
-                URL.revokeObjectURL(activeQrBlobUrl);
-                activeQrBlobUrl = '';
+            const svgText = await response.text();
+            if (!svgText || !svgText.includes('<svg')) {
+                throw new Error('Formato QR non valido');
             }
 
-            activeQrBlobUrl = URL.createObjectURL(blob);
+            activeQrImageSrc = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`;
             const qrBox = byId('qrBox');
             if (qrBox) {
-                qrBox.innerHTML = `<img src="${activeQrBlobUrl}" alt="QR ${escapeHtml(qrCode)}">`;
+                qrBox.innerHTML = `<img src="${activeQrImageSrc}" alt="QR ${escapeHtml(qrCode)}">`;
             }
         }
 
@@ -684,17 +688,35 @@ if (appIsLandingMode()) {
             }
         }
 
-        function logout() {
-            if (activeQrBlobUrl) {
-                URL.revokeObjectURL(activeQrBlobUrl);
-                activeQrBlobUrl = '';
+        async function logout() {
+            activeQrImageSrc = '';
+
+            try {
+                await fetch(`${API_URL}/auth.php?action=logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (_) {
             }
-            localStorage.clear();
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
             window.location.href = '../login.php';
         }
 
+        function goHome() {
+            window.location.href = '../landing.php';
+        }
+
         function bindEvents() {
-            byId('logoutBtn').addEventListener('click', logout);
+            byId('logoutBtn').addEventListener('click', () => {
+                logout();
+            });
+            byId('homeBtn').addEventListener('click', goHome);
             byId('openRequestModalBtn').addEventListener('click', openRequestModal);
             byId('closeRequestModalBtn').addEventListener('click', closeRequestModal);
             byId('profileRequestForm').addEventListener('submit', submitProfileRequest);

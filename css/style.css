@@ -839,6 +839,48 @@ section {
 .package-step-card {
     overflow: visible;
     padding-top: calc(var(--spacing-xl) + 0.5rem);
+    position: relative;
+}
+
+.package-step-selector {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.38rem 0.62rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.82);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 4;
+}
+
+.package-step-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.package-step-card:hover .package-step-selector,
+.package-step-card:focus-within .package-step-selector,
+.package-step-card.step-selected .package-step-selector {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.package-step-card.step-selected {
+    border-color: var(--primary-dark);
+    box-shadow: 0 14px 30px rgba(0, 119, 182, 0.2);
 }
 
 .package-required-card {
@@ -879,6 +921,14 @@ section {
     font-weight: 500;
     font-size: 0.95rem;
     text-align: center;
+}
+
+@media (hover: none) {
+    .package-step-selector {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
 }
 
 /* ===================================

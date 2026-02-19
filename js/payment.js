@@ -7,7 +7,9 @@ const paymentState = {
     packagePrice: 0,
     mandatoryFee: 0,
     totalPrice: 0,
-    packageName: ''
+    packageName: '',
+    step1Selected: false,
+    step2Selected: false
 };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -21,12 +23,47 @@ function initPackageSelection() {
     const packageCards = document.querySelectorAll('.package-card');
     const packagesSection = document.getElementById('packagesSection');
     const checkoutSection = document.getElementById('checkoutSection');
+    const stepCheckboxes = document.querySelectorAll('[data-step-select]');
+
+    function applyStepSelectionState(checkbox) {
+        if (!checkbox) return;
+
+        const step = String(checkbox.dataset.stepSelect || '');
+        const selected = !!checkbox.checked;
+        const stepCard = checkbox.closest('.package-step-card');
+
+        if (stepCard) {
+            stepCard.classList.toggle('step-selected', selected);
+        }
+
+        if (step === '1') {
+            paymentState.step1Selected = selected;
+        } else if (step === '2') {
+            paymentState.step2Selected = selected;
+        }
+    }
+
+    function setStepSelection(step, selected) {
+        const checkbox = document.querySelector(`[data-step-select="${step}"]`);
+        if (!checkbox) return;
+        checkbox.checked = !!selected;
+        applyStepSelectionState(checkbox);
+    }
+
+    stepCheckboxes.forEach((checkbox) => {
+        applyStepSelectionState(checkbox);
+        checkbox.addEventListener('change', () => {
+            applyStepSelectionState(checkbox);
+        });
+    });
 
     packageCards.forEach(card => {
         const selectButton = card.querySelector('.select-package');
         if (!selectButton) return;
 
         selectButton.addEventListener('click', function () {
+            // La selezione step e opzionale: il click su Finalizza deve sempre procedere.
+
             const packagePrice = parseFloat(card.dataset.price || '0');
             const mandatoryFee = parseFloat(card.dataset.requiredFee || '0');
             const packageName = card.dataset.name || '10 Ingressi';
@@ -225,6 +262,4 @@ function redirectToConfirmation(enrollmentId, orderData) {
 
     window.location.href = `grazie-iscrizione.php?${params.toString()}`;
 }
-
-
 

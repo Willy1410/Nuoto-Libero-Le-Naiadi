@@ -372,6 +372,24 @@
         return null;
     }
 
+    async function performLogout() {
+        try {
+            await fetch(`${API_URL}/auth.php?action=logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+        } catch (_) {
+        }
+
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.clear();
+        window.location.href = '../login.php';
+    }
+
     function openModal(id) {
         const node = el(id);
         if (!node) return;
@@ -1522,8 +1540,18 @@
 
         if (el('logoutBtn')) {
             el('logoutBtn').addEventListener('click', () => {
-                localStorage.clear();
-                window.location.href = '../login.php';
+                performLogout().catch(() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    sessionStorage.clear();
+                    window.location.href = '../login.php';
+                });
+            });
+        }
+
+        if (el('goHomeBtn')) {
+            el('goHomeBtn').addEventListener('click', () => {
+                window.location.href = config.homeUrl || '../landing.php';
             });
         }
 

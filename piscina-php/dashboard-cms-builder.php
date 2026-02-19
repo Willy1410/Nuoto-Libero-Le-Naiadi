@@ -74,6 +74,7 @@ if (appIsLandingMode()) {
             <small id="whoami">Utente</small>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-light" id="homeBtn">Home</button>
             <button type="button" class="btn btn-light" id="backBtn">Torna dashboard</button>
             <button type="button" class="btn btn-danger" id="logoutBtn">Esci</button>
         </div>
@@ -540,8 +541,25 @@ if (appIsLandingMode()) {
             window.location.href = 'dashboard-ufficio.php';
         });
 
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.clear();
+        document.getElementById('homeBtn').addEventListener('click', () => {
+            window.location.href = '../landing.php';
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await fetch('../api/auth.php?action=logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (_) {
+            }
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
             window.location.href = '../login.php';
         });
 
@@ -553,5 +571,4 @@ if (appIsLandingMode()) {
     </script>
 </body>
 </html>
-
 

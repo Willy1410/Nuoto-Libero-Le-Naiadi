@@ -158,6 +158,7 @@ try {
     $fallback = [
         'modulo-iscrizione' => [PROJECT_ROOT . '/assets/modulo-iscrizione.html', 'text/html; charset=UTF-8', 'modulo-iscrizione.html'],
         'regolamento-piscina' => [PROJECT_ROOT . '/assets/regolamento-piscina.html', 'text/html; charset=UTF-8', 'regolamento-piscina.html'],
+        'informativa-privacy' => [PROJECT_ROOT . '/assets/documenti/informativa-privacy-cladam.pdf', 'application/pdf', 'informativa-privacy-cladam.pdf'],
     ];
 
     if (isset($fallback[$slug])) {
