@@ -41,13 +41,13 @@ require_once __DIR__ . '/bootstrap.php';
             padding: 24px;
         }
         .landing-card {
-            width: min(920px, 100%);
+            width: min(940px, 100%);
             background: var(--c-white);
             border-radius: 22px;
             box-shadow: 0 24px 44px rgba(2, 6, 23, 0.35);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
+            grid-template-columns: 1.02fr 0.98fr;
         }
         .brand-side {
             padding: 34px;
@@ -88,7 +88,7 @@ require_once __DIR__ . '/bootstrap.php';
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 18px;
+            gap: 16px;
         }
         .info-side h1 {
             margin: 0;
@@ -141,6 +141,108 @@ require_once __DIR__ . '/bootstrap.php';
             color: #0369a1;
             background: #fff;
         }
+        .quick-form {
+            margin-top: 8px;
+            border: 1px solid #dbeafe;
+            border-radius: 14px;
+            padding: 14px;
+            background: #f8fbff;
+        }
+        .quick-form h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            color: #0f172a;
+        }
+        .quick-form .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .quick-form .field {
+            margin-bottom: 8px;
+        }
+        .quick-form label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: #334155;
+            font-weight: 600;
+        }
+        .quick-form input,
+        .quick-form textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 9px 10px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            background: #fff;
+        }
+        .quick-form input:focus,
+        .quick-form textarea:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+        }
+        .quick-form textarea {
+            min-height: 86px;
+            resize: vertical;
+        }
+        .quick-form .privacy {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+        .quick-form .privacy input {
+            width: auto;
+            margin-top: 2px;
+        }
+        .quick-form .submit-btn {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            box-shadow: 0 9px 18px rgba(2, 132, 199, 0.24);
+        }
+        .quick-form .submit-btn:disabled {
+            opacity: .75;
+            cursor: wait;
+        }
+        .form-feedback {
+            margin-top: 9px;
+            font-size: 12px;
+            border-radius: 9px;
+            padding: 8px 9px;
+            display: none;
+        }
+        .form-feedback.ok {
+            display: block;
+            background: #ecfdf5;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .form-feedback.error {
+            display: block;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .hp-field {
+            position: absolute;
+            left: -9999px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
         .mode-hint {
             margin-top: 8px;
             font-size: 12px;
@@ -150,6 +252,7 @@ require_once __DIR__ . '/bootstrap.php';
             .landing-card { grid-template-columns: 1fr; }
             .brand-side, .info-side { padding: 24px; }
             .info-side h1 { font-size: 24px; }
+            .quick-form .row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -179,8 +282,120 @@ require_once __DIR__ . '/bootstrap.php';
                 <a class="cta-btn cta-primary" href="contatti.php">Contattaci ora</a>
                 <a class="cta-btn cta-secondary" href="login.php">Area riservata</a>
             </div>
+            <form id="landingContactForm" class="quick-form" novalidate>
+                <h3>Richiedi contatto rapido</h3>
+                <div class="row">
+                    <div class="field">
+                        <label for="landingName">Nome e cognome *</label>
+                        <input id="landingName" name="name" type="text" maxlength="120" required>
+                    </div>
+                    <div class="field">
+                        <label for="landingEmail">Email *</label>
+                        <input id="landingEmail" name="email" type="email" maxlength="255" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="landingPhone">Telefono</label>
+                        <input id="landingPhone" name="phone" type="tel" maxlength="40">
+                    </div>
+                    <div class="field">
+                        <label for="landingSubject">Oggetto *</label>
+                        <input id="landingSubject" name="subject" type="text" maxlength="200" value="Richiesta informazioni da landing" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="landingMessage">Messaggio *</label>
+                    <textarea id="landingMessage" name="message" maxlength="4000" required></textarea>
+                </div>
+                <input class="hp-field" type="text" name="website" id="landingWebsite" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <label class="privacy" for="landingPrivacy">
+                    <input id="landingPrivacy" name="privacy" type="checkbox" required>
+                    <span>Accetto l'<a href="privacy.php" target="_blank" rel="noopener">informativa privacy</a> *</span>
+                </label>
+                <button id="landingSubmitBtn" class="submit-btn" type="submit">Invia richiesta</button>
+                <div id="landingFormFeedback" class="form-feedback" role="status" aria-live="polite"></div>
+            </form>
             <div class="mode-hint">Modalita corrente: <strong><?= htmlspecialchars(appSiteMode(), ENT_QUOTES, 'UTF-8'); ?></strong></div>
         </section>
     </main>
+    <script>
+        (function () {
+            const form = document.getElementById('landingContactForm');
+            if (!form) return;
+
+            const submitBtn = document.getElementById('landingSubmitBtn');
+            const feedback = document.getElementById('landingFormFeedback');
+
+            function setFeedback(message, kind) {
+                if (!feedback) return;
+                feedback.className = 'form-feedback ' + (kind === 'ok' ? 'ok' : 'error');
+                feedback.textContent = message;
+            }
+
+            function clearFeedback() {
+                if (!feedback) return;
+                feedback.className = 'form-feedback';
+                feedback.textContent = '';
+            }
+
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                clearFeedback();
+
+                const payload = {
+                    name: (document.getElementById('landingName')?.value || '').trim(),
+                    email: (document.getElementById('landingEmail')?.value || '').trim(),
+                    phone: (document.getElementById('landingPhone')?.value || '').trim(),
+                    subject: (document.getElementById('landingSubject')?.value || '').trim(),
+                    message: (document.getElementById('landingMessage')?.value || '').trim(),
+                    privacy: !!document.getElementById('landingPrivacy')?.checked,
+                    website: (document.getElementById('landingWebsite')?.value || '').trim()
+                };
+
+                if (!payload.name || !payload.email || !payload.subject || !payload.message) {
+                    setFeedback('Compila tutti i campi obbligatori.', 'error');
+                    return;
+                }
+                if (!payload.privacy) {
+                    setFeedback('Devi accettare la privacy per inviare la richiesta.', 'error');
+                    return;
+                }
+
+                const originalText = submitBtn ? submitBtn.textContent : '';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Invio in corso...';
+                }
+
+                try {
+                    const response = await fetch('api/contact.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Invio non riuscito');
+                    }
+
+                    const params = new URLSearchParams({
+                        name: payload.name,
+                        subject: payload.subject,
+                        email: payload.email
+                    });
+                    window.location.href = 'grazie-contatto.php?' + params.toString();
+                } catch (error) {
+                    setFeedback((error && error.message) ? error.message : 'Errore invio richiesta. Riprova o usa i contatti diretti.', 'error');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText || 'Invia richiesta';
+                    }
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
