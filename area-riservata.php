@@ -326,7 +326,7 @@ $currentBlock = $demoBlocks[$demo];
         </form>
 
         <div class="links">
-            <a href="landing.php">Torna alla landing</a>
+            <a href="landing.php">Torna alla home</a>
             <a href="landing.php#landingContactForm">Richiedi contatto</a>
             <a href="landing-privacy.php">Privacy vetrina</a>
         </div>

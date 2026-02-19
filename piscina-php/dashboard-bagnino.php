@@ -116,13 +116,20 @@ if (appIsLandingMode()) {
 
         .alert {
             display: none;
-            margin-bottom: 10px;
             padding: 10px 12px;
             border-radius: 8px;
             font-size: 14px;
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(920px, calc(100% - 24px));
+            z-index: 2200;
+            border: 1px solid transparent;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
         }
-        .alert.ok { display: block; background: #dcfce7; color: #166534; }
-        .alert.err { display: block; background: #fee2e2; color: #991b1b; }
+        .alert.ok { display: block; background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .alert.err { display: block; background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 
         .user-box {
             margin-top: 12px;
@@ -151,6 +158,11 @@ if (appIsLandingMode()) {
 
         @media (max-width: 900px) {
             .scanner-grid { grid-template-columns: 1fr; }
+            .alert {
+                top: 8px;
+                width: calc(100% - 16px);
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -195,10 +207,10 @@ if (appIsLandingMode()) {
                 </div>
 
                 <div class="manual-box">
-                    <p style="margin-bottom:8px; color:#64748b; font-size:13px;">Se la camera non è disponibile, inserisci il codice manualmente.</p>
+                    <p style="margin-bottom:8px; color:#64748b; font-size:13px;">Se la camera non e disponibile, inserisci il codice manualmente.</p>
                     <input type="text" id="qrInput" placeholder="PSC-XXXXXXXXXX-XXXXXX">
                     <div class="actions-row">
-                        <button class="btn btn-primary" onclick="verificaQR()">Verifica QR</button>
+                        <button class="btn btn-primary" onclick="verificaQR()">Verifica QR manuale</button>
                         <button class="btn" onclick="clearCurrent()">Pulisci</button>
                     </div>
 
@@ -239,6 +251,7 @@ if (appIsLandingMode()) {
         let checkinBusy = false;
         let verifyBusy = false;
         let scannerLibraryPromise = null;
+        let alertTimer = null;
 
         if (!token || !user || user.ruolo !== 'bagnino') {
             window.location.href = '../login.php';
@@ -253,14 +266,16 @@ if (appIsLandingMode()) {
 
         function showAlert(message, type = 'ok') {
             const box = document.getElementById('alertBox');
+            if (alertTimer) {
+                clearTimeout(alertTimer);
+                alertTimer = null;
+            }
             box.className = `alert ${type === 'error' ? 'err' : 'ok'}`;
             box.textContent = message;
-            if (type !== 'error') {
-                setTimeout(() => {
-                    box.className = 'alert';
-                    box.textContent = '';
-                }, 5000);
-            }
+            alertTimer = setTimeout(() => {
+                box.className = 'alert';
+                box.textContent = '';
+            }, type === 'error' ? 9000 : 5000);
         }
 
         function getErrorMessage(error) {
@@ -453,6 +468,7 @@ if (appIsLandingMode()) {
                     <button class="btn" onclick="clearCurrent()">Annulla</button>
                 </div>
             `;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         async function confermaCheckin() {
@@ -620,8 +636,7 @@ if (appIsLandingMode()) {
             try {
                 await scanner.stop();
                 await scanner.clear();
-            } catch (error) {
-                console.error(error);
+            } catch (_) {
             } finally {
                 scannerRunning = false;
                 scanner = null;
@@ -701,4 +716,5 @@ if (appIsLandingMode()) {
     </script>
 </body>
 </html>
+
 

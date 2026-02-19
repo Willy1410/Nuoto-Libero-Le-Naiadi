@@ -11,11 +11,11 @@ require_once __DIR__ . '/bootstrap.php';
     <meta name="robots" content="noindex,nofollow">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="it_IT">
-    <meta property="og:title" content="Gli Squaletti - Sito in aggiornamento">
+    <meta property="og:title" content="Nuoto Libero Le Naiadi - Sito in aggiornamento">
     <meta property="og:description" content="Stiamo preparando il nuovo sito. Contattaci per supporto immediato.">
     <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/landing.php', ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
-    <title>Gli Squaletti - Sito in aggiornamento</title>
+    <title>Nuoto Libero Le Naiadi - Sito in aggiornamento</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -119,6 +119,10 @@ require_once __DIR__ . '/bootstrap.php';
             border-radius: 12px;
             background: #f8fbff;
             padding: 10px 12px;
+        }
+        .hours-grid {
+            display: grid;
+            gap: 8px;
         }
         .hours-box h3 {
             margin: 0 0 6px;
@@ -286,7 +290,7 @@ require_once __DIR__ . '/bootstrap.php';
             <div class="brand-logo">
                 <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Logo Gli Squaletti">
             </div>
-            <h2 class="brand-title">Gli Squaletti</h2>
+            <h2 class="brand-title">Nuoto Libero Le Naiadi</h2>
             <p class="brand-copy">Stiamo finalizzando gli ultimi dettagli del nuovo sito. Le attivita operative proseguono regolarmente con supporto diretto della segreteria.</p>
             <div class="brand-badges">
                 <span>Nuoto libero</span>
@@ -298,19 +302,27 @@ require_once __DIR__ . '/bootstrap.php';
             <h1>Sito in aggiornamento</h1>
             <p>La piattaforma completa sara online a breve. Nel frattempo puoi contattarci subito per iscrizioni, documenti e informazioni operative.</p>
             <ul class="contact-list">
-                <li><strong>Email</strong><a href="mailto:info@glisqualetti.it">info@glisqualetti.it</a></li>
+                <li><strong>Email</strong><a href="mailto:info@nuotoliberolenaiadi.it">info@nuotoliberolenaiadi.it</a></li>
                 <li><strong>Telefono</strong><a href="tel:+393203009040">+39 320 300 9040</a></li>
                 <li><strong>Sede</strong><span>Via Federico Fellini, 2 - Spoltore (PE)</span></li>
             </ul>
             <div class="cta-row">
-                <a class="cta-btn cta-primary" href="#landingContactForm">Contattaci ora</a>
+                <a class="cta-btn cta-primary" href="https://wa.me/393203009040?text=Ciao%2C%20vorrei%20parlare%20subito%20con%20la%20segreteria%20di%20Nuoto%20Libero%20Le%20Naiadi." target="_blank" rel="noopener">Contattaci ora</a>
                 <a class="cta-btn cta-secondary" href="area-riservata.php">Area riservata</a>
             </div>
-            <div class="hours-box" aria-label="Giorni e orari di apertura">
-                <h3>Giorni e orari di apertura</h3>
-                <p><strong>Lunedi-Venerdi:</strong> 07:00-22:00</p>
-                <p><strong>Sabato:</strong> 08:00-19:00</p>
-                <p><strong>Domenica:</strong> 09:00-19:00</p>
+            <div class="hours-grid" aria-label="Giorni e orari di apertura">
+                <div class="hours-box">
+                    <h3>Nuoto libero in piscina</h3>
+                    <p><strong>Lunedi, Mercoledi, Venerdi:</strong></p>
+                    <p>06:30 - 09:00</p>
+                    <p>13:00 - 14:00</p>
+                </div>
+                <div class="hours-box">
+                    <h3>Ufficio (solo su appuntamento)</h3>
+                    <p><strong>Martedi:</strong> 10:00 - 12:30</p>
+                    <p><strong>Giovedi:</strong> 16:00 - 19:00</p>
+                    <p><strong>Sabato:</strong> 09:00 - 11:00</p>
+                </div>
             </div>
             <form id="landingContactForm" class="quick-form" novalidate>
                 <h3>Richiedi informazioni</h3>
