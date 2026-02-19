@@ -3,18 +3,32 @@
 Thumbs.db
 *.tmp
 *.temp
+.idea/
+.vscode/
+*.swp
 
 # Environment / secrets
 .env
 .env.*
 !.env.example
-config/mail.php
-config/payments.php
+*.local.env
+config/*.local.php
 
 # Composer artifacts
 vendor/
 composer.phar
 .phpunit.result.cache
+
+# Node / frontend artifacts
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Build / cache
+build/
+dist/
+coverage/
+.cache/
 
 # Runtime logs
 logs/*
@@ -23,6 +37,7 @@ logs/mail_queue/*
 !logs/mail_queue/.gitkeep
 logs/ratelimit/*
 !logs/ratelimit/.gitkeep
+*.log
 
 # Runtime uploads
 uploads/moduli/*
@@ -30,4 +45,11 @@ uploads/moduli/*
 !uploads/moduli/_archive/
 uploads/moduli/_archive/*
 !uploads/moduli/_archive/.gitkeep
+uploads/documenti/**
+
+# Local backups
+_backups/
+*.zip
+
+# Local-only docs with credentials
 DOCUMENTAZIONE_E_CONFIG/TEST_CREDENTIALS_LOCAL.txt
