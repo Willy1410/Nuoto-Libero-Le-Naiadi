@@ -13,11 +13,11 @@
     <meta property="og:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
     <meta property="og:description" content="Richiedi iscrizione e attivazione pacchetti ingressi per nuoto libero non agonistico in piscina.">
     <meta property="og:url" content="/pacchetti.php">
-    <meta property="og:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Pacchetti Ingressi Nuoto Libero - Gli Squaletti">
     <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico: iscrizione e pacchetti ingressi.">
-    <meta name="twitter:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta name="twitter:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <title>Pacchetti Ingressi Nuoto Libero - Gli Squaletti</title>
     <script type="application/ld+json">
     {
@@ -29,7 +29,7 @@
       "url": "/pacchetti.php"
     }
     </script>
-    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -47,7 +47,7 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <span>Gli Squaletti</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
@@ -210,7 +210,7 @@
                             <h3><i class="fas fa-building"></i> Finalizzazione in Struttura</h3>
                             <div class="instore-info">
                                 <i class="fas fa-info-circle"></i>
-                                <p>Nessun pagamento online. Invia la richiesta e completa iscrizione/tesseramento direttamente in struttura.</p>
+                                <p>Invia la richiesta e completa iscrizione/tesseramento direttamente in struttura.</p>
                             </div>
                             <button type="submit" id="instore-submit" class="btn btn-primary btn-block">
                                 <i class="fas fa-check"></i> Finalizza iscrizione in struttura
@@ -313,7 +313,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <h3>Gli Squaletti</h3>
                     </div>
                     <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>

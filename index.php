@@ -22,11 +22,11 @@ if (appIsLandingMode()) {
     <meta property="og:title" content="Nuoto Libero in Piscina - Gli Squaletti">
     <meta property="og:description" content="Piscina nuoto libero non agonistico, corsie dedicate, orari flessibili e area riservata utenti.">
     <meta property="og:url" content="/index.php">
-    <meta property="og:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Nuoto Libero in Piscina - Gli Squaletti">
     <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico, piscina coperta e 50m all'aperto in estate.">
-    <meta name="twitter:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta name="twitter:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
 
     <title>Nuoto Libero in Piscina - Gli Squaletti</title>
     <script type="application/ld+json">
@@ -41,7 +41,7 @@ if (appIsLandingMode()) {
     </script>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -68,7 +68,7 @@ if (appIsLandingMode()) {
                 <div class="nav-wrapper">
                     <!-- Logo -->
                     <a href="index.php" class="logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <span>Gli Squaletti</span>
                     </a>
 
@@ -100,7 +100,7 @@ if (appIsLandingMode()) {
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-background">
-            <img src="https://www.genspark.ai/api/files/s/qroJIpG9" alt="Piscina Olimpionica Naiadi Pescara" loading="lazy">
+            <img src="https://public.gensparkspace.com/api/files/s/qroJIpG9" alt="Piscina Olimpionica Naiadi Pescara" loading="lazy">
             <div class="hero-overlay"></div>
         </div>
         <div class="hero-content">
@@ -180,10 +180,10 @@ if (appIsLandingMode()) {
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-icon">
-                        <i class="fas fa-credit-card"></i>
+                        <i class="fas fa-file-signature"></i>
                     </div>
                     <h3>Invia Richiesta</h3>
-                    <p>Invia la richiesta di adesione e scegli bonifico o contributo in struttura. La segreteria confermer? l'attivazione.</p>
+                    <p>Invia la richiesta di adesione online. La segreteria verifica la pratica e conferma l'attivazione in struttura.</p>
                 </div>
 
                 <div class="step-arrow">
@@ -294,7 +294,7 @@ if (appIsLandingMode()) {
                 <!-- Colonna 1: Info -->
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <h3>Gli Squaletti</h3>
                     </div>
                     <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>

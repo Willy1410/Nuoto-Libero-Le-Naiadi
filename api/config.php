@@ -117,7 +117,7 @@ define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
 define('MAIL_LOG_PATH', LOG_DIR . '/mail.log');
 define('MAIL_QUEUE_DIR', LOG_DIR . '/mail_queue');
 define('SITE_NAME', 'Gli Squaletti');
-define('SITE_LOGO_URL', 'https://www.genspark.ai/api/files/s/s3WpPfgP');
+define('SITE_LOGO_URL', 'https://public.gensparkspace.com/api/files/s/s3WpPfgP');
 
 if (!file_exists(MAIL_LOG_PATH)) {
     touch(MAIL_LOG_PATH);

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * API pacchetti
@@ -48,16 +48,15 @@ function respond(int $statusCode, array $payload): void
 function paymentMethodLabel(string $method): string
 {
     return match ($method) {
-        'contanti', 'instore' => 'Contributo in struttura',
-        'bonifico' => 'Bonifico bancario',
-        default => 'Contributo',
+        'contanti', 'instore', 'bonifico' => 'Finalizzazione in struttura',
+        default => 'Finalizzazione in struttura',
     };
 }
 
 function normalizePaymentMethod(string $method): string
 {
     $value = strtolower(trim($method));
-    if ($value === 'instore') {
+    if ($value === 'instore' || $value === 'bonifico') {
         return 'contanti';
     }
 
@@ -519,13 +518,13 @@ function assignManualPackage(): void
         respond(400, ['success' => false, 'message' => 'Utente o modalita pacchetto non validi']);
     }
 
-    $allowedMethods = ['bonifico', 'contanti'];
+    $allowedMethods = ['contanti'];
     if (!in_array($metodoPagamento, $allowedMethods, true)) {
-        respond(400, ['success' => false, 'message' => 'Metodo pagamento non supportato']);
+        respond(400, ['success' => false, 'message' => 'Canale finalizzazione non supportato']);
     }
 
     if (!in_array($statoPagamento, ['pending', 'confirmed', 'cancelled'], true)) {
-        respond(400, ['success' => false, 'message' => 'Stato pagamento non valido']);
+        respond(400, ['success' => false, 'message' => 'Stato pratica non valido']);
     }
 
     try {
@@ -733,7 +732,7 @@ function acquistaPacchetto(): void
     // Flusso pubblico: finalizzazione iscrizione in struttura (nessun pagamento online).
     $allowedMethods = ['contanti'];
     if (!in_array($metodoPagamento, $allowedMethods, true)) {
-        respond(400, ['success' => false, 'message' => 'Pagamento online non attivo. Usa finalizzazione in struttura.']);
+        respond(400, ['success' => false, 'message' => 'Canale finalizzazione non supportato.']);
     }
 
     if ($pacchettoId <= 0) {
@@ -837,7 +836,7 @@ function acquistaPacchetto(): void
                     . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$pacchetto['nome'], ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Importo:</strong> EUR ' . number_format((float)$managed['prezzo'], 2, ',', '.') . '<br>'
                     . '<strong>Ingressi inclusi:</strong> ' . (int)$managed['num_ingressi'] . '<br>'
-                    . '<strong>Metodo di pagamento:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
+                    . '<strong>Canale finalizzazione:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Codice QR:</strong> <code>' . htmlspecialchars((string)$qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
                     . '<strong>Scadenza:</strong> ' . htmlspecialchars((string)$dataScadenza, ENT_QUOTES, 'UTF-8') . '</p>'
                     . '<p><a href="' . htmlspecialchars($qrDownloadUrl, ENT_QUOTES, 'UTF-8') . '">Scarica QR in PDF</a></p>';
@@ -845,19 +844,19 @@ function acquistaPacchetto(): void
                 $mailSent = sendBrandedEmail(
                     (string)$user['email'],
                     $fullName,
-                    'Pagamento confermato e QR disponibile - Gli Squaletti',
+                    'Pratica confermata e QR disponibile - Gli Squaletti',
                     'QR code disponibile',
                     $body,
-                    'Pagamento confermato'
+                    'Pratica confermata'
                 );
             } else {
                 $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
                     . '<p>abbiamo ricevuto la tua richiesta di attivazione pacchetto ingressi.</p>'
                     . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$pacchetto['nome'], ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Importo:</strong> EUR ' . number_format((float)$managed['prezzo'], 2, ',', '.') . '<br>'
-                    . '<strong>Metodo di pagamento:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
+                    . '<strong>Canale finalizzazione:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Riferimento pratica:</strong> <code>' . htmlspecialchars((string)$acquistoId, ENT_QUOTES, 'UTF-8') . '</code></p>'
-                    . '<p>Il pacchetto risulta in <strong>attesa di conferma</strong>. Riceverai un aggiornamento appena il pagamento sara verificato.</p>';
+                    . '<p>Il pacchetto risulta in <strong>attesa di conferma</strong>. Riceverai un aggiornamento appena la pratica sara completata in segreteria.</p>';
 
                 $mailSent = sendBrandedEmail(
                     (string)$user['email'],
@@ -880,7 +879,7 @@ function acquistaPacchetto(): void
         respond(201, [
             'success' => true,
             'message' => $isImmediate
-                ? 'Pagamento confermato. QR code generato con successo.'
+                ? 'Pratica confermata. QR code generato con successo.'
                 : 'Richiesta registrata correttamente, in attesa di conferma.',
             'acquisto' => $acquisto,
             'mail_sent' => $mailSent,
@@ -977,7 +976,7 @@ function confirmPayment(): void
             $pdo->commit();
             respond(200, [
                 'success' => true,
-                'message' => 'Pagamento gia confermato',
+                'message' => 'Pratica gia confermata',
                 'qr_code' => $existingQr,
                 'mail_sent' => false,
                 'already_confirmed' => true,
@@ -1007,8 +1006,8 @@ function confirmPayment(): void
 
         logActivity(
             (string)$currentUser['user_id'],
-            'conferma_pagamento',
-            'Pagamento confermato per acquisto ' . $acquistoId,
+            'conferma_pratica',
+            'Pratica confermata per acquisto ' . $acquistoId,
             'acquisti',
             $acquistoId
         );
@@ -1021,7 +1020,7 @@ function confirmPayment(): void
         if ($shouldNotify && $user && !empty($user['email'])) {
             $qrDownloadUrl = buildAbsoluteUrl('api/qr.php?action=download&acquisto_id=' . urlencode($acquistoId));
             $body = '<p>Ciao <strong>' . htmlspecialchars((string)$user['nome'], ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
-                . '<p>il tuo pagamento e stato <strong>confermato</strong> e il tuo QR e pronto.</p>'
+                . '<p>la tua pratica e stata <strong>confermata</strong> e il tuo QR e pronto.</p>'
                 . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$acquisto['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '<br>'
                 . '<strong>Codice QR:</strong> <code>' . htmlspecialchars($qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
                 . '<strong>Ingressi disponibili:</strong> ' . (int)$acquisto['ingressi_rimanenti'] . '<br>'
@@ -1031,14 +1030,14 @@ function confirmPayment(): void
             $mailSent = sendBrandedEmail(
                 (string)$user['email'],
                 trim((string)$user['nome'] . ' ' . (string)$user['cognome']),
-                'Pagamento confermato e QR pronto - Gli Squaletti',
-                'Pagamento confermato',
+                'Pratica confermata e QR pronto - Gli Squaletti',
+                'Pratica confermata',
                 $body,
                 'Il tuo QR e pronto'
             );
 
             if (!$mailSent) {
-                logMailEvent('warning', 'Email conferma pagamento non inviata', [
+                logMailEvent('warning', 'Email conferma pratica non inviata', [
                     'acquisto_id' => $acquistoId,
                     'email' => $user['email'],
                 ]);
@@ -1047,7 +1046,7 @@ function confirmPayment(): void
 
         respond(200, [
             'success' => true,
-            'message' => $alreadyConfirmed ? 'Pagamento gia confermato, QR ripristinato' : 'Pagamento confermato',
+            'message' => $alreadyConfirmed ? 'Pratica gia confermata, QR ripristinato' : 'Pratica confermata',
             'qr_code' => $qrCode,
             'mail_sent' => $mailSent,
             'already_confirmed' => $alreadyConfirmed,
@@ -1057,8 +1056,6 @@ function confirmPayment(): void
             $pdo->rollBack();
         }
         error_log('confirmPayment error: ' . $e->getMessage());
-        respond(500, ['success' => false, 'message' => 'Errore durante la conferma del pagamento']);
+        respond(500, ['success' => false, 'message' => 'Errore durante la conferma della pratica']);
     }
 }
-
-

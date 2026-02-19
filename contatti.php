@@ -12,10 +12,10 @@
     <meta property="og:title" content="Contatti - Gli Squaletti Nuoto Libero">
     <meta property="og:description" content="Contatta la segreteria per iscrizione e gestione pacchetti ingressi.">
     <meta property="og:url" content="/contatti.php">
-    <meta property="og:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
     <title>Contatti Nuoto Libero - Gli Squaletti</title>
-    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -35,7 +35,7 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <span>Gli Squaletti</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
@@ -308,7 +308,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <h3>Gli Squaletti</h3>
                     </div>
                     <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>

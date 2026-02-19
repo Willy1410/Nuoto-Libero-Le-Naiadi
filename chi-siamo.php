@@ -12,10 +12,10 @@
     <meta property="og:title" content="Chi Siamo - Gli Squaletti">
     <meta property="og:description" content="Scopri la missione e il team dedicato al nuoto libero non agonistico.">
     <meta property="og:url" content="/chi-siamo.php">
-    <meta property="og:image" content="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <meta name="twitter:card" content="summary_large_image">
     <title>Chi Siamo - Associazione Nuoto Libero Gli Squaletti</title>
-    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -35,7 +35,7 @@
             <div class="container">
                 <div class="nav-wrapper">
                     <a href="index.php" class="logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <span>Gli Squaletti</span>
                     </a>
                     <ul class="nav-menu" id="navMenu">
@@ -77,7 +77,7 @@
                 </div>
 
                 <div class="about-image">
-                    <img src="https://www.genspark.ai/api/files/s/8wOxAopz" alt="Piscina Naiadi Pescara" loading="lazy">
+                    <img src="https://public.gensparkspace.com/api/files/s/8wOxAopz" alt="Piscina Naiadi Pescara" loading="lazy">
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@
             <div class="brands-grid">
                 <div class="brand-card">
                     <div class="brand-icon">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                     </div>
                     <h3>Gli Squaletti</h3>
                     <p>Dedicato al <strong>nuoto libero</strong> per adulti e ragazzi. Corsie dedicate, orari flessibili e ambiente professionale presso la Piscina Naiadi di Pescara.</p>
@@ -159,7 +159,7 @@
 
             <div class="facility-content">
                 <div class="facility-image">
-                    <img src="https://www.genspark.ai/api/files/s/DJs6A7qS" alt="Piscina Naiadi Panoramica" loading="lazy">
+                    <img src="https://public.gensparkspace.com/api/files/s/DJs6A7qS" alt="Piscina Naiadi Panoramica" loading="lazy">
                 </div>
 
                 <div class="facility-features">
@@ -272,7 +272,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://www.genspark.ai/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
+                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Gli Squaletti Logo">
                         <h3>Gli Squaletti</h3>
                     </div>
                     <p>CLADAM GROUP - Nuoto libero presso Piscina Naiadi, Pescara</p>

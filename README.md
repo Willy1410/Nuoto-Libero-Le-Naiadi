@@ -1,4 +1,4 @@
-﻿# Nuoto Libero Le Naiadi
+# Nuoto Libero Le Naiadi
 
 Stack: frontend PHP/HTML/CSS/JS + API PHP + MySQL (XAMPP locale o hosting LAMP).
 
@@ -48,6 +48,5 @@ Variabile `.env`:
 ## Documentazione utile
 - `DOCUMENTAZIONE_E_CONFIG/ISTRUZIONI_SETUP_E_TEST.md`
 - `DOCUMENTAZIONE_E_CONFIG/CONFIG_EMAIL.md`
-- `DOCUMENTAZIONE_E_CONFIG/CONFIG_PAGAMENTI_STRIPE_PAYPAL.md`
 - `DOCUMENTAZIONE_E_CONFIG/DIARIO_SESSIONI.md`
 - `db/README_DB.md`

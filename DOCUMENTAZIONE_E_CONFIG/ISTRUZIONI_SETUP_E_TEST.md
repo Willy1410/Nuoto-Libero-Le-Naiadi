@@ -67,14 +67,14 @@ Se in XAMPP usi credenziali diverse, modifica questi valori (o variabili ambient
 - In `piscina-php/dashboard-admin.php` verifica:
   - statistiche dashboard
   - tab documenti pending
-  - tab acquisti pending con bottone conferma pagamento
+  - tab pratiche pending con bottone conferma pratica
   - report giornaliero
   - accesso a `CMS Contenuti` (pagina `piscina-php/dashboard-contenuti.php`)
 
 ### Test ufficio/segreteria
 - In `piscina-php/dashboard-ufficio.php` verifica:
   - lista acquisti pending
-  - conferma pagamento (genera QR e invia mail di conferma)
+  - conferma pratica (genera QR e invia mail di conferma)
   - revisione documenti
   - accesso a `CMS Contenuti`
 
@@ -85,14 +85,12 @@ Se in XAMPP usi credenziali diverse, modifica questi valori (o variabili ambient
   - registrazione check-in
   - storico check-in giornata
 
-### Test area utente (acquisto + QR PDF)
-- In `piscina-php/dashboard-utente.php` verifica:
-  - scelta metodo pagamento prima dell'acquisto (carta/paypal/bonifico/in struttura)
-  - comportamento stato:
-    - carta/paypal => conferma immediata + QR disponibile
-    - bonifico/in struttura => pending finche conferma ufficio/admin
-  - visualizzazione QR in dashboard
-  - download PDF QR da `api/qr.php?action=download&acquisto_id=...`
+### Test area utente (richiesta + QR PDF)
+- In piscina-php/dashboard-utente.php verifica:
+  - invio richiesta pacchetto con finalizzazione in struttura
+  - stato pratica: pending fino a conferma ufficio/admin
+  - visualizzazione QR in dashboard dopo conferma
+  - download PDF QR da api/qr.php?action=download&acquisto_id=...
 
 ## 5) Test bug UI richiesti
 
@@ -125,41 +123,7 @@ Dettaglio completo:
 
 Nota: se SMTP non configurato, gli endpoint rispondono con errore gestito (comportamento previsto).
 
-## 7) Configurazione Stripe/PayPal (solo test/sandbox)
-
-File da compilare:
-- `config/payments.php`
-
-Imposta solo chiavi test:
-- Stripe: `pk_test`, `sk_test`, `whsec_...`
-- PayPal: `client_id`, `client_secret`, `webhook_id` sandbox
-
-Dettaglio completo:
-- `DOCUMENTAZIONE_E_CONFIG/CONFIG_PAGAMENTI_STRIPE_PAYPAL.md`
-
-Webhook:
-- Stripe: endpoint applicativo da configurare lato provider se attivi flusso server completo
-- PayPal: endpoint webhook sandbox coerente con il tuo ambiente locale/tunnel
-
-## 8) Bonifico - cosa fai tu e cosa vede l'utente
-
-### Cosa fai tu
-1. Compila dati bonifico test in `config/payments.php`:
-   - intestatario, iban, banca, causale, email conferma
-2. Configura SMTP (fase email) per ricevere notifiche bonifico.
-
-### Cosa vede l'utente
-1. In `pacchetti.php` seleziona metodo `Bonifico bancario`.
-2. Visualizza dati bonifico.
-3. Inserisce riferimento + data bonifico.
-4. Clicca `Ho effettuato il bonifico`.
-
-### Cosa succede
-- Il frontend chiama `api/bonifico-notify.php`.
-- L'admin riceve email notifica (se SMTP configurato).
-- L'utente riceve conferma a schermo di notifica registrata.
-
-## 9) Checklist rapida finale
+## 7) Checklist rapida finale
 - [ ] Apache e MySQL avviati
 - [ ] `db/CREATE_DATABASE_FROM_ZERO.sql` importato senza errori
 - [ ] Login con utenti test funzionante
@@ -170,8 +134,8 @@ Webhook:
 - [ ] Bottone Area Riservata con sfondo corretto
 - [ ] SMTP test configurato e invio contatti funzionante
 - [ ] Log mail scritto in `logs/mail.log`
-- [ ] Config test Stripe/PayPal compilata (senza chiavi reali)
-- [ ] Flusso bonifico + notifica admin verificato
+- [ ] Nessun flusso pagamento online attivo nel sito
+- [ ] Flusso richiesta/finalizzazione in struttura verificato
 
 ## Troubleshooting veloce
 1. API login da errore 500:
@@ -184,4 +148,3 @@ Webhook:
 3. Dashboard vuote:
    - verifica token in localStorage
    - verifica seed utenti presenti nel DB
-

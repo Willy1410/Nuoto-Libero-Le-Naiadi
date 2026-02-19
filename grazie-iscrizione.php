@@ -44,7 +44,7 @@ if ($email === '') {
     <meta property="og:description" content="La tua richiesta e stata registrata. Completa la finalizzazione in struttura.">
     <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/grazie-iscrizione.php', ENT_QUOTES, 'UTF-8'); ?>">
     <title>Richiesta Iscrizione Ricevuta - Gli Squaletti</title>
-    <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
+    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }

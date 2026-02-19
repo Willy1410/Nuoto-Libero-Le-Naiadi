@@ -2,32 +2,30 @@
 
 ## File coinvolti
 - `config/mail.php`
+- `config/env.php`
 - `api/config.php`
 - `api/contact.php`
-- `api/bonifico-notify.php`
 - `logs/mail.log`
 
-## Configurazione SMTP Gmail (test locale)
-In `config/mail.php` Ã¨ giÃ  impostato:
-- host: `smtp.gmail.com`
-- port: `587`
-- encryption: `tls`
-- app password test: `yyvb ckzs zvpi rwdb`
-
-Parametro da impostare:
-- variabile ambiente `GMAIL_SMTP_USER` (la casella Gmail reale)
-
-Esempio PowerShell:
-```powershell
-$env:GMAIL_SMTP_USER='tuacasella@gmail.com'
-```
+## Configurazione SMTP (locale/test)
+1. Copia `.env.example` in `.env` (se non esiste).
+2. Imposta nel `.env`:
+   - `MAIL_ENABLED=true`
+   - `MAIL_FROM_EMAIL`
+   - `MAIL_FROM_NAME`
+   - `MAIL_ADMIN_EMAIL`
+   - `MAIL_SMTP_HOST`
+   - `MAIL_SMTP_PORT`
+   - `MAIL_SMTP_USER`
+   - `MAIL_SMTP_PASS`
+   - `MAIL_SMTP_ENCRYPTION`
 
 ## Test invio
-1. Compila form in `contatti.php`.
-2. Invia notifica bonifico da `pacchetti.php` (sezione bonifico).
-3. Verifica `logs/mail.log`.
+1. Compila il form in `contatti.php`.
+2. Verifica risposta positiva lato UI.
+3. Controlla `logs/mail.log`.
 
 ## Note sicurezza
-- solo ambiente locale
-- non usare credenziali live in repository pubblici
-- non condividere app password di produzione
+- Non inserire credenziali reali nel repository.
+- Usa sempre variabili ambiente (`.env` locale non tracciato).
+- In produzione abilita SMTP solo con account dedicato.

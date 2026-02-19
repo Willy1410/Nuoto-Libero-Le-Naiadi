@@ -395,7 +395,7 @@
                                 <th>Email</th>
                                 <th>Telefono</th>
                                 <th>Pacchetto</th>
-                                <th>Stato</th>
+                                <th>Stato pratica</th>
                                 <th>Azioni</th>
                             </tr>
                         </thead>
@@ -403,7 +403,7 @@
                     </table>
                 </div>
 
-                <h4 style="margin-bottom:8px;">Acquisti pending</h4>
+                <h4 style="margin-bottom:8px;">Pratiche pending</h4>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -411,10 +411,10 @@
                                 <th>Data</th>
                                 <th>Utente</th>
                                 <th>Pacchetto</th>
-                                <th>Metodo</th>
-                                <th>Stato</th>
-                                <th>Importo</th>
-                                <th>Riferimento</th>
+                                <th>Canale</th>
+                                <th>Stato pratica</th>
+                                <th>Quota</th>
+                                <th>Riferimento pratica</th>
                                 <th>QR</th>
                                 <th>Azioni</th>
                             </tr>
@@ -604,15 +604,15 @@
                 </div>
                 <div>
                     <div class="detail-block">
-                        <h4>Pacchetti / pagamenti / QR</h4>
+                        <h4>Pacchetti / pratiche / QR</h4>
                         <div class="table-wrap">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Data</th>
                                         <th>Pacchetto</th>
-                                        <th>Stato</th>
-                                        <th>Importo</th>
+                                        <th>Stato pratica</th>
+                                        <th>Quota</th>
                                         <th>Ingressi</th>
                                         <th>QR</th>
                                         <th>Azioni</th>
@@ -707,22 +707,22 @@
 
                 <div class="grid-2" style="margin-top:8px;">
                     <div class="field">
-                        <label for="apPaymentStatus">Stato pagamento</label>
+                        <label for="apPaymentStatus">Stato pratica</label>
                         <select id="apPaymentStatus">
-                            <option value="confirmed">Confermato (genera QR)</option>
+                            <option value="confirmed">Confermata (genera QR)</option>
                             <option value="pending">Pending</option>
                             <option value="cancelled">Annullato</option>
                         </select>
                     </div>
                     <div class="field">
-                        <label for="apPaymentMethod">Metodo pagamento</label>
+                        <label for="apPaymentMethod">Canale finalizzazione</label>
                         <select id="apPaymentMethod">
                             <option value="contanti">In struttura</option>
-                            <option value="bonifico">Bonifico</option>
+                            
                         </select>
                     </div>
-                    <div class="field"><label for="apImporto">Importo pagato override (facoltativo)</label><input id="apImporto" type="number" min="0" step="0.01"></div>
-                    <div class="field"><label for="apPaymentReference">Riferimento pagamento</label><input id="apPaymentReference"></div>
+                    <div class="field"><label for="apImporto">Importo quota override (facoltativo)</label><input id="apImporto" type="number" min="0" step="0.01"></div>
+                    <div class="field"><label for="apPaymentReference">Riferimento pratica</label><input id="apPaymentReference"></div>
                 </div>
                 <div class="field" style="margin-top:8px;"><label for="apPaymentNote">Note</label><textarea id="apPaymentNote"></textarea></div>
                 <div class="field" style="margin-top:8px;">
@@ -754,6 +754,3 @@
     <script src="../js/dashboard-staff.js"></script>
 </body>
 </html>
-
-
-

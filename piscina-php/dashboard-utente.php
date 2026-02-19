@@ -463,7 +463,7 @@
 
             <div class="row">
                 <label>Modalita</label>
-                <p class="small">Nessun pagamento online. La finalizzazione avviene in struttura con verifica segreteria.</p>
+                <p class="small">La finalizzazione avviene in struttura con verifica segreteria.</p>
             </div>
 
             <div class="row">
@@ -1116,7 +1116,7 @@
         function openPurchaseModal(id, name, price) {
             selectedPackage = { id, name, price };
             document.getElementById('purchaseTitle').textContent = `Finalizza in struttura: ${name}`;
-            document.getElementById('purchaseMeta').textContent = `Totale ${formatCurrency(price)}. Nessun pagamento online: finalizzazione presso la segreteria.`;
+            document.getElementById('purchaseMeta').textContent = `Totale ${formatCurrency(price)}. Finalizzazione presso la segreteria.`;
             document.getElementById('paymentNote').value = '';
             document.getElementById('paymentHint').textContent = 'Con questa richiesta verranno avviate le verifiche amministrative.';
             document.getElementById('purchaseOverlay').classList.add('open');
@@ -1201,4 +1201,3 @@
     </script>
 </body>
 </html>
-

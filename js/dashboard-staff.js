@@ -78,6 +78,13 @@
         return { cls: 'badge-neutral', text: value || '-' };
     }
 
+    function formatFinalizationChannel(method) {
+        const value = String(method || '').toLowerCase().trim();
+        if (value === 'contanti' || value === 'instore' || value === 'bonifico') {
+            return 'in struttura';
+        }
+        return value || '-';
+    }
     function getExportDatasetLabel(dataset) {
         if (dataset === 'users') return 'Clienti';
         if (dataset === 'purchases') return 'Acquisti';
@@ -293,7 +300,7 @@
         const body = el('pendingPurchasesBody');
 
         if (!rows.length) {
-            body.innerHTML = '<tr><td colspan="9">Nessun acquisto pending</td></tr>';
+            body.innerHTML = '<tr><td colspan="9">Nessuna pratica pending</td></tr>';
             return;
         }
 
@@ -302,12 +309,12 @@
                 <td>${escapeHtml(formatDate(row.data_acquisto))}</td>
                 <td><button class="btn btn-primary" data-action="view-user" data-user-id="${escapeHtml(row.user_id)}" type="button">${escapeHtml(`${row.user_nome || ''} ${row.user_cognome || ''}`.trim())}</button></td>
                 <td>${escapeHtml(row.pacchetto_nome || '-')}</td>
-                <td>${escapeHtml(row.metodo_pagamento || '-')}</td>
+                <td>${escapeHtml(formatFinalizationChannel(row.metodo_pagamento || '-'))}</td>
                 <td><span class="badge badge-warn">pending</span></td>
                 <td>${escapeHtml(formatCurrency(row.importo_pagato || 0))}</td>
                 <td>${escapeHtml(row.riferimento_pagamento || '-')}</td>
                 <td><code>${escapeHtml(row.qr_code || '-')}</code></td>
-                <td><button class="btn btn-ok" data-action="confirm-purchase" data-id="${escapeHtml(row.id)}" type="button">Conferma</button></td>
+                <td><button class="btn btn-ok" data-action="confirm-purchase" data-id="${escapeHtml(row.id)}" type="button">Conferma pratica</button></td>
             </tr>
         `).join('');
     }
@@ -691,7 +698,7 @@
                 <p><strong>Ingressi disponibili:</strong> ${escapeHtml(String(remainingEntries))}</p>
                 <p><strong>Pacchetti:</strong> ${escapeHtml(String(summary.totale_pacchetti || purchases.length || 0))}</p>
                 <p><strong>Check-in:</strong> ${escapeHtml(String(summary.totale_checkin || checkins.length || 0))}</p>
-                <p><strong>Pagamenti:</strong> ${escapeHtml(String(summary.totale_pagamenti || purchases.length || 0))}</p>
+                <p><strong>Pratiche:</strong> ${escapeHtml(String(summary.totale_pagamenti || purchases.length || 0))}</p>
                 <p><strong>Documenti pending:</strong> ${escapeHtml(String(summary.documenti_pending || 0))}</p>
                 <p><strong>Documenti mancanti:</strong> ${escapeHtml(String(summary.documenti_mancanti || missing.length || 0))}</p>
                 <p><strong>Registrazione:</strong> ${escapeHtml(formatDate(userInfo.created_at))}</p>
@@ -715,7 +722,7 @@
                     const status = normalizeStatus(row.stato_pagamento || '-');
                     let actions = '';
                     if (String(row.stato_pagamento || '').toLowerCase() === 'pending') {
-                        actions += `<button class="btn btn-ok" data-action="confirm-purchase" data-id="${escapeHtml(row.id)}" type="button">Conferma</button> `;
+                        actions += `<button class="btn btn-ok" data-action="confirm-purchase" data-id="${escapeHtml(row.id)}" type="button">Conferma pratica</button> `;
                     }
                     if (String(row.stato_pagamento || '').toLowerCase() === 'confirmed') {
                         actions += `<button class="btn btn-secondary" data-action="download-qr" data-acquisto-id="${escapeHtml(row.id)}" type="button">QR PDF</button>`;
@@ -916,14 +923,14 @@
 
     async function handleConfirmPurchase(acquistoId) {
         if (!acquistoId) return;
-        if (!(await modalConfirm('Confermare pagamento e generare QR?', 'Conferma pagamento'))) return;
+        if (!(await modalConfirm('Confermare pratica e generare QR?', 'Conferma pratica'))) return;
 
         const data = await apiJson(`pacchetti.php?action=confirm&id=${encodeURIComponent(acquistoId)}`, {
             method: 'PATCH',
             body: JSON.stringify({}),
         });
 
-        setStatus(`${data.message || 'Pagamento confermato'}${data.qr_code ? ` | QR: ${data.qr_code}` : ''}`, 'ok');
+        setStatus(`${data.message || 'Pratica confermata'}${data.qr_code ? ` | QR: ${data.qr_code}` : ''}`, 'ok');
         await Promise.all([loadStats(), loadPendingPurchases(), loadPendingEnrollments()]);
         if (state.selectedUserId) {
             await openUserDetail(state.selectedUserId);
@@ -1396,6 +1403,3 @@
         setStatus(error.message || 'Errore caricamento dashboard', 'error');
     });
 })();
-
-
-
