@@ -520,7 +520,7 @@ function getUserDetail(): void
     try {
         $stmt = $pdo->prepare(
             'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
-                    p.codice_fiscale, p.attivo, p.email_verificata, p.ultimo_accesso, p.created_at,
+                    p.codice_fiscale, p.qr_token, p.attivo, p.email_verificata, p.ultimo_accesso, p.created_at,
                     r.nome AS ruolo, r.livello AS ruolo_livello
              FROM profili p
              JOIN ruoli r ON r.id = p.ruolo_id
@@ -536,10 +536,12 @@ function getUserDetail(): void
 
         $stmt = $pdo->prepare(
             'SELECT a.id, a.data_acquisto, a.metodo_pagamento, a.stato_pagamento, a.riferimento_pagamento,
-                    a.ingressi_rimanenti, a.importo_pagato, a.data_scadenza, a.data_conferma, a.qr_code,
+                    a.ingressi_rimanenti, a.importo_pagato, a.data_scadenza, a.data_conferma,
+                    COALESCE(NULLIF(a.qr_code, ""), pu.qr_token) AS qr_code,
                     p.nome AS pacchetto_nome, p.num_ingressi
              FROM acquisti a
              JOIN pacchetti p ON p.id = a.pacchetto_id
+             JOIN profili pu ON pu.id = a.user_id
              WHERE a.user_id = ?
              ORDER BY a.data_acquisto DESC'
         );
@@ -925,6 +927,7 @@ function createUser(array $staff): void
              VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ""), 1, 1, 0)'
         );
         $stmt->execute([$userId, $roleRow['id'], $email, $hash, $nome, $cognome, $telefono]);
+        $qrToken = getOrCreateUserQrToken($userId);
 
         $token = createPasswordResetTokenForUser(
             $userId,
@@ -953,6 +956,7 @@ function createUser(array $staff): void
                 ? 'Utente creato e invito password inviato via email'
                 : 'Utente creato, ma email invito non inviata (verifica configurazione SMTP/log)',
             'user_id' => $userId,
+            'qr_token' => $qrToken,
             'mail_sent' => $mailSent,
         ]);
     } catch (Throwable $e) {
@@ -1110,4 +1114,3 @@ function deleteUser(array $staff): void
         sendJson(500, ['success' => false, 'message' => 'Errore eliminazione utente']);
     }
 }
-

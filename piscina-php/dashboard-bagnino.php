@@ -214,7 +214,7 @@ if (appIsLandingMode()) {
 
                 <div class="manual-box">
                     <p style="margin-bottom:8px; color:#64748b; font-size:13px;">Se la camera non e disponibile, inserisci il codice manualmente.</p>
-                    <input type="text" id="qrInput" placeholder="PSC-XXXXXXXXXX-XXXXXX">
+                    <input type="text" id="qrInput" placeholder="Incolla token QR o URL /q/<token>">
                     <div class="actions-row">
                         <button class="btn btn-primary" onclick="verificaQR()">Verifica QR manuale</button>
                         <button class="btn" onclick="clearCurrent()">Pulisci</button>
@@ -307,12 +307,21 @@ if (appIsLandingMode()) {
                 return '';
             }
 
-            if (/^(PSC|NL)-/i.test(value)) {
+            if (/^[A-Za-z0-9\-_]{16,128}$/.test(value)) {
                 return value;
+            }
+
+            const pathMatch = value.match(/\/q\/([A-Za-z0-9\-_]{16,128})/i);
+            if (pathMatch && pathMatch[1]) {
+                return pathMatch[1];
             }
 
             try {
                 const url = new URL(value);
+                const fromPath = (url.pathname.match(/\/q\/([A-Za-z0-9\-_]{16,128})/i) || [])[1] || '';
+                if (fromPath) {
+                    return fromPath;
+                }
                 const fromParam = (url.searchParams.get('qr') || '').trim();
                 if (fromParam !== '') {
                     return fromParam;
@@ -326,7 +335,7 @@ if (appIsLandingMode()) {
                 return match[1];
             }
 
-            return value;
+            return '';
         }
 
         async function fetchJson(url, options = {}) {

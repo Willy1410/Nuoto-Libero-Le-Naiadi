@@ -27,11 +27,17 @@ if ($acquistoId === '') {
 try {
     $acquisto = getAuthorizedPurchase($currentUser, $acquistoId);
 
-    if ((string)$acquisto['stato_pagamento'] !== 'confirmed' || empty($acquisto['qr_code'])) {
+    if ((string)$acquisto['stato_pagamento'] !== 'confirmed') {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'QR non disponibile: acquisto non confermato']);
         exit();
     }
+
+    if (trim((string)($acquisto['qr_token'] ?? '')) === '') {
+        $acquisto['qr_token'] = getOrCreateUserQrToken((string)$acquisto['user_id']);
+    }
+    $acquisto['qr_code'] = (string)$acquisto['qr_token'];
+    $acquisto['qr_url'] = buildUserQrUrl((string)$acquisto['qr_token']);
 
     if ($action === 'svg') {
         outputQrSvg($acquisto);
@@ -55,6 +61,7 @@ function getAuthorizedPurchase(array $currentUser, string $acquistoId): array
         'SELECT a.id, a.user_id, a.qr_code, a.stato_pagamento, a.ingressi_rimanenti, a.data_scadenza,
                 a.data_acquisto, a.data_conferma, a.metodo_pagamento,
                 p.nome AS pacchetto_nome,
+                prof.qr_token,
                 prof.nome AS user_nome,
                 prof.cognome AS user_cognome,
                 prof.email AS user_email,
@@ -96,7 +103,7 @@ function outputQrSvg(array $acquisto): void
         throw new RuntimeException('TCPDF2DBarcode non disponibile. Eseguire composer install.');
     }
 
-    $barcode = new TCPDF2DBarcode((string)$acquisto['qr_code'], 'QRCODE,H');
+    $barcode = new TCPDF2DBarcode((string)$acquisto['qr_url'], 'QRCODE,H');
     $svg = $barcode->getBarcodeSVGcode(5, 5, 'black');
 
     while (ob_get_level() > 0) {
@@ -125,14 +132,14 @@ function outputQrPdf(array $acquisto): void
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
     $pdf->SetCreator('Nuoto Libero');
     $pdf->SetAuthor('Gli Squaletti');
-    $pdf->SetTitle('QR Pacchetto - ' . (string)$acquisto['pacchetto_nome']);
+    $pdf->SetTitle('QR Utente - ' . (string)$acquisto['pacchetto_nome']);
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
     $pdf->SetMargins(15, 15, 15);
     $pdf->AddPage();
 
     $pdf->SetFont('helvetica', 'B', 18);
-    $pdf->Cell(0, 10, 'Gli Squaletti - QR Pacchetto', 0, 1, 'C');
+    $pdf->Cell(0, 10, 'Gli Squaletti - QR Utente', 0, 1, 'C');
 
     $pdf->Ln(2);
     $pdf->SetFont('helvetica', '', 10);
@@ -171,7 +178,8 @@ function outputQrPdf(array $acquisto): void
         ['Telefono', (string)($acquisto['user_telefono'] ?? '-') ?: '-'],
         ['Pacchetto', (string)$acquisto['pacchetto_nome']],
         ['Metodo pagamento', (string)$acquisto['metodo_pagamento']],
-        ['Codice QR', (string)$acquisto['qr_code']],
+        ['Token QR', (string)$acquisto['qr_code']],
+        ['URL QR', (string)$acquisto['qr_url']],
         ['ID acquisto', (string)$acquisto['id']],
         ['Data acquisto', $formatDateTime($acquisto['data_acquisto'] ?? '')],
         ['Data conferma', $formatDateTime($acquisto['data_conferma'] ?? '')],
@@ -193,7 +201,7 @@ function outputQrPdf(array $acquisto): void
         'bgcolor' => [255, 255, 255],
     ];
 
-    $pdf->write2DBarcode((string)$acquisto['qr_code'], 'QRCODE,H', 65, 112, 80, 80, $style, 'N');
+    $pdf->write2DBarcode((string)$acquisto['qr_url'], 'QRCODE,H', 65, 112, 80, 80, $style, 'N');
 
     $pdf->SetY(198);
     $pdf->SetFont('helvetica', '', 10);

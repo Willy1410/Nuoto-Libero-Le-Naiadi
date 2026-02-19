@@ -7,6 +7,7 @@
 - Migrazione incrementale: `db/MIGRATION_2026_02_18_USER_PACKAGES_ENROLLMENTS.sql`
 - Migrazione incrementale: `db/MIGRATION_2026_02_19_PROFILE_UPDATE_REQUESTS.sql`
 - Migrazione incrementale: `db/MIGRATION_2026_02_19_OPERATIONAL_SETTINGS.sql`
+- Migrazione incrementale: `db/MIGRATION_2026_02_19_STATIC_USER_QR_TOKEN.sql`
 
 Script pronto per phpMyAdmin:
 - crea database `nuoto_libero`
@@ -38,6 +39,7 @@ Script pronto per phpMyAdmin:
    - `db/MIGRATION_2026_02_18_USER_PACKAGES_ENROLLMENTS.sql`
    - `db/MIGRATION_2026_02_19_PROFILE_UPDATE_REQUESTS.sql`
    - `db/MIGRATION_2026_02_19_OPERATIONAL_SETTINGS.sql`
+   - `db/MIGRATION_2026_02_19_STATIC_USER_QR_TOKEN.sql`
 
 ## Utenti test seed
 - admin@piscina.it / password123

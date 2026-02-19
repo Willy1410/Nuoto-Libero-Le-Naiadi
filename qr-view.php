@@ -20,12 +20,14 @@ h1{font-size:24px;margin-bottom:10px}.alert{padding:10px;border-radius:8px;margi
 <h1>Verifica QR</h1>
 <div id="status" class="alert info">Caricamento...</div>
 <div id="content"></div>
-<div class="tools"><button class="btn btn-primary" onclick="reload()">Aggiorna</button><button class="btn btn-danger" onclick="location.href='login.php'">Login</button></div>
+<div class="tools"><button class="btn btn-primary" onclick="reload()">Aggiorna</button><button class="btn btn-danger" onclick="location.href='/login.php'">Login</button></div>
 </div>
 </div>
 <script>
-const API='api';
-const qr=new URLSearchParams(location.search).get('qr')||'';
+const API='/api';
+const qsQr=new URLSearchParams(location.search).get('qr')||'';
+const pathQr=((location.pathname.match(/\/q\/([A-Za-z0-9\-_]{16,128})/i)||[])[1]||'').trim();
+const qr=(qsQr||pathQr||'').trim();
 const token=localStorage.getItem('token');
 let loading=false;
 function setStatus(msg,cls='info'){status.className=`alert ${cls}`;status.textContent=msg;}

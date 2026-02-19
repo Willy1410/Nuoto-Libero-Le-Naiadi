@@ -68,21 +68,13 @@ function isImmediatePaymentMethod(string $method): bool
     return false;
 }
 
-function generateUniqueQrCode(string $acquistoId, int $maxAttempts = 12): string
+function resolveUserStaticQrToken(string $userId): string
 {
-    global $pdo;
-
-    $stmt = $pdo->prepare('SELECT id FROM acquisti WHERE qr_code = ? LIMIT 1');
-
-    for ($i = 0; $i < $maxAttempts; $i++) {
-        $candidate = generateQRCode($acquistoId);
-        $stmt->execute([$candidate]);
-        if (!$stmt->fetch()) {
-            return $candidate;
-        }
+    $token = getOrCreateUserQrToken($userId);
+    if ($token === '') {
+        throw new RuntimeException('Impossibile recuperare qr_token utente');
     }
-
-    throw new RuntimeException('Impossibile generare un QR univoco');
+    return $token;
 }
 
 function buildAbsoluteUrl(string $path): string
@@ -605,7 +597,7 @@ function assignManualPackage(): void
 
         $acquistoId = generateUuid();
         $isConfirmed = $statoPagamento === 'confirmed';
-        $qrCode = $isConfirmed ? generateUniqueQrCode($acquistoId) : null;
+        $qrCode = resolveUserStaticQrToken($userId);
         $dataScadenza = $isConfirmed
             ? date('Y-m-d', strtotime('+' . (int)$pacchetto['validita_giorni'] . ' days'))
             : null;
@@ -680,10 +672,14 @@ function assignManualPackage(): void
                 . '<strong>Importo:</strong> EUR ' . number_format((float)$importoPagato, 2, ',', '.') . '<br>'
                 . '<strong>Stato:</strong> ' . htmlspecialchars($statoPagamento, ENT_QUOTES, 'UTF-8') . '</p>';
 
-            if ($isConfirmed && $qrCode) {
+            if ($qrCode !== '') {
                 $qrDownloadUrl = buildAbsoluteUrl('api/qr.php?action=download&acquisto_id=' . urlencode($acquistoId));
                 $body .= '<p><strong>Codice QR:</strong> <code>' . htmlspecialchars($qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
+                    . '<strong>Link QR statico:</strong> <a href="' . htmlspecialchars(buildUserQrUrl($qrCode), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(buildUserQrUrl($qrCode), ENT_QUOTES, 'UTF-8') . '</a><br>'
                     . '<a href="' . htmlspecialchars($qrDownloadUrl, ENT_QUOTES, 'UTF-8') . '">Scarica QR in PDF</a></p>';
+                if (!$isConfirmed) {
+                    $body .= '<p>Il QR personale e gia assegnato ed e sempre lo stesso. L\'accesso resta attivo dopo conferma pratica.</p>';
+                }
             }
 
             $mailSent = sendBrandedEmail(
@@ -750,7 +746,7 @@ function acquistaPacchetto(): void
 
     try {
         $acquistoId = generateUuid();
-        $qrCode = $isImmediate ? generateUniqueQrCode($acquistoId) : null;
+        $qrCode = resolveUserStaticQrToken((string)$currentUser['user_id']);
         $dataScadenza = $isImmediate
             ? date('Y-m-d', strtotime('+' . (int)$pacchetto['validita_giorni'] . ' days'))
             : null;
@@ -838,6 +834,7 @@ function acquistaPacchetto(): void
                     . '<strong>Ingressi inclusi:</strong> ' . (int)$managed['num_ingressi'] . '<br>'
                     . '<strong>Canale finalizzazione:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Codice QR:</strong> <code>' . htmlspecialchars((string)$qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
+                    . '<strong>Link QR statico:</strong> <a href="' . htmlspecialchars(buildUserQrUrl((string)$qrCode), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(buildUserQrUrl((string)$qrCode), ENT_QUOTES, 'UTF-8') . '</a><br>'
                     . '<strong>Scadenza:</strong> ' . htmlspecialchars((string)$dataScadenza, ENT_QUOTES, 'UTF-8') . '</p>'
                     . '<p><a href="' . htmlspecialchars($qrDownloadUrl, ENT_QUOTES, 'UTF-8') . '">Scarica QR in PDF</a></p>';
 
@@ -855,7 +852,9 @@ function acquistaPacchetto(): void
                     . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$pacchetto['nome'], ENT_QUOTES, 'UTF-8') . '<br>'
                     . '<strong>Importo:</strong> EUR ' . number_format((float)$managed['prezzo'], 2, ',', '.') . '<br>'
                     . '<strong>Canale finalizzazione:</strong> ' . htmlspecialchars($metodoLabel, ENT_QUOTES, 'UTF-8') . '<br>'
-                    . '<strong>Riferimento pratica:</strong> <code>' . htmlspecialchars((string)$acquistoId, ENT_QUOTES, 'UTF-8') . '</code></p>'
+                    . '<strong>Riferimento pratica:</strong> <code>' . htmlspecialchars((string)$acquistoId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+                    . '<strong>Codice QR personale (statico):</strong> <code>' . htmlspecialchars((string)$qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
+                    . '<strong>Link QR statico:</strong> <a href="' . htmlspecialchars(buildUserQrUrl((string)$qrCode), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(buildUserQrUrl((string)$qrCode), ENT_QUOTES, 'UTF-8') . '</a></p>'
                     . '<p>Il pacchetto risulta in <strong>attesa di conferma</strong>. Riceverai un aggiornamento appena la pratica sara completata in segreteria.</p>';
 
                 $mailSent = sendBrandedEmail(
@@ -919,7 +918,8 @@ function getPendingPurchases(): void
 
     $stmt = $pdo->query(
         'SELECT a.id, a.user_id, a.pacchetto_id, a.metodo_pagamento, a.stato_pagamento, a.riferimento_pagamento,
-                a.note_pagamento, a.data_acquisto, a.importo_pagato, a.qr_code,
+                a.note_pagamento, a.data_acquisto, a.importo_pagato,
+                COALESCE(NULLIF(a.qr_code, ""), prof.qr_token) AS qr_code,
                 p.nome AS pacchetto_nome,
                 prof.nome AS user_nome,
                 prof.cognome AS user_cognome,
@@ -968,28 +968,23 @@ function confirmPayment(): void
 
         $alreadyConfirmed = (string)$acquisto['stato_pagamento'] === 'confirmed';
         $existingQr = trim((string)($acquisto['qr_code'] ?? ''));
+        $qrCode = resolveUserStaticQrToken((string)$acquisto['user_id']);
         $dataScadenza = !empty($acquisto['data_scadenza'])
             ? (string)$acquisto['data_scadenza']
             : date('Y-m-d', strtotime('+' . (int)$acquisto['validita_giorni'] . ' days'));
 
-        if ($alreadyConfirmed && $existingQr !== '') {
+        if ($alreadyConfirmed && $existingQr === $qrCode) {
             $pdo->commit();
             respond(200, [
                 'success' => true,
                 'message' => 'Pratica gia confermata',
-                'qr_code' => $existingQr,
+                'qr_code' => $qrCode,
                 'mail_sent' => false,
                 'already_confirmed' => true,
             ]);
         }
 
-        if ($alreadyConfirmed) {
-            $qrCode = $existingQr !== '' ? $existingQr : generateUniqueQrCode($acquistoId);
-        } else {
-            // Per flusso ufficio/admin rigeneriamo sempre il QR al momento della conferma.
-            $qrCode = generateUniqueQrCode($acquistoId);
-        }
-        $shouldNotify = !$alreadyConfirmed || $existingQr === '';
+        $shouldNotify = !$alreadyConfirmed || $existingQr !== $qrCode;
 
         $stmt = $pdo->prepare(
             'UPDATE acquisti
@@ -1023,6 +1018,7 @@ function confirmPayment(): void
                 . '<p>la tua pratica e stata <strong>confermata</strong> e il tuo QR e pronto.</p>'
                 . '<p><strong>Pacchetto:</strong> ' . htmlspecialchars((string)$acquisto['pacchetto_nome'], ENT_QUOTES, 'UTF-8') . '<br>'
                 . '<strong>Codice QR:</strong> <code>' . htmlspecialchars($qrCode, ENT_QUOTES, 'UTF-8') . '</code><br>'
+                . '<strong>Link QR statico:</strong> <a href="' . htmlspecialchars(buildUserQrUrl($qrCode), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(buildUserQrUrl($qrCode), ENT_QUOTES, 'UTF-8') . '</a><br>'
                 . '<strong>Ingressi disponibili:</strong> ' . (int)$acquisto['ingressi_rimanenti'] . '<br>'
                 . '<strong>Data scadenza:</strong> ' . htmlspecialchars($dataScadenza, ENT_QUOTES, 'UTF-8') . '</p>'
                 . '<p><a href="' . htmlspecialchars($qrDownloadUrl, ENT_QUOTES, 'UTF-8') . '">Scarica QR in PDF</a></p>';
@@ -1046,7 +1042,7 @@ function confirmPayment(): void
 
         respond(200, [
             'success' => true,
-            'message' => $alreadyConfirmed ? 'Pratica gia confermata, QR ripristinato' : 'Pratica confermata',
+            'message' => $alreadyConfirmed ? 'Pratica gia confermata, QR statico allineato' : 'Pratica confermata',
             'qr_code' => $qrCode,
             'mail_sent' => $mailSent,
             'already_confirmed' => $alreadyConfirmed,

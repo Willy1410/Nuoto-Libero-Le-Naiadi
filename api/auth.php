@@ -128,6 +128,7 @@ function handleRegister(): void
             $codiceFiscale,
         ]);
 
+        $qrToken = getOrCreateUserQrToken($userId);
         $token = generateJWT($userId, $email, (string)$ruolo['nome'], (int)$ruolo['livello']);
 
         logActivity($userId, 'registrazione', 'Registrazione utente', 'profili', $userId);
@@ -148,6 +149,7 @@ function handleRegister(): void
                 'cognome' => $cognome,
                 'ruolo' => $ruolo['nome'],
                 'livello' => (int)$ruolo['livello'],
+                'qr_token' => $qrToken,
             ],
         ]);
     } catch (Throwable $e) {
@@ -197,6 +199,7 @@ function handleLogin(): void
     try {
         $stmt = $pdo->prepare(
             'SELECT p.id, p.email, p.password_hash, p.nome, p.cognome, p.attivo, p.email_verificata, p.force_password_change,
+                    p.qr_token,
                     r.nome AS ruolo_nome, r.livello AS ruolo_livello
              FROM profili p
              JOIN ruoli r ON p.ruolo_id = r.id
@@ -250,6 +253,7 @@ function handleLogin(): void
                 'livello' => (int)$user['ruolo_livello'],
                 'email_verificata' => (bool)$user['email_verificata'],
                 'force_password_change' => (bool)($user['force_password_change'] ?? false),
+                'qr_token' => (string)($user['qr_token'] ?? ''),
             ],
         ]);
     } catch (Throwable $e) {
@@ -283,7 +287,7 @@ function handleMe(): void
 
         $stmt = $pdo->prepare(
             'SELECT p.id, p.email, p.nome, p.cognome, p.telefono, p.data_nascita, p.indirizzo, p.citta, p.cap,
-                    p.codice_fiscale, p.attivo, p.email_verificata, ' . $statoSelect . ',
+                    p.codice_fiscale, p.qr_token, p.attivo, p.email_verificata, ' . $statoSelect . ',
                     p.force_password_change, p.ultimo_accesso,
                     r.nome AS ruolo_nome, r.livello AS ruolo_livello
              FROM profili p
@@ -316,6 +320,8 @@ function ensureAuthSchemaColumns(): void
     $bootstrapped = true;
 
     try {
+        ensureQrTokenSchemaColumn();
+
         $check = $pdo->query("SHOW COLUMNS FROM profili LIKE 'force_password_change'");
         if (!$check || !$check->fetch()) {
             $pdo->exec(
@@ -981,4 +987,3 @@ function handleResetPassword(): void
         sendJson(500, ['success' => false, 'message' => 'Errore durante il reset password']);
     }
 }
-

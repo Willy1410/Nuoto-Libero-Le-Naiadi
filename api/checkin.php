@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * API check-in
@@ -26,61 +26,127 @@ if ($method === 'POST' && $action === '') {
     echo json_encode(['success' => false, 'message' => 'Endpoint non trovato']);
 }
 
-function verificaQR(): void
+function requireCheckinOperator(): array
+{
+    $user = requireRole(2);
+    $role = strtolower((string)($user['role'] ?? ''));
+    if (!in_array($role, ['bagnino', 'admin'], true)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Operazione consentita solo a bagnino o admin',
+        ]);
+        exit();
+    }
+
+    return $user;
+}
+
+function parseIncomingQrToken(string $raw): string
+{
+    return extractQrTokenFromInput($raw);
+}
+
+function findUserByQrToken(string $qrToken, bool $forUpdate = false): ?array
 {
     global $pdo;
 
-    requireRole(2);
-    $qrCode = sanitizeInput($_GET['qr'] ?? '');
+    $sql = 'SELECT id, nome, cognome, telefono, qr_token
+            FROM profili
+            WHERE qr_token = ? AND attivo = 1
+            LIMIT 1';
+    if ($forUpdate) {
+        $sql .= ' FOR UPDATE';
+    }
 
-    if ($qrCode === '') {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$qrToken]);
+    $row = $stmt->fetch();
+
+    return $row ?: null;
+}
+
+function selectCheckinPurchaseForUser(string $userId, bool $forUpdate = false): ?array
+{
+    global $pdo;
+
+    $sql = 'SELECT a.id, a.user_id, a.ingressi_rimanenti, a.data_scadenza,
+                   p.nome AS pacchetto_nome
+            FROM acquisti a
+            JOIN pacchetti p ON p.id = a.pacchetto_id
+            WHERE a.user_id = ?
+              AND a.stato_pagamento = "confirmed"
+              AND a.ingressi_rimanenti > 0
+              AND (a.data_scadenza IS NULL OR a.data_scadenza >= CURDATE())
+            ORDER BY
+              CASE WHEN a.data_scadenza IS NULL THEN 1 ELSE 0 END ASC,
+              a.data_scadenza ASC,
+              COALESCE(a.data_conferma, a.data_acquisto) ASC
+            LIMIT 1';
+    if ($forUpdate) {
+        $sql .= ' FOR UPDATE';
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+
+    return $row ?: null;
+}
+
+function getTotalRemainingEntriesForUser(string $userId): int
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare(
+        'SELECT COALESCE(SUM(a.ingressi_rimanenti), 0) AS total
+         FROM acquisti a
+         WHERE a.user_id = ?
+           AND a.stato_pagamento = "confirmed"
+           AND (a.data_scadenza IS NULL OR a.data_scadenza >= CURDATE())'
+    );
+    $stmt->execute([$userId]);
+
+    return (int)($stmt->fetch()['total'] ?? 0);
+}
+
+function hasCheckinInCurrentSlot(string $userId, string $fasciaOraria): bool
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) AS count
+         FROM check_ins
+         WHERE user_id = ?
+           AND DATE(timestamp) = CURDATE()
+           AND fascia_oraria = ?'
+    );
+    $stmt->execute([$userId, $fasciaOraria]);
+
+    return (int)($stmt->fetch()['count'] ?? 0) > 0;
+}
+
+function verificaQR(): void
+{
+    requireCheckinOperator();
+    $qrCodeRaw = sanitizeInput($_GET['qr'] ?? '');
+    $qrToken = parseIncomingQrToken((string)$qrCodeRaw);
+
+    if ($qrToken === '') {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Codice QR mancante']);
+        echo json_encode(['success' => false, 'message' => 'Codice QR non valido']);
         return;
     }
 
     try {
-        $stmt = $pdo->prepare(
-            'SELECT a.id, a.user_id, a.qr_code, a.stato_pagamento, a.ingressi_rimanenti, a.data_scadenza,
-                    p.nome AS pacchetto_nome,
-                    prof.nome AS user_nome,
-                    prof.cognome AS user_cognome,
-                    prof.telefono AS user_telefono
-             FROM acquisti a
-             JOIN pacchetti p ON p.id = a.pacchetto_id
-             JOIN profili prof ON prof.id = a.user_id
-             WHERE a.qr_code = ? AND a.stato_pagamento = \'confirmed\'
-             LIMIT 1'
-        );
-        $stmt->execute([$qrCode]);
-        $acquisto = $stmt->fetch();
-
-        if (!$acquisto) {
+        $utente = findUserByQrToken($qrToken, false);
+        if (!$utente) {
             http_response_code(404);
             echo json_encode([
                 'success' => false,
                 'valid' => false,
-                'message' => 'QR non valido o acquisto non confermato',
-            ]);
-            return;
-        }
-
-        if (!empty($acquisto['data_scadenza']) && (string)$acquisto['data_scadenza'] < date('Y-m-d')) {
-            echo json_encode([
-                'success' => false,
-                'valid' => false,
-                'message' => 'Pacchetto scaduto',
-                'data_scadenza' => $acquisto['data_scadenza'],
-            ]);
-            return;
-        }
-
-        if ((int)$acquisto['ingressi_rimanenti'] <= 0) {
-            echo json_encode([
-                'success' => false,
-                'valid' => false,
-                'message' => 'Ingressi esauriti',
-                'ingressi_rimanenti' => 0,
+                'message' => 'QR non valido',
+                'can_checkin' => false,
             ]);
             return;
         }
@@ -91,26 +157,41 @@ function verificaQR(): void
                 'success' => false,
                 'valid' => false,
                 'message' => 'Ingresso consentito solo in fascia attiva: ' . getIngressScheduleSummary(),
+                'can_checkin' => false,
             ]);
             return;
         }
 
-        $stmt = $pdo->prepare(
-            'SELECT COUNT(*) AS count
-             FROM check_ins
-             WHERE acquisto_id = ?
-               AND DATE(timestamp) = CURDATE()
-               AND fascia_oraria = ?'
-        );
-        $stmt->execute([$acquisto['id'], $fasciaCorrente]);
-        $alreadyChecked = (int)($stmt->fetch()['count'] ?? 0);
+        $totalRemaining = getTotalRemainingEntriesForUser((string)$utente['id']);
+        if ($totalRemaining <= 0) {
+            echo json_encode([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Ingressi esauriti',
+                'ingressi_rimanenti' => 0,
+                'can_checkin' => false,
+            ]);
+            return;
+        }
 
-        if ($alreadyChecked > 0) {
+        if (hasCheckinInCurrentSlot((string)$utente['id'], $fasciaCorrente)) {
             echo json_encode([
                 'success' => false,
                 'valid' => false,
                 'message' => 'Check-in gia effettuato in questa fascia oraria',
                 'fascia_oraria' => $fasciaCorrente,
+                'can_checkin' => false,
+            ]);
+            return;
+        }
+
+        $acquisto = selectCheckinPurchaseForUser((string)$utente['id'], false);
+        if (!$acquisto) {
+            echo json_encode([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Nessun pacchetto confermato disponibile',
+                'can_checkin' => false,
             ]);
             return;
         }
@@ -119,17 +200,19 @@ function verificaQR(): void
             'success' => true,
             'valid' => true,
             'message' => 'QR valido',
+            'can_checkin' => true,
             'acquisto' => [
                 'id' => $acquisto['id'],
                 'pacchetto_nome' => $acquisto['pacchetto_nome'],
-                'ingressi_rimanenti' => (int)$acquisto['ingressi_rimanenti'],
+                'ingressi_rimanenti' => $totalRemaining,
                 'data_scadenza' => $acquisto['data_scadenza'],
-                'qr_code' => $acquisto['qr_code'],
+                'qr_code' => $qrToken,
+                'qr_url' => buildUserQrUrl($qrToken),
             ],
             'utente' => [
-                'nome' => $acquisto['user_nome'],
-                'cognome' => $acquisto['user_cognome'],
-                'telefono' => $acquisto['user_telefono'],
+                'nome' => $utente['nome'],
+                'cognome' => $utente['cognome'],
+                'telefono' => $utente['telefono'],
             ],
         ]);
     } catch (Throwable $e) {
@@ -143,18 +226,19 @@ function registraCheckIn(): void
 {
     global $pdo;
 
-    $currentUser = requireRole(2);
+    $currentUser = requireCheckinOperator();
     $data = json_decode(file_get_contents('php://input'), true);
     if (!is_array($data)) {
         $data = [];
     }
 
-    $qrCode = sanitizeInput($data['qr_code'] ?? '');
+    $qrCodeRaw = sanitizeInput($data['qr_code'] ?? '');
+    $qrToken = parseIncomingQrToken((string)$qrCodeRaw);
     $note = sanitizeInput($data['note'] ?? '');
 
-    if ($qrCode === '') {
+    if ($qrToken === '') {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Codice QR mancante']);
+        echo json_encode(['success' => false, 'message' => 'Codice QR non valido']);
         return;
     }
 
@@ -171,64 +255,40 @@ function registraCheckIn(): void
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare(
-            'SELECT a.id, a.user_id, a.ingressi_rimanenti, a.data_scadenza,
-                    prof.nome, prof.cognome
-             FROM acquisti a
-             JOIN profili prof ON prof.id = a.user_id
-             WHERE a.qr_code = ? AND a.stato_pagamento = \'confirmed\'
-             LIMIT 1
-             FOR UPDATE'
-        );
-        $stmt->execute([$qrCode]);
-        $acquisto = $stmt->fetch();
-
-        if (!$acquisto) {
+        $utente = findUserByQrToken($qrToken, true);
+        if (!$utente) {
             $pdo->rollBack();
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'QR non valido']);
             return;
         }
 
-        if (!empty($acquisto['data_scadenza']) && (string)$acquisto['data_scadenza'] < date('Y-m-d')) {
-            $pdo->rollBack();
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Pacchetto scaduto']);
-            return;
-        }
+        $userId = (string)$utente['id'];
 
-        if ((int)$acquisto['ingressi_rimanenti'] <= 0) {
-            $pdo->rollBack();
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Ingressi esauriti']);
-            return;
-        }
-
-        $stmt = $pdo->prepare(
-            'SELECT COUNT(*) AS count
-             FROM check_ins
-             WHERE acquisto_id = ?
-               AND DATE(timestamp) = CURDATE()
-               AND fascia_oraria = ?'
-        );
-        $stmt->execute([$acquisto['id'], $fasciaCorrente]);
-        $alreadyChecked = (int)($stmt->fetch()['count'] ?? 0);
-
-        if ($alreadyChecked > 0) {
+        if (hasCheckinInCurrentSlot($userId, $fasciaCorrente)) {
             $pdo->rollBack();
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Check-in gia registrato in questa fascia oraria']);
             return;
         }
 
+        $acquisto = selectCheckinPurchaseForUser($userId, true);
+        if (!$acquisto) {
+            $pdo->rollBack();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Ingressi esauriti o pacchetto non attivo']);
+            return;
+        }
+
+        $checkinId = generateUuid();
         $stmt = $pdo->prepare(
             'INSERT INTO check_ins (id, acquisto_id, user_id, bagnino_id, fascia_oraria, note)
              VALUES (?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
-            generateUuid(),
+            $checkinId,
             $acquisto['id'],
-            $acquisto['user_id'],
+            $userId,
             $currentUser['user_id'],
             $fasciaCorrente,
             $note,
@@ -248,16 +308,14 @@ function registraCheckIn(): void
             return;
         }
 
-        $stmt = $pdo->prepare('SELECT ingressi_rimanenti FROM acquisti WHERE id = ? LIMIT 1');
-        $stmt->execute([$acquisto['id']]);
-        $remaining = (int)($stmt->fetch()['ingressi_rimanenti'] ?? 0);
+        $remaining = getTotalRemainingEntriesForUser($userId);
 
         logActivity(
             (string)$currentUser['user_id'],
             'check_in',
-            'Check-in registrato per ' . (string)$acquisto['nome'] . ' ' . (string)$acquisto['cognome'],
+            'Check-in registrato [esito=success] per ' . (string)$utente['nome'] . ' ' . (string)$utente['cognome'],
             'check_ins',
-            (string)$acquisto['id']
+            $checkinId
         );
 
         $pdo->commit();
@@ -267,6 +325,8 @@ function registraCheckIn(): void
             'success' => true,
             'message' => 'Check-in registrato con successo',
             'ingressi_rimanenti' => $remaining,
+            'qr_code' => $qrToken,
+            'qr_url' => buildUserQrUrl($qrToken),
         ]);
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -285,10 +345,11 @@ function getHistory(): void
     $currentUser = requireAuth();
 
     $stmt = $pdo->prepare(
-        'SELECT c.*, a.qr_code, p.nome AS pacchetto_nome,
+        'SELECT c.*, COALESCE(NULLIF(a.qr_code, ""), up.qr_token) AS qr_code, p.nome AS pacchetto_nome,
                 prof.nome AS bagnino_nome, prof.cognome AS bagnino_cognome
          FROM check_ins c
          JOIN acquisti a ON c.acquisto_id = a.id
+         JOIN profili up ON up.id = c.user_id
          JOIN pacchetti p ON a.pacchetto_id = p.id
          JOIN profili prof ON c.bagnino_id = prof.id
          WHERE c.user_id = ?
@@ -304,7 +365,7 @@ function getTodayCheckIns(): void
 {
     global $pdo;
 
-    requireRole(2);
+    requireCheckinOperator();
 
     $stmt = $pdo->query(
         'SELECT c.timestamp, c.fascia_oraria, c.note,
@@ -341,5 +402,3 @@ function getTodayCheckIns(): void
         ],
     ]);
 }
-
-

@@ -465,7 +465,8 @@ function approveEnrollment(array $enrollment, array $staff, string $reviewNote):
     $package = resolveApprovalPackage((int)($enrollment['requested_package_id'] ?? 0));
 
     $acquistoId = generateUuid();
-    $qrCode = generateUniqueQrCodeEnrollment($acquistoId);
+    $qrCode = getOrCreateUserQrToken($userId);
+    $qrUrl = buildUserQrUrl($qrCode);
     $ingressiTotali = (int)$package['entries_count'] + 2; // 10 + 2 omaggio
     $notePagamento = trim('Iscrizione approvata. Include 2 ingressi omaggio validi 60 giorni. ' . $reviewNote);
 
@@ -508,6 +509,7 @@ function approveEnrollment(array $enrollment, array $staff, string $reviewNote):
         'username' => $email,
         'temporary_password' => $temporaryPassword,
         'qr_code' => $qrCode,
+        'qr_url' => $qrUrl,
         'acquisto_id' => $acquistoId,
         'package_name' => (string)$package['name'],
         'schedule_summary' => getIngressScheduleSummary(),
@@ -655,22 +657,6 @@ function generateTemporaryPassword(int $length = 12): string
     return $out;
 }
 
-function generateUniqueQrCodeEnrollment(string $acquistoId, int $maxAttempts = 12): string
-{
-    global $pdo;
-
-    $stmt = $pdo->prepare('SELECT id FROM acquisti WHERE qr_code = ? LIMIT 1');
-    for ($i = 0; $i < $maxAttempts; $i++) {
-        $candidate = generateQRCode($acquistoId);
-        $stmt->execute([$candidate]);
-        if (!$stmt->fetch()) {
-            return $candidate;
-        }
-    }
-
-    throw new RuntimeException('Impossibile generare un QR univoco');
-}
-
 function sendActivationEmailWithAttachments(array $payload): bool
 {
     $qrAttachment = buildQrPdfAttachment($payload);
@@ -691,6 +677,7 @@ function sendActivationEmailWithAttachments(array $payload): bool
         . '<p><strong>Username:</strong> ' . htmlspecialchars((string)$payload['username'], ENT_QUOTES, 'UTF-8') . '<br>'
         . '<strong>Password temporanea:</strong> <code>' . htmlspecialchars((string)$payload['temporary_password'], ENT_QUOTES, 'UTF-8') . '</code><br>'
         . '<strong>QR Code:</strong> <code>' . htmlspecialchars((string)$payload['qr_code'], ENT_QUOTES, 'UTF-8') . '</code><br>'
+        . '<strong>Link QR statico:</strong> <a href="' . htmlspecialchars((string)($payload['qr_url'] ?? ''), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars((string)($payload['qr_url'] ?? ''), ENT_QUOTES, 'UTF-8') . '</a><br>'
         . '<strong>Pacchetto attivato:</strong> ' . htmlspecialchars((string)$payload['package_name'], ENT_QUOTES, 'UTF-8') . ' + 2 ingressi omaggio</p>'
         . '<p>Al primo accesso dovrai cambiare la password.</p>'
         . '<p><a href="' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '">Accedi all\'area riservata</a></p>';
@@ -732,8 +719,10 @@ function buildQrPdfAttachment(array $payload): ?array
         $pdf->Ln(2);
 
         $pdf->SetFont('helvetica', '', 11);
+        $qrUrl = (string)($payload['qr_url'] ?? buildUserQrUrl((string)$payload['qr_code']));
         $pdf->Cell(0, 7, 'Cliente: ' . (string)$payload['nome'] . ' ' . (string)$payload['cognome'], 0, 1, 'L');
-        $pdf->Cell(0, 7, 'Codice QR: ' . (string)$payload['qr_code'], 0, 1, 'L');
+        $pdf->Cell(0, 7, 'Token QR: ' . (string)$payload['qr_code'], 0, 1, 'L');
+        $pdf->MultiCell(0, 7, 'Link QR statico: ' . $qrUrl, 0, 'L');
         $pdf->Cell(0, 7, 'Pacchetto: ' . (string)$payload['package_name'] . ' + 2 ingressi omaggio', 0, 1, 'L');
 
         $style = [
@@ -743,7 +732,7 @@ function buildQrPdfAttachment(array $payload): ?array
             'bgcolor' => [255, 255, 255],
         ];
 
-        $pdf->write2DBarcode((string)$payload['qr_code'], 'QRCODE,H', 65, 90, 80, 80, $style, 'N');
+        $pdf->write2DBarcode($qrUrl, 'QRCODE,H', 65, 90, 80, 80, $style, 'N');
 
         $pdf->SetY(180);
         $pdf->SetFont('helvetica', '', 10);
@@ -801,4 +790,3 @@ function buildInstructionsPdfAttachment(array $payload): ?array
         return null;
     }
 }
-

@@ -472,6 +472,144 @@ function generateQRCode(string $acquistoId): string
     return 'PSC-' . $base . '-' . $suffix;
 }
 
+function ensureQrTokenSchemaColumn(): void
+{
+    global $pdo;
+
+    static $bootstrapped = false;
+    if ($bootstrapped) {
+        return;
+    }
+    $bootstrapped = true;
+
+    try {
+        $check = $pdo->query("SHOW COLUMNS FROM profili LIKE 'qr_token'");
+        $hasColumn = $check && $check->fetch();
+        if (!$hasColumn) {
+            $pdo->exec(
+                'ALTER TABLE profili
+                 ADD COLUMN qr_token VARCHAR(96) NULL UNIQUE AFTER email'
+            );
+        }
+    } catch (Throwable $e) {
+        error_log('ensureQrTokenSchemaColumn error: ' . $e->getMessage());
+    }
+}
+
+function generateQrToken(): string
+{
+    return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+}
+
+function generateUniqueUserQrToken(int $maxAttempts = 16): string
+{
+    global $pdo;
+
+    ensureQrTokenSchemaColumn();
+
+    $stmt = $pdo->prepare('SELECT id FROM profili WHERE qr_token = ? LIMIT 1');
+    for ($i = 0; $i < $maxAttempts; $i++) {
+        $candidate = generateQrToken();
+        $stmt->execute([$candidate]);
+        if (!$stmt->fetch()) {
+            return $candidate;
+        }
+    }
+
+    throw new RuntimeException('Impossibile generare qr_token univoco');
+}
+
+function getOrCreateUserQrToken(string $userId): string
+{
+    global $pdo;
+
+    ensureQrTokenSchemaColumn();
+
+    $ownsTransaction = false;
+    try {
+        if (!$pdo->inTransaction()) {
+            $pdo->beginTransaction();
+            $ownsTransaction = true;
+        }
+
+        $stmt = $pdo->prepare('SELECT qr_token FROM profili WHERE id = ? LIMIT 1 FOR UPDATE');
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            throw new RuntimeException('Utente non trovato per qr_token');
+        }
+
+        $current = trim((string)($row['qr_token'] ?? ''));
+        if ($current !== '') {
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+            return $current;
+        }
+
+        $token = generateUniqueUserQrToken();
+        $update = $pdo->prepare(
+            'UPDATE profili
+             SET qr_token = ?
+             WHERE id = ?
+               AND (qr_token IS NULL OR qr_token = "")'
+        );
+        $update->execute([$token, $userId]);
+
+        if ($update->rowCount() < 1) {
+            $stmt = $pdo->prepare('SELECT qr_token FROM profili WHERE id = ? LIMIT 1');
+            $stmt->execute([$userId]);
+            $fallback = trim((string)($stmt->fetch()['qr_token'] ?? ''));
+            if ($fallback !== '') {
+                if ($ownsTransaction) {
+                    $pdo->commit();
+                }
+                return $fallback;
+            }
+
+            throw new RuntimeException('Impossibile impostare qr_token utente');
+        }
+
+        if ($ownsTransaction) {
+            $pdo->commit();
+        }
+
+        return $token;
+    } catch (Throwable $e) {
+        if ($ownsTransaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+}
+
+function buildUserQrUrl(string $qrToken): string
+{
+    return rtrim(localAppBaseUrl(), '/') . '/q/' . rawurlencode($qrToken);
+}
+
+function extractQrTokenFromInput(string $raw): string
+{
+    $value = trim($raw);
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('#/q/([A-Za-z0-9\-_]{16,128})#', $value, $match) === 1) {
+        return (string)$match[1];
+    }
+
+    if (preg_match('/^[A-Za-z0-9\-_]{16,128}$/', $value) === 1) {
+        return $value;
+    }
+
+    if (preg_match('/\b((?:PSC|NL)-[A-Z0-9\-]+)\b/i', $value, $legacy) === 1) {
+        return strtoupper((string)$legacy[1]);
+    }
+
+    return '';
+}
+
 function getUserRoleLevel(string $userId): int
 {
     global $pdo;

@@ -494,17 +494,21 @@ if (appIsLandingMode()) {
             const section = byId('qrSection');
             if (!section) return;
 
-            if (!latestConfirmedPurchase || !latestConfirmedPurchase.id || !latestConfirmedPurchase.qr_code) {
+            const qrToken = String(profile?.qr_token || latestConfirmedPurchase?.qr_code || '').trim();
+            if (!latestConfirmedPurchase || !latestConfirmedPurchase.id || !qrToken) {
                 activeQrImageSrc = '';
                 section.innerHTML = '<p class="muted">Nessun QR disponibile. Verifica con la segreteria lo stato dell\'iscrizione.</p>';
                 return;
             }
 
+            const qrStaticUrl = `${window.location.origin}/q/${encodeURIComponent(qrToken)}`;
+
             section.innerHTML = `
                 <div class="qr-layout">
                     <div class="qr-box" id="qrBox"><span class="muted">Generazione QR...</span></div>
                     <div class="qr-meta">
-                        <p><strong>Codice QR:</strong> <code>${escapeHtml(latestConfirmedPurchase.qr_code)}</code></p>
+                        <p><strong>Codice QR statico:</strong> <code>${escapeHtml(qrToken)}</code></p>
+                        <p><strong>Link QR statico:</strong> <a href="${escapeHtml(qrStaticUrl)}">${escapeHtml(qrStaticUrl)}</a></p>
                         <p><strong>Pacchetto:</strong> ${escapeHtml(latestConfirmedPurchase.pacchetto_nome || '-')}</p>
                         <p><strong>Scadenza:</strong> ${escapeHtml(formatDate(latestConfirmedPurchase.data_scadenza))}</p>
                         <p><strong>Ingressi rimanenti:</strong> ${escapeHtml(String(latestConfirmedPurchase.ingressi_rimanenti || 0))}</p>
@@ -520,7 +524,7 @@ if (appIsLandingMode()) {
                 downloadBtn.addEventListener('click', () => downloadQrPdf(latestConfirmedPurchase.id));
             }
 
-            loadQrImage(latestConfirmedPurchase.id, latestConfirmedPurchase.qr_code).catch((error) => {
+            loadQrImage(latestConfirmedPurchase.id, qrToken).catch((error) => {
                 showAlert(error.message || 'Errore generazione QR', 'error');
             });
         }
@@ -584,6 +588,7 @@ if (appIsLandingMode()) {
                 cognome: profile.cognome || user?.cognome,
                 ruolo: profile.ruolo_nome || user?.ruolo,
                 livello: Number(profile.ruolo_livello || user?.livello || 1),
+                qr_token: profile.qr_token || user?.qr_token || '',
             };
             localStorage.setItem('user', JSON.stringify(user));
 
@@ -633,7 +638,7 @@ if (appIsLandingMode()) {
             const data = await apiJson('pacchetti.php?action=my-purchases', { method: 'GET' });
             const rows = Array.isArray(data.acquisti) ? data.acquisti : [];
             const confirmed = rows
-                .filter((row) => String(row.stato_pagamento || '').toLowerCase() === 'confirmed' && row.qr_code)
+                .filter((row) => String(row.stato_pagamento || '').toLowerCase() === 'confirmed')
                 .sort((a, b) => new Date(b.data_conferma || b.data_acquisto) - new Date(a.data_conferma || a.data_acquisto));
 
             latestConfirmedPurchase = confirmed[0] || null;
