@@ -27,11 +27,12 @@ if ($honeypot !== '') {
 $name = sanitizeText((string)($data['name'] ?? ''), 120);
 $email = strtolower(sanitizeText((string)($data['email'] ?? ''), 255));
 $phone = sanitizeText((string)($data['phone'] ?? ''), 40);
-$subject = sanitizeText((string)($data['subject'] ?? ''), 200);
+$subjectRaw = sanitizeText((string)($data['subject'] ?? ''), 120);
+$subjectOther = sanitizeText((string)($data['subject_other'] ?? ''), 220);
 $message = sanitizeText((string)($data['message'] ?? ''), 4000);
 $privacy = filter_var($data['privacy'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-if ($name === '' || $email === '' || $subject === '' || $message === '') {
+if ($name === '' || $email === '' || $subjectRaw === '' || $message === '') {
     sendJson(400, ['success' => false, 'message' => 'Compila tutti i campi obbligatori']);
 }
 
@@ -43,12 +44,33 @@ if (!$privacy) {
     sendJson(400, ['success' => false, 'message' => 'Consenso privacy obbligatorio']);
 }
 
-if (!isMailConfigured()) {
-    sendJson(503, [
-        'success' => false,
-        'message' => 'SMTP non configurato. Controlla config/mail.php e logs/mail.log',
-    ]);
+$subjectKey = strtolower(trim((string)preg_replace('/[^a-z0-9]+/i', '-', $subjectRaw)));
+$subjectMap = [
+    'informazioni-iscrizione' => 'Informazioni iscrizione',
+    'orari-corsi' => 'Orari corsi',
+    'costi' => 'Costi',
+    'problemi-con-account' => 'Problemi con account',
+    'problemi-account' => 'Problemi con account',
+    'altro' => 'Altro',
+    'informazioni' => 'Richiesta informazioni',
+    'pacchetti' => 'Informazioni sui pacchetti',
+    'certificato' => 'Certificato medico',
+    'problemi' => 'Problemi tecnici',
+    'feedback' => 'Feedback e suggerimenti',
+];
+
+if (!isset($subjectMap[$subjectKey])) {
+    sendJson(400, ['success' => false, 'message' => 'Oggetto non valido']);
 }
+
+if ($subjectKey === 'altro' && $subjectOther === '') {
+    sendJson(400, ['success' => false, 'message' => 'Specifica il dettaglio per il campo Altro']);
+}
+
+$subjectLabel = $subjectMap[$subjectKey];
+$subject = $subjectKey === 'altro'
+    ? ($subjectLabel . ' - ' . $subjectOther)
+    : $subjectLabel;
 
 $adminEmail = sanitizeText((string)($MAIL_CONFIG['admin_email'] ?? ''), 255);
 $adminName = sanitizeText((string)($MAIL_CONFIG['admin_name'] ?? 'Admin'), 120);
@@ -61,7 +83,10 @@ $body = '<p><strong>Nuovo messaggio dal sito</strong></p>'
     . '<p><strong>Nome:</strong> ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</p>'
     . '<p><strong>Email:</strong> ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</p>'
     . '<p><strong>Telefono:</strong> ' . ($phone !== '' ? htmlspecialchars($phone, ENT_QUOTES, 'UTF-8') : '-') . '</p>'
-    . '<p><strong>Oggetto:</strong> ' . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</p>'
+    . '<p><strong>Oggetto:</strong> ' . htmlspecialchars($subjectLabel, ENT_QUOTES, 'UTF-8') . '</p>'
+    . ($subjectKey === 'altro'
+        ? '<p><strong>Dettaglio altro:</strong> ' . htmlspecialchars($subjectOther, ENT_QUOTES, 'UTF-8') . '</p>'
+        : '')
     . '<p><strong>Messaggio:</strong><br>' . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . '</p>';
 
 $sent = sendTemplateEmail(

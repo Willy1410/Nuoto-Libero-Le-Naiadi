@@ -114,6 +114,22 @@ require_once __DIR__ . '/bootstrap.php';
             align-items: baseline;
             font-size: 14px;
         }
+        .hours-box {
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            background: #f8fbff;
+            padding: 10px 12px;
+        }
+        .hours-box h3 {
+            margin: 0 0 6px;
+            font-size: 14px;
+            color: #0f172a;
+        }
+        .hours-box p {
+            margin: 0 0 4px;
+            font-size: 13px;
+            color: #334155;
+        }
         .contact-list strong { min-width: 86px; }
         .contact-list a { color: #0369a1; text-decoration: none; font-weight: 600; }
         .cta-row {
@@ -169,6 +185,7 @@ require_once __DIR__ . '/bootstrap.php';
             font-weight: 600;
         }
         .quick-form input,
+        .quick-form select,
         .quick-form textarea {
             width: 100%;
             border: 1px solid #cbd5e1;
@@ -180,9 +197,16 @@ require_once __DIR__ . '/bootstrap.php';
             background: #fff;
         }
         .quick-form input:focus,
+        .quick-form select:focus,
         .quick-form textarea:focus {
             border-color: #0ea5e9;
             box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+        }
+        .conditional-field {
+            display: none;
+        }
+        .conditional-field.open {
+            display: block;
         }
         .quick-form textarea {
             min-height: 86px;
@@ -282,8 +306,14 @@ require_once __DIR__ . '/bootstrap.php';
                 <a class="cta-btn cta-primary" href="#landingContactForm">Contattaci ora</a>
                 <a class="cta-btn cta-secondary" href="area-riservata.php">Area riservata</a>
             </div>
+            <div class="hours-box" aria-label="Giorni e orari di apertura">
+                <h3>Giorni e orari di apertura</h3>
+                <p><strong>Lunedi-Venerdi:</strong> 07:00-22:00</p>
+                <p><strong>Sabato:</strong> 08:00-19:00</p>
+                <p><strong>Domenica:</strong> 09:00-19:00</p>
+            </div>
             <form id="landingContactForm" class="quick-form" novalidate>
-                <h3>Richiedi contatto rapido</h3>
+                <h3>Richiedi informazioni</h3>
                 <div class="row">
                     <div class="field">
                         <label for="landingName">Nome e cognome *</label>
@@ -301,8 +331,19 @@ require_once __DIR__ . '/bootstrap.php';
                     </div>
                     <div class="field">
                         <label for="landingSubject">Oggetto *</label>
-                        <input id="landingSubject" name="subject" type="text" maxlength="200" value="Richiesta informazioni da landing" required>
+                        <select id="landingSubject" name="subject" required>
+                            <option value="">Seleziona...</option>
+                            <option value="informazioni-iscrizione">Informazioni iscrizione</option>
+                            <option value="orari-corsi">Orari corsi</option>
+                            <option value="costi">Costi</option>
+                            <option value="problemi-account">Problemi con account</option>
+                            <option value="altro">Altro</option>
+                        </select>
                     </div>
+                </div>
+                <div class="field conditional-field" id="landingOtherFieldWrap">
+                    <label for="landingSubjectOther">Dettaglio altro *</label>
+                    <input id="landingSubjectOther" name="subject_other" type="text" maxlength="220">
                 </div>
                 <div class="field">
                     <label for="landingMessage">Messaggio *</label>
@@ -326,6 +367,9 @@ require_once __DIR__ . '/bootstrap.php';
 
             const submitBtn = document.getElementById('landingSubmitBtn');
             const feedback = document.getElementById('landingFormFeedback');
+            const subjectSelect = document.getElementById('landingSubject');
+            const otherWrap = document.getElementById('landingOtherFieldWrap');
+            const otherInput = document.getElementById('landingSubjectOther');
 
             function setFeedback(message, kind) {
                 if (!feedback) return;
@@ -339,6 +383,24 @@ require_once __DIR__ . '/bootstrap.php';
                 feedback.textContent = '';
             }
 
+            function syncOtherSubjectField() {
+                const isOther = !!subjectSelect && subjectSelect.value === 'altro';
+                if (otherWrap) {
+                    otherWrap.classList.toggle('open', isOther);
+                }
+                if (otherInput) {
+                    otherInput.required = isOther;
+                    if (!isOther) {
+                        otherInput.value = '';
+                    }
+                }
+            }
+
+            if (subjectSelect) {
+                subjectSelect.addEventListener('change', syncOtherSubjectField);
+                syncOtherSubjectField();
+            }
+
             form.addEventListener('submit', async function (event) {
                 event.preventDefault();
                 clearFeedback();
@@ -348,6 +410,7 @@ require_once __DIR__ . '/bootstrap.php';
                     email: (document.getElementById('landingEmail')?.value || '').trim(),
                     phone: (document.getElementById('landingPhone')?.value || '').trim(),
                     subject: (document.getElementById('landingSubject')?.value || '').trim(),
+                    subject_other: (document.getElementById('landingSubjectOther')?.value || '').trim(),
                     message: (document.getElementById('landingMessage')?.value || '').trim(),
                     privacy: !!document.getElementById('landingPrivacy')?.checked,
                     website: (document.getElementById('landingWebsite')?.value || '').trim()
@@ -355,6 +418,10 @@ require_once __DIR__ . '/bootstrap.php';
 
                 if (!payload.name || !payload.email || !payload.subject || !payload.message) {
                     setFeedback('Compila tutti i campi obbligatori.', 'error');
+                    return;
+                }
+                if (payload.subject === 'altro' && !payload.subject_other) {
+                    setFeedback('Specifica il dettaglio per il campo "Altro".', 'error');
                     return;
                 }
                 if (!payload.privacy) {
@@ -382,7 +449,9 @@ require_once __DIR__ . '/bootstrap.php';
 
                     const params = new URLSearchParams({
                         name: payload.name,
-                        subject: payload.subject,
+                        subject: payload.subject === 'altro'
+                            ? `Altro - ${payload.subject_other}`
+                            : ((subjectSelect && subjectSelect.selectedOptions[0] && subjectSelect.selectedOptions[0].textContent) || payload.subject),
                         email: payload.email
                     });
                     window.location.href = 'grazie-contatto.php?from=landing&' + params.toString();

@@ -3,43 +3,17 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-function contactSafe(string $value, int $maxLen = 120): string
-{
-    $value = trim($value);
-    if (mb_strlen($value) > $maxLen) {
-        $value = mb_substr($value, 0, $maxLen);
-    }
-
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-}
-
-$name = contactSafe((string)($_GET['name'] ?? 'Utente'), 120);
-$subject = contactSafe((string)($_GET['subject'] ?? 'Richiesta informazioni'), 160);
-$email = contactSafe((string)($_GET['email'] ?? ''), 255);
-if ($email === '') {
-    $email = '-';
-}
-
 $isLandingContext = appIsLandingMode() || strtolower((string)($_GET['from'] ?? '')) === 'landing';
 $homeHref = $isLandingContext ? 'landing.php' : 'index.php';
-$homeLabel = $isLandingContext ? 'Torna alla landing' : 'Torna alla home';
-$secondaryHref = $isLandingContext ? 'landing.php#landingContactForm' : 'contatti.php';
-$thirdHref = $isLandingContext ? 'area-riservata.php' : 'pacchetti.php';
-$thirdLabel = $isLandingContext ? 'Area riservata demo' : 'Vai ai pacchetti';
 ?>
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Messaggio contatto inviato correttamente a Gli Squaletti.">
+    <meta name="description" content="Messaggio contatto inviato correttamente.">
     <meta name="robots" content="noindex,nofollow">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="it_IT">
-    <meta property="og:title" content="Messaggio Inviato - Gli Squaletti">
-    <meta property="og:description" content="Il tuo messaggio e stato inviato alla segreteria.">
-    <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/grazie-contatto.php', ENT_QUOTES, 'UTF-8'); ?>">
-    <title>Messaggio Inviato - Gli Squaletti</title>
+    <title>Grazie - Gli Squaletti</title>
     <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -48,7 +22,8 @@ $thirdLabel = $isLandingContext ? 'Area riservata demo' : 'Vai ai pacchetti';
             margin: 0;
             min-height: 100vh;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(145deg, #0f766e, #0ea5a0);
+            background: radial-gradient(circle at 20% 20%, rgba(14,165,233,.18), transparent 40%),
+                        linear-gradient(145deg, #0f172a, #0b6da8);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -56,91 +31,57 @@ $thirdLabel = $isLandingContext ? 'Area riservata demo' : 'Vai ai pacchetti';
             color: #0f172a;
         }
         .card {
-            width: min(760px, 100%);
-            background: #fff;
+            width: min(640px, 100%);
+            background: #ffffff;
             border-radius: 18px;
-            box-shadow: 0 24px 42px rgba(2, 6, 23, 0.28);
-            padding: 28px;
+            box-shadow: 0 22px 44px rgba(2, 6, 23, 0.3);
+            padding: 34px 26px;
+            text-align: center;
         }
-        .status {
-            width: 78px;
-            height: 78px;
+        .icon {
+            width: 82px;
+            height: 82px;
+            margin: 0 auto 14px;
             border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
             display: grid;
             place-items: center;
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
             color: #fff;
             font-size: 34px;
-            margin: 0 auto 14px;
+            font-weight: 700;
         }
         h1 {
             margin: 0;
-            text-align: center;
-            color: #0f766e;
-            font-size: 30px;
+            font-size: 46px;
+            color: #0f172a;
+            line-height: 1.1;
         }
-        .lead {
-            text-align: center;
-            margin: 8px 0 20px;
-            color: #475569;
-        }
-        .summary {
-            border: 1px solid #ccfbf1;
-            border-radius: 12px;
-            padding: 14px;
-            background: #f0fdfa;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .summary strong { color: #115e59; }
-        .cta {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
+        .subtitle {
+            margin: 8px 0 24px;
+            font-size: 18px;
+            color: #334155;
         }
         .btn {
-            text-decoration: none;
-            border-radius: 999px;
-            padding: 11px 18px;
-            font-size: 14px;
-            font-weight: 700;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-        }
-        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; }
-        .btn-secondary { background: #fff; color: #0f766e; border: 2px solid #0f766e; }
-        .note {
-            margin-top: 14px;
-            color: #475569;
-            font-size: 13px;
-            text-align: center;
+            text-decoration: none;
+            border-radius: 999px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: #fff;
+            letter-spacing: .02em;
         }
     </style>
 </head>
 <body>
 <main class="card" role="main">
-    <div class="status">&#9993;</div>
-    <h1>Messaggio inviato correttamente</h1>
-    <p class="lead">Grazie <?= $name; ?>, la segreteria ha ricevuto la tua richiesta.</p>
-
-    <section class="summary" aria-label="Riepilogo invio contatto">
-        <div><strong>Azione eseguita:</strong> invio modulo contatto dal sito.</div>
-        <div><strong>Oggetto:</strong> <?= $subject; ?></div>
-        <div><strong>Email indicata:</strong> <?= $email; ?></div>
-        <div><strong>Esito:</strong> richiesta in lavorazione.</div>
-    </section>
-
-    <div class="cta">
-        <a class="btn btn-primary" href="<?= htmlspecialchars($homeHref, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($homeLabel, ENT_QUOTES, 'UTF-8'); ?></a>
-        <a class="btn btn-secondary" href="<?= htmlspecialchars($secondaryHref, ENT_QUOTES, 'UTF-8'); ?>">Invia un altro messaggio</a>
-        <a class="btn btn-secondary" href="<?= htmlspecialchars($thirdHref, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($thirdLabel, ENT_QUOTES, 'UTF-8'); ?></a>
-    </div>
-
-    <p class="note">Risposta media: entro 24 ore lavorative.</p>
+    <div class="icon" aria-hidden="true">&#10148;</div>
+    <h1>Grazie</h1>
+    <p class="subtitle">Entro poche ore verrai ricontattato</p>
+    <a class="btn" href="<?= htmlspecialchars($homeHref, ENT_QUOTES, 'UTF-8'); ?>">TORNA ALLA HOME</a>
 </main>
 </body>
 </html>
-
