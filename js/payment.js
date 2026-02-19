@@ -211,55 +211,16 @@ function validateFormData(data) {
 }
 
 function redirectToConfirmation(enrollmentId, orderData) {
-    const confirmationHTML = `
-        <!DOCTYPE html>
-        <html lang="it">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Richiesta Iscrizione Registrata - Gli Squaletti</title>
-            <link rel="icon" type="image/png" href="https://www.genspark.ai/api/files/s/s3WpPfgP">
-            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-            <style>
-                body { margin:0; font-family:Poppins, sans-serif; background:linear-gradient(135deg,#00a8e8,#0077b6); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
-                .card { background:#fff; max-width:680px; width:100%; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,.2); padding:28px; }
-                .ok { width:72px; height:72px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:34px; margin:0 auto 18px; }
-                h1 { margin:0 0 8px; text-align:center; color:#0077b6; }
-                p { color:#334155; }
-                .box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin:16px 0; }
-                .row { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; font-size:14px; }
-                .row:last-child { margin-bottom:0; }
-                .actions { margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
-                .btn { display:inline-block; padding:10px 16px; border-radius:999px; text-decoration:none; font-weight:600; }
-                .btn-primary { background:#00a8e8; color:#fff; }
-                .btn-secondary { border:2px solid #00a8e8; color:#00a8e8; background:#fff; }
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <div class="ok">✓</div>
-                <h1>Richiesta Iscrizione Registrata</h1>
-                <p style="text-align:center;">${orderData.message}. Nessun pagamento online: finalizzazione in struttura.</p>
-                <div class="box">
-                    <div class="row"><strong>Codice richiesta</strong><span>${enrollmentId}</span></div>
-                    <div class="row"><strong>Pacchetto</strong><span>${orderData.package}</span></div>
-                    <div class="row"><strong>Quota iscrizione EPS + tesseramento</strong><span>${formatCurrency(orderData.mandatoryFee)}</span></div>
-                    <div class="row"><strong>Quota pacchetto 10 ingressi</strong><span>${formatCurrency(orderData.packageFee)}</span></div>
-                    <div class="row"><strong>Totale</strong><span>${formatCurrency(orderData.total)}</span></div>
-                    <div class="row"><strong>Comprende</strong><span>Iscrizione, Tesseramento, 10 ingressi + 2 omaggio</span></div>
-                    <div class="row"><strong>Email</strong><span>${orderData.email}</span></div>
-                </div>
-                <div class="actions">
-                    <a href="index.php" class="btn btn-primary">Torna alla Home</a>
-                    <a href="moduli.php" class="btn btn-secondary">Apri Moduli</a>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
+    const params = new URLSearchParams({
+        id: String(enrollmentId || ''),
+        package: String(orderData.package || ''),
+        package_fee: String(orderData.packageFee || 0),
+        mandatory_fee: String(orderData.mandatoryFee || 0),
+        total: String(orderData.total || 0),
+        email: String(orderData.email || '')
+    });
 
-    const confirmationWindow = window.open('', '_self');
-    confirmationWindow.document.write(confirmationHTML);
-    confirmationWindow.document.close();
+    window.location.href = `grazie-iscrizione.php?${params.toString()}`;
 }
+
 

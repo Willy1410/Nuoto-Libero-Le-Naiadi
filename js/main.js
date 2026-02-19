@@ -329,14 +329,13 @@ function initContactForm() {
                 throw new Error(result.message || 'Invio non riuscito');
             }
 
-            // Success
-            if (formMessage) {
-                formMessage.className = 'form-message success';
-                formMessage.textContent = result.message || 'Grazie! Il tuo messaggio e stato inviato con successo.';
-            }
-
-            // Reset form
-            contactForm.reset();
+            const params = new URLSearchParams({
+                name: formData.name || '',
+                subject: formData.subject || '',
+                email: formData.email || ''
+            });
+            window.location.href = `grazie-contatto.php?${params.toString()}`;
+            return;
 
         } catch (error) {
             // Error
@@ -483,3 +482,4 @@ window.GliSqualetti = {
     validatePhone,
     showNotification
 };
+
