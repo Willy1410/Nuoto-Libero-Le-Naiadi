@@ -45,7 +45,11 @@ if ($email === '') {
     <meta property="og:description" content="La tua richiesta e stata registrata. Completa la finalizzazione in struttura.">
     <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/grazie-iscrizione.php', ENT_QUOTES, 'UTF-8'); ?>">
     <title>Richiesta Iscrizione Ricevuta - Nuoto libero Le Naiadi</title>
-    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="shortcut icon" href="favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }

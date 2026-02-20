@@ -60,7 +60,11 @@ $currentBlock = $demoBlocks[$demo];
     <meta name="description" content="Area riservata demo vetrina Nuoto libero Le Naiadi.">
     <meta name="robots" content="noindex,nofollow">
     <title>Area Riservata Demo - Nuoto libero Le Naiadi</title>
-    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="shortcut icon" href="favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -296,7 +300,7 @@ $currentBlock = $demoBlocks[$demo];
 <main class="layout" role="main">
     <section class="left" aria-label="Brand Nuoto libero Le Naiadi">
         <div class="logo">
-            <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Logo Nuoto libero Le Naiadi">
+            <img src="assets/brand/squalo_nuoto_colore.svg" alt="Logo Nuoto libero Le Naiadi">
         </div>
         <h1>Area riservata</h1>
         <p>Versione vetrina attiva: i pulsanti restano nel percorso demo e non aprono il sito principale.</p>

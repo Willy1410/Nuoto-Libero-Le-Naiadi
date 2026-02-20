@@ -126,7 +126,11 @@ define('UPLOAD_DIR', PROJECT_ROOT . '/uploads/');
 define('MAIL_LOG_PATH', LOG_DIR . '/mail.log');
 define('MAIL_QUEUE_DIR', LOG_DIR . '/mail_queue');
 define('SITE_NAME', 'Nuoto libero Le Naiadi');
-define('SITE_LOGO_URL', 'https://public.gensparkspace.com/api/files/s/s3WpPfgP');
+$siteLogoUrl = trim((string)(getenv('SITE_LOGO_URL') ?: ''));
+if ($siteLogoUrl === '') {
+    $siteLogoUrl = getAppBaseUrl() . '/assets/brand/squalo_nuoto_colore.svg';
+}
+define('SITE_LOGO_URL', $siteLogoUrl);
 
 if (!file_exists(MAIL_LOG_PATH)) {
     touch(MAIL_LOG_PATH);

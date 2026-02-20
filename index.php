@@ -19,11 +19,11 @@ appEnforceFullSiteAccess();
     <meta property="og:title" content="Nuoto Libero in Piscina - Nuoto libero Le Naiadi">
     <meta property="og:description" content="Piscina nuoto libero non agonistico, corsie dedicate, orari flessibili e area riservata utenti.">
     <meta property="og:url" content="/index.php">
-    <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
+    <meta property="og:image" content="assets/brand/squalo_nuoto_colore.jpg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Nuoto Libero in Piscina - Nuoto libero Le Naiadi">
     <meta name="twitter:description" content="Associazione sportiva nuoto non agonistico, piscina coperta e 50m all'aperto in estate.">
-    <meta name="twitter:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
+    <meta name="twitter:image" content="assets/brand/squalo_nuoto_colore.jpg">
 
     <title>Nuoto Libero Le Naiadi</title>
     <script type="application/ld+json">
@@ -38,8 +38,11 @@ appEnforceFullSiteAccess();
     </script>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
-    
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="shortcut icon" href="favicon.ico">    
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     
@@ -65,7 +68,7 @@ appEnforceFullSiteAccess();
                 <div class="nav-wrapper">
                     <!-- Logo -->
                     <a href="index.php" class="logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <img src="assets/brand/squalo_nuoto_colore.svg" alt="Nuoto libero Le Naiadi Logo">
                         <span>Nuoto libero le Naiadi</span>
                     </a>
 
@@ -291,7 +294,7 @@ appEnforceFullSiteAccess();
                 <!-- Colonna 1: Info -->
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <img src="https://public.gensparkspace.com/api/files/s/s3WpPfgP" alt="Nuoto libero Le Naiadi Logo">
+                        <img src="assets/brand/squalo_nuoto_colore.svg" alt="Nuoto libero Le Naiadi Logo">
                         <h3>Nuoto libero Le Naiadi</h3>
                     </div>
                     <p>La tua piscina per il nuoto libero. Allenati quando vuoi, come vuoi.</p>

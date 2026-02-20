@@ -7,6 +7,11 @@ require_once __DIR__ . '/bootstrap.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="shortcut icon" href="favicon.ico">
     <meta name="description" content="Sito in aggiornamento. Contattaci per informazioni su nuoto libero e iscrizioni.">
     <meta name="robots" content="noindex,nofollow">
     <meta property="og:type" content="website">
@@ -14,7 +19,7 @@ require_once __DIR__ . '/bootstrap.php';
     <meta property="og:title" content="Nuoto Libero Le Naiadi - Sito in aggiornamento">
     <meta property="og:description" content="Stiamo preparando il nuovo sito. Contattaci per supporto immediato.">
     <meta property="og:url" content="<?= htmlspecialchars(appBaseUrl() . '/landing.php', ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:image" content="https://public.gensparkspace.com/api/files/s/s3WpPfgP">
+    <meta property="og:image" content="assets/brand/squalo_nuoto_colore.jpg">
     <title>Nuoto Libero le Naiadi - Sito in aggiornamento</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -317,6 +322,9 @@ require_once __DIR__ . '/bootstrap.php';
 <body>
     <main class="landing-card" role="main">
         <section class="brand-side" aria-label="Brand Nuoto libero Le Naiadi">
+            <div class="brand-logo">
+                <img src="assets/brand/squalo_nuoto_colore.svg" alt="Logo Nuoto libero Le Naiadi">
+            </div>
             <h2 class="brand-title">Nuoto Libero le Naiadi</h2>
             <p class="brand-copy">Stiamo finalizzando gli ultimi dettagli del nuovo sito. A breve saremo operativi.</p>
 
