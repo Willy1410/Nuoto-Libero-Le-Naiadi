@@ -131,6 +131,17 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             window.location.href = ROLE_REDIRECTS[role] || 'piscina-php/dashboard-utente.php';
         }
 
+        function isStaffRoleName(role) {
+            const value = String(role || '').toLowerCase();
+            return value === 'admin' || value === 'ufficio' || value === 'segreteria';
+        }
+
+        function clearAuthStorage() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+        }
+
         function safeParseJson(raw) {
             try {
                 return JSON.parse(raw);
@@ -139,14 +150,65 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             }
         }
 
-        try {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || 'null');
-            if (token && user && user.ruolo) {
-                redirectByRole(user.ruolo);
+        async function tryAutoRedirectWithStoredSession() {
+            try {
+                const token = localStorage.getItem('token');
+                const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+                if (!token || !storedUser || !storedUser.ruolo) {
+                    return;
+                }
+
+                if (LANDING_STAFF_ONLY && !isStaffRoleName(storedUser.ruolo)) {
+                    clearAuthStorage();
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/auth.php?action=me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const raw = await response.text();
+                const data = safeParseJson(raw);
+                if (!response.ok || !data.success) {
+                    clearAuthStorage();
+                    return;
+                }
+
+                const normalizedRole = String(
+                    data?.user?.ruolo_nome ||
+                    data?.user?.ruolo ||
+                    storedUser.ruolo ||
+                    ''
+                ).toLowerCase();
+
+                if (LANDING_STAFF_ONLY && !isStaffRoleName(normalizedRole)) {
+                    clearAuthStorage();
+                    return;
+                }
+
+                const mergedUser = {
+                    ...storedUser,
+                    id: data?.user?.id || storedUser.id,
+                    email: data?.user?.email || storedUser.email,
+                    nome: data?.user?.nome || storedUser.nome,
+                    cognome: data?.user?.cognome || storedUser.cognome,
+                    ruolo: normalizedRole || storedUser.ruolo,
+                    livello: Number(data?.user?.ruolo_livello || storedUser.livello || 1),
+                    qr_token: data?.user?.qr_token || storedUser.qr_token || '',
+                };
+
+                localStorage.setItem('user', JSON.stringify(mergedUser));
+                redirectByRole(mergedUser.ruolo);
+            } catch (_) {
+                clearAuthStorage();
             }
-        } catch (error) {
         }
+
+        void tryAutoRedirectWithStoredSession();
 
         document.getElementById('togglePassword').addEventListener('change', function () {
             const pwd = document.getElementById('password');
@@ -179,7 +241,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 }
 
                 const roleName = String(data?.user?.ruolo || '').toLowerCase();
-                const isStaffRole = roleName === 'admin' || roleName === 'ufficio' || roleName === 'segreteria';
+                const isStaffRole = isStaffRoleName(roleName);
                 if (LANDING_STAFF_ONLY && !isStaffRole) {
                     throw new Error('In modalita landing l\'accesso reale e riservato a admin/ufficio.');
                 }

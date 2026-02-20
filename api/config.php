@@ -351,16 +351,42 @@ function verifyJWT(?string $token): ?array
 
 function getAuthorizationHeader(): string
 {
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
-    if ($authHeader) {
-        return $authHeader;
+    $candidateKeys = [
+        'HTTP_AUTHORIZATION',
+        'Authorization',
+        'REDIRECT_HTTP_AUTHORIZATION',
+        'REDIRECT_Authorization',
+        'HTTP_X_AUTHORIZATION',
+        'X-Authorization',
+    ];
+
+    foreach ($candidateKeys as $key) {
+        $value = trim((string)($_SERVER[$key] ?? ''));
+        if ($value !== '') {
+            return $value;
+        }
     }
 
     if (function_exists('getallheaders')) {
         $headers = getallheaders();
         foreach ($headers as $key => $value) {
             if (strtolower($key) === 'authorization') {
-                return (string)$value;
+                $normalized = trim((string)$value);
+                if ($normalized !== '') {
+                    return $normalized;
+                }
+            }
+        }
+    }
+
+    if (function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        foreach ($headers as $key => $value) {
+            if (strtolower((string)$key) === 'authorization') {
+                $normalized = trim((string)$value);
+                if ($normalized !== '') {
+                    return $normalized;
+                }
             }
         }
     }
@@ -375,11 +401,20 @@ function extractBearerToken(string $authHeader): ?string
         return null;
     }
 
-    if (!preg_match('/^Bearer\s+([A-Za-z0-9\-\._]+)$/i', $value, $matches)) {
+    if (!preg_match('/^Bearer\s+(.+)$/i', $value, $matches)) {
         return null;
     }
 
-    return trim((string)$matches[1]);
+    $token = trim((string)$matches[1]);
+    if ($token === '') {
+        return null;
+    }
+
+    if (!preg_match('/^[A-Za-z0-9\-\._~\+\/]+=*$/', $token)) {
+        return null;
+    }
+
+    return $token;
 }
 
 function jwtRevocationFilePath(string $token): string

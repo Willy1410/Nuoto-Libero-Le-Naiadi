@@ -19,6 +19,8 @@
         return;
     }
 
+    let authRedirecting = false;
+
     const state = {
         activeTab: 'overview',
         selectedUserId: '',
@@ -346,6 +348,31 @@
         box.className = `status-box ${type === 'error' ? 'err' : 'ok'}`;
         box.textContent = message;
     }
+
+    function clearAuthStorage() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.clear();
+    }
+
+    function isUnauthorizedMessage(message) {
+        const normalized = String(message || '').trim().toLowerCase();
+        return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+    }
+
+    function redirectToLogin(message = 'Sessione scaduta. Accedi di nuovo.') {
+        if (authRedirecting) {
+            return;
+        }
+
+        authRedirecting = true;
+        clearAuthStorage();
+        setStatus(message, 'error');
+        setTimeout(() => {
+            window.location.href = '../login.php?clear_staff_access=1';
+        }, 120);
+    }
+
     async function modalAlert(message, title) {
         if (window.NuotoLiberoUI && typeof window.NuotoLiberoUI.alert === 'function') {
             await window.NuotoLiberoUI.alert(message, { title: title || 'Avviso' });
@@ -384,9 +411,7 @@
         } catch (_) {
         }
 
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        sessionStorage.clear();
+        clearAuthStorage();
         window.location.href = '../login.php?clear_staff_access=1';
     }
 
@@ -422,6 +447,11 @@
             }
         }
 
+        if (response.status === 401 || isUnauthorizedMessage(data?.message)) {
+            redirectToLogin('Sessione scaduta. Accedi di nuovo.');
+            throw new Error('Sessione scaduta. Accedi di nuovo.');
+        }
+
         if (!response.ok || data.success === false) {
             throw new Error(data.message || `Errore richiesta API (${response.status})`);
         }
@@ -453,12 +483,21 @@
 
         if (!response.ok) {
             const raw = (await response.text()).replace(/^\uFEFF/, '').trim();
+            let message = 'Download non riuscito';
+
             try {
                 const json = raw ? JSON.parse(raw) : {};
-                throw new Error(json.message || 'Download non riuscito');
+                message = String(json?.message || message);
             } catch (_) {
-                throw new Error('Download non riuscito');
+                message = 'Download non riuscito';
             }
+
+            if (response.status === 401 || isUnauthorizedMessage(message)) {
+                redirectToLogin('Sessione scaduta. Accedi di nuovo.');
+                throw new Error('Sessione scaduta. Accedi di nuovo.');
+            }
+
+            throw new Error(message || 'Download non riuscito');
         }
 
         const blob = await response.blob();

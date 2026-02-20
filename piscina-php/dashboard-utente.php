@@ -352,6 +352,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         let profile = null;
         let latestConfirmedPurchase = null;
         let activeQrImageSrc = '';
+        let authRedirecting = false;
 
         try {
             user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -361,6 +362,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
         if (!token || !user) {
             window.location.href = '../login.php';
+            throw new Error('Sessione non valida');
         }
 
         function byId(id) {
@@ -394,6 +396,45 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             }
         }
 
+        function clearAuthStorage() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+        }
+
+        function isUnauthorizedMessage(message) {
+            const normalized = String(message || '').trim().toLowerCase();
+            return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+        }
+
+        function forceRelogin(message = 'Sessione scaduta. Accedi di nuovo.') {
+            if (authRedirecting) {
+                return;
+            }
+
+            authRedirecting = true;
+            clearAuthStorage();
+            showAlert(message, 'error');
+            setTimeout(() => {
+                window.location.href = '../login.php';
+            }, 120);
+        }
+
+        async function readApiErrorMessage(response, fallbackMessage) {
+            const rawText = (await response.text()).replace(/^\uFEFF/, '').trim();
+            if (rawText === '') {
+                return fallbackMessage;
+            }
+
+            try {
+                const data = JSON.parse(rawText);
+                const fromApi = String(data?.message || '').trim();
+                return fromApi || fallbackMessage;
+            } catch (_) {
+                return fallbackMessage;
+            }
+        }
+
         async function apiJson(path, options = {}) {
             const response = await fetch(`${API_URL}/${path}`, {
                 ...options,
@@ -412,6 +453,11 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 } catch (_) {
                     data = { success: false, message: 'Risposta API non valida' };
                 }
+            }
+
+            if (response.status === 401 || isUnauthorizedMessage(data?.message)) {
+                forceRelogin('Sessione scaduta. Accedi di nuovo.');
+                throw new Error('Sessione scaduta. Accedi di nuovo.');
             }
 
             if (!response.ok || data.success === false) {
@@ -538,7 +584,12 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             });
 
             if (!response.ok) {
-                throw new Error('Errore generazione QR');
+                const message = await readApiErrorMessage(response, 'Errore generazione QR');
+                if (response.status === 401 || isUnauthorizedMessage(message)) {
+                    forceRelogin('Sessione scaduta. Accedi di nuovo.');
+                    throw new Error('Sessione scaduta. Accedi di nuovo.');
+                }
+                throw new Error(message);
             }
 
             const svgText = await response.text();
@@ -562,7 +613,12 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             });
 
             if (!response.ok) {
-                throw new Error('Errore download QR');
+                const message = await readApiErrorMessage(response, 'Errore download QR');
+                if (response.status === 401 || isUnauthorizedMessage(message)) {
+                    forceRelogin('Sessione scaduta. Accedi di nuovo.');
+                    throw new Error('Sessione scaduta. Accedi di nuovo.');
+                }
+                throw new Error(message);
             }
 
             const blob = await response.blob();
@@ -746,10 +802,16 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         }
 
         bootstrap().catch((error) => {
+            if (authRedirecting) {
+                return;
+            }
             showAlert(error.message || 'Errore caricamento dashboard', 'error');
         });
 
         setInterval(() => {
+            if (authRedirecting) {
+                return;
+            }
             Promise.allSettled([loadProfileRequests(), loadMyPurchases()]);
         }, 45000);
     </script>

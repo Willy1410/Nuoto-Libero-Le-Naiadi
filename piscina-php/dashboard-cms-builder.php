@@ -229,11 +229,18 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     <script>
         const API_URL = '../api/cms.php';
         const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        let user = null;
+        try {
+            user = JSON.parse(localStorage.getItem('user') || 'null');
+        } catch (_) {
+            user = null;
+        }
+        let authRedirecting = false;
 
         const allowedRoles = ['admin', 'ufficio', 'segreteria'];
         if (!token || !user || !allowedRoles.includes(user.ruolo)) {
             window.location.href = '../login.php';
+            throw new Error('Sessione non valida');
         }
 
         let pages = [];
@@ -254,6 +261,30 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             }
             box.className = `status ${type === 'error' ? 'err' : 'ok'}`;
             box.textContent = message;
+        }
+
+        function clearAuthStorage() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+        }
+
+        function isUnauthorizedMessage(message) {
+            const normalized = String(message || '').trim().toLowerCase();
+            return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+        }
+
+        function forceRelogin(message = 'Sessione scaduta. Accedi di nuovo.') {
+            if (authRedirecting) {
+                return;
+            }
+
+            authRedirecting = true;
+            clearAuthStorage();
+            showStatus(message, 'error');
+            setTimeout(() => {
+                window.location.href = '../login.php';
+            }, 120);
         }
 
         function escapeHtml(value) {
@@ -280,6 +311,11 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 data = raw ? JSON.parse(raw) : {};
             } catch (_) {
                 throw new Error('Risposta API non valida');
+            }
+
+            if (response.status === 401 || isUnauthorizedMessage(data?.message)) {
+                forceRelogin('Sessione scaduta. Accedi di nuovo.');
+                throw new Error('Sessione scaduta. Accedi di nuovo.');
             }
 
             if (!response.ok || data.success === false) {
@@ -557,9 +593,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             } catch (_) {
             }
 
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            sessionStorage.clear();
+            clearAuthStorage();
             window.location.href = '../login.php';
         });
 
@@ -567,7 +601,12 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             loadPages(),
             loadMedia(),
             loadSettings()
-        ]).catch((error) => showStatus(error.message, 'error'));
+        ]).catch((error) => {
+            if (authRedirecting) {
+                return;
+            }
+            showStatus(error.message, 'error');
+        });
     </script>
 </body>
 </html>

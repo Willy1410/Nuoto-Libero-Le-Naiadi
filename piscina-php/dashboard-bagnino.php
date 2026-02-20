@@ -247,7 +247,12 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     <script>
         const API_URL = '../api';
         const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        let user = null;
+        try {
+            user = JSON.parse(localStorage.getItem('user') || 'null');
+        } catch (_) {
+            user = null;
+        }
 
         let scanner = null;
         let scannerRunning = false;
@@ -258,9 +263,11 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         let verifyBusy = false;
         let scannerLibraryPromise = null;
         let alertTimer = null;
+        let authRedirecting = false;
 
         if (!token || !user || user.ruolo !== 'bagnino') {
             window.location.href = '../login.php';
+            throw new Error('Sessione non valida');
         }
 
         document.getElementById('userName').textContent = `${user.nome} ${user.cognome}`;
@@ -282,6 +289,31 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 box.className = 'alert';
                 box.textContent = '';
             }, type === 'error' ? 9000 : 5000);
+        }
+
+        function clearAuthStorage() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+        }
+
+        function isUnauthorizedMessage(message) {
+            const normalized = String(message || '').trim().toLowerCase();
+            return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+        }
+
+        function forceRelogin(message = 'Sessione scaduta. Accedi di nuovo.') {
+            if (authRedirecting) {
+                return;
+            }
+
+            authRedirecting = true;
+            stopScanner().catch(() => {});
+            clearAuthStorage();
+            showAlert(message, 'error');
+            setTimeout(() => {
+                window.location.href = '../login.php';
+            }, 120);
         }
 
         function getErrorMessage(error) {
@@ -360,6 +392,11 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                     }
                     throw new Error('Risposta API non valida. Controlla i log backend.');
                 }
+            }
+
+            if (response.status === 401 || isUnauthorizedMessage(data?.message)) {
+                forceRelogin('Sessione scaduta. Accedi di nuovo.');
+                throw new Error('Sessione scaduta. Accedi di nuovo.');
             }
 
             if (!response.ok || !data.success) {
@@ -675,9 +712,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             } catch (_) {
             }
 
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            sessionStorage.clear();
+            clearAuthStorage();
             window.location.href = '../login.php';
         }
 
