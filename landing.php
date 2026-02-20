@@ -59,19 +59,16 @@ require_once __DIR__ . '/bootstrap.php';
             color: #e2f5ff;
         }
         .brand-logo {
-            width: 74px;
-            height: 74px;
-            border-radius: 16px;
-            background: #ffffff;
-            display: grid;
-            place-items: center;
-            margin-bottom: 18px;
-            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto 18px;
         }
         .brand-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+            width: min(280px, 86%);
+            height: auto;
+            display: block;
         }
         .brand-title { margin: 0 0 8px; font-size: 30px; }
         .brand-copy { margin: 0; font-size: 15px; color: rgba(240, 249, 255, 0.92); line-height: 1.6; }
