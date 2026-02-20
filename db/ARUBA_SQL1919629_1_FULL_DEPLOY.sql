@@ -1,3 +1,47 @@
+﻿-- =====================================================
+-- Nuoto Libero Le Naiadi
+-- ARUBA SINGLE DEPLOY SQL
+-- Target DB: Sql1919629_1
+-- Generated: 2026-02-20
+-- NOTE: import this file in phpMyAdmin selecting database Sql1919629_1
+-- =====================================================
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+SET NAMES utf8mb4;
+
+USE `Sql1919629_1`;
+
+-- ATTENZIONE: reset completo schema applicativo nel DB selezionato.
+-- Eseguire solo se vuoi ripartire da zero.
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS
+  cms_revisions,
+  cms_settings,
+  cms_media,
+  cms_pages,
+  profile_update_requests,
+  iscrizioni,
+  packages,
+  check_ins,
+  acquisti,
+  documenti_utente,
+  moduli,
+  contenuti_sito,
+  gallery,
+  notifiche_email,
+  password_reset_tokens,
+  impostazioni_operative,
+  pacchetti,
+  tipi_documento,
+  activity_log,
+  profili,
+  ruoli;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- -----------------------------------------------------
+-- SOURCE: db/CREATE_DATABASE_FROM_ZERO.sql
+-- -----------------------------------------------------
 -- =====================================================
 -- Nuoto Libero - CREATE DATABASE FROM ZERO
 -- Compatibile con XAMPP (MySQL/MariaDB)
@@ -407,5 +451,406 @@ UNION ALL SELECT 'acquisti', COUNT(*) FROM acquisti
 UNION ALL SELECT 'check_ins', COUNT(*) FROM check_ins
 UNION ALL SELECT 'documenti_utente', COUNT(*) FROM documenti_utente
 UNION ALL SELECT 'moduli', COUNT(*) FROM moduli;
+
+
+-- -----------------------------------------------------
+-- SOURCE: db/MIGRATION_2026_02_17_STORAGE_DB.sql
+-- -----------------------------------------------------
+-- =====================================================
+-- Nuoto Libero - MIGRATION_2026_02_17_STORAGE_DB
+-- Obiettivo:
+-- 1) salvare upload documenti/moduli direttamente su DB
+-- 2) rimuovere dipendenza da path hardcoded /nuoto-libero
+-- =====================================================
+USE `Sql1919629_1`;
+-- Nota compatibilita Aruba:
+-- le colonne file_mime/file_size/file_blob/file_data sono gia presenti
+-- nello schema base (CREATE_DATABASE_FROM_ZERO.sql), quindi qui non servono ALTER.
+
+-- Normalizzazione opzionale path legacy
+UPDATE documenti_utente
+SET file_url = REPLACE(file_url, '/nuoto-libero/uploads/', 'uploads/')
+WHERE file_url LIKE '%/nuoto-libero/uploads/%';
+
+
+-- -----------------------------------------------------
+-- SOURCE: db/MIGRATION_2026_02_18_CMS_BUILDER_READY.sql
+-- -----------------------------------------------------
+-- =====================================================
+-- Nuoto Libero - MIGRATION_2026_02_18_CMS_BUILDER_READY
+-- Predisposizione CMS headless compatibile Builder.io
+-- =====================================================
+USE `Sql1919629_1`;
+CREATE TABLE IF NOT EXISTS cms_pages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(160) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
+  content_json LONGTEXT NOT NULL,
+  version_num INT UNSIGNED NOT NULL DEFAULT 1,
+  updated_by CHAR(36) NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  published_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_cms_pages_slug (slug),
+  KEY idx_cms_pages_status (status),
+  KEY idx_cms_pages_updated_at (updated_at),
+  CONSTRAINT fk_cms_pages_updated_by FOREIGN KEY (updated_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cms_media (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  type ENUM('image', 'file') NOT NULL,
+  storage_driver VARCHAR(30) NOT NULL DEFAULT 'local',
+  file_path VARCHAR(500) NOT NULL,
+  public_url VARCHAR(500) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  mime VARCHAR(120) NOT NULL,
+  size_bytes BIGINT UNSIGNED NOT NULL,
+  sha256 CHAR(64) NULL,
+  uploaded_by CHAR(36) NULL,
+  uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_cms_media_type_uploaded (type, uploaded_at),
+  CONSTRAINT fk_cms_media_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cms_revisions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  page_id BIGINT UNSIGNED NOT NULL,
+  version_num INT UNSIGNED NOT NULL,
+  status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
+  content_json LONGTEXT NOT NULL,
+  created_by CHAR(36) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_cms_revisions_page_version (page_id, version_num),
+  CONSTRAINT fk_cms_revisions_page FOREIGN KEY (page_id) REFERENCES cms_pages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_cms_revisions_created_by FOREIGN KEY (created_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cms_settings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  setting_key VARCHAR(120) NOT NULL,
+  value_json LONGTEXT NOT NULL,
+  updated_by CHAR(36) NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_cms_settings_key (setting_key),
+  CONSTRAINT fk_cms_settings_updated_by FOREIGN KEY (updated_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------
+-- SOURCE: db/MIGRATION_2026_02_18_USER_PACKAGES_ENROLLMENTS.sql
+-- -----------------------------------------------------
+-- =====================================================
+-- Nuoto Libero - MIGRATION_2026_02_18_USER_PACKAGES_ENROLLMENTS
+-- Obiettivo:
+-- 1) introdurre tabella packages (gestione dinamica admin/ufficio)
+-- 2) introdurre flusso iscrizioni pending/approved/rejected
+-- 3) forzare pacchetto commerciale unico: 10 ingressi (EUR 110)
+-- 4) mantenere compatibilita con tabella legacy pacchetti/acquisti
+-- =====================================================
+USE `Sql1919629_1`;
+CREATE TABLE IF NOT EXISTS packages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description TEXT NULL,
+  entries_count INT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  visible TINYINT(1) NOT NULL DEFAULT 1,
+  legacy_pacchetto_id INT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_packages_legacy_pacchetto FOREIGN KEY (legacy_pacchetto_id) REFERENCES pacchetti(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Nota compatibilita Aruba:
+-- stato_iscrizione e force_password_change sono gia presenti nello schema base.
+
+ALTER TABLE acquisti
+  ADD COLUMN ingressi_totali INT NOT NULL DEFAULT 0 AFTER ingressi_rimanenti;
+
+UPDATE acquisti a
+JOIN pacchetti p ON p.id = a.pacchetto_id
+SET a.ingressi_totali = CASE
+  WHEN a.ingressi_totali IS NULL OR a.ingressi_totali <= 0 THEN p.num_ingressi
+  ELSE a.ingressi_totali
+END;
+
+UPDATE profili
+SET stato_iscrizione = 'approved'
+WHERE stato_iscrizione IS NULL OR stato_iscrizione = '';
+
+CREATE TABLE IF NOT EXISTS iscrizioni (
+  id CHAR(36) PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  cognome VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  telefono VARCHAR(30) NULL,
+  data_nascita DATE NULL,
+  indirizzo VARCHAR(255) NULL,
+  citta VARCHAR(100) NULL,
+  cap VARCHAR(10) NULL,
+  codice_fiscale VARCHAR(16) NULL,
+  note TEXT NULL,
+  requested_package_id INT NULL,
+  stato ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  note_revisione TEXT NULL,
+  approvato_user_id CHAR(36) NULL,
+  revisionato_da CHAR(36) NULL,
+  reviewed_at DATETIME NULL,
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_iscrizioni_requested_package FOREIGN KEY (requested_package_id) REFERENCES packages(id) ON DELETE SET NULL,
+  CONSTRAINT fk_iscrizioni_approvato_user FOREIGN KEY (approvato_user_id) REFERENCES profili(id) ON DELETE SET NULL,
+  CONSTRAINT fk_iscrizioni_revisionato_da FOREIGN KEY (revisionato_da) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET @legacy_package_id := (
+  SELECT id
+  FROM pacchetti
+  WHERE nome = '10 Ingressi'
+  ORDER BY id ASC
+  LIMIT 1
+);
+
+INSERT INTO pacchetti (nome, descrizione, num_ingressi, prezzo, validita_giorni, attivo, ordine)
+SELECT
+  '10 Ingressi',
+  'Pacchetto con iscrizione obbligatoria + tesseramento + 2 ingressi omaggio (validita 60 giorni)',
+  10,
+  110.00,
+  365,
+  1,
+  1
+WHERE @legacy_package_id IS NULL;
+
+SET @legacy_package_id := (
+  SELECT id
+  FROM pacchetti
+  WHERE nome = '10 Ingressi'
+  ORDER BY id ASC
+  LIMIT 1
+);
+
+UPDATE pacchetti
+SET
+  nome = '10 Ingressi',
+  descrizione = 'Pacchetto con iscrizione obbligatoria + tesseramento + 2 ingressi omaggio (validita 60 giorni)',
+  num_ingressi = 10,
+  prezzo = 110.00,
+  validita_giorni = 365,
+  attivo = 1,
+  ordine = 1
+WHERE id = @legacy_package_id;
+
+UPDATE acquisti
+SET pacchetto_id = @legacy_package_id
+WHERE pacchetto_id <> @legacy_package_id;
+
+DELETE FROM pacchetti
+WHERE id <> @legacy_package_id;
+
+DELETE FROM packages;
+
+INSERT INTO packages (name, description, entries_count, price, visible, legacy_pacchetto_id)
+VALUES (
+  '10 Ingressi',
+  'Pacchetto con iscrizione obbligatoria + tesseramento + 2 ingressi omaggio (validita 60 giorni)',
+  10,
+  110.00,
+  1,
+  @legacy_package_id
+);
+
+
+-- -----------------------------------------------------
+-- SOURCE: db/MIGRATION_2026_02_19_PROFILE_UPDATE_REQUESTS.sql
+-- -----------------------------------------------------
+-- =====================================================
+-- MIGRATION 2026-02-19
+-- Richieste modifica dati profilo (utente -> ufficio/admin)
+-- =====================================================
+USE `Sql1919629_1`;
+CREATE TABLE IF NOT EXISTS profile_update_requests (
+  id CHAR(36) PRIMARY KEY,
+  user_id CHAR(36) NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  requested_changes_json LONGTEXT NOT NULL,
+  current_snapshot_json LONGTEXT NULL,
+  review_note TEXT NULL,
+  reviewed_by CHAR(36) NULL,
+  reviewed_at DATETIME NULL,
+  ip_address VARCHAR(45) NULL,
+  user_agent TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_profile_update_requests_user FOREIGN KEY (user_id) REFERENCES profili(id) ON DELETE CASCADE,
+  CONSTRAINT fk_profile_update_requests_reviewer FOREIGN KEY (reviewed_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET @idx_user_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'profile_update_requests'
+    AND INDEX_NAME = 'idx_profile_update_requests_user'
+);
+SET @idx_user_sql := IF(@idx_user_exists = 0, 'CREATE INDEX idx_profile_update_requests_user ON profile_update_requests(user_id)', 'SELECT 1');
+PREPARE stmt_idx_user FROM @idx_user_sql;
+EXECUTE stmt_idx_user;
+DEALLOCATE PREPARE stmt_idx_user;
+
+SET @idx_status_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'profile_update_requests'
+    AND INDEX_NAME = 'idx_profile_update_requests_status'
+);
+SET @idx_status_sql := IF(@idx_status_exists = 0, 'CREATE INDEX idx_profile_update_requests_status ON profile_update_requests(status)', 'SELECT 1');
+PREPARE stmt_idx_status FROM @idx_status_sql;
+EXECUTE stmt_idx_status;
+DEALLOCATE PREPARE stmt_idx_status;
+
+SET @idx_created_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'profile_update_requests'
+    AND INDEX_NAME = 'idx_profile_update_requests_created_at'
+);
+SET @idx_created_sql := IF(@idx_created_exists = 0, 'CREATE INDEX idx_profile_update_requests_created_at ON profile_update_requests(created_at)', 'SELECT 1');
+PREPARE stmt_idx_created FROM @idx_created_sql;
+EXECUTE stmt_idx_created;
+DEALLOCATE PREPARE stmt_idx_created;
+
+
+-- -----------------------------------------------------
+-- SOURCE: db/MIGRATION_2026_02_19_OPERATIONAL_SETTINGS.sql
+-- -----------------------------------------------------
+-- MIGRATION: impostazioni operative scanner QR
+-- Data: 2026-02-19
+USE `Sql1919629_1`;
+CREATE TABLE IF NOT EXISTS impostazioni_operative (
+  id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  scanner_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  h24_mode TINYINT(1) NOT NULL DEFAULT 0,
+  schedule_json LONGTEXT NULL,
+  updated_by CHAR(36) NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_impostazioni_operative_updated_by
+    FOREIGN KEY (updated_by) REFERENCES profili(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO impostazioni_operative (id, scanner_enabled, h24_mode, schedule_json, updated_by)
+VALUES (
+  1,
+  1,
+  0,
+  '[{"day":1,"start":"06:30","end":"09:00"},{"day":1,"start":"13:00","end":"14:00"},{"day":3,"start":"06:30","end":"09:00"},{"day":3,"start":"13:00","end":"14:00"},{"day":5,"start":"06:30","end":"09:00"},{"day":5,"start":"13:00","end":"14:00"}]',
+  NULL
+)
+ON DUPLICATE KEY UPDATE
+  scanner_enabled = VALUES(scanner_enabled),
+  h24_mode = VALUES(h24_mode),
+  schedule_json = VALUES(schedule_json);
+
+
+-- -----------------------------------------------------
+-- SOURCE: db/MIGRATION_2026_02_19_STATIC_USER_QR_TOKEN.sql
+-- -----------------------------------------------------
+-- =====================================================
+-- MIGRATION 2026-02-19
+-- QR statico per utente (token univoco su profili)
+-- =====================================================
+USE `Sql1919629_1`;
+SET @db_name := DATABASE();
+
+-- 1) profili.qr_token (colonna dedicata, unica e persistente)
+SET @has_profili_qr_token := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = @db_name
+    AND TABLE_NAME = 'profili'
+    AND COLUMN_NAME = 'qr_token'
+);
+SET @sql_add_profili_qr_token := IF(
+  @has_profili_qr_token = 0,
+  'ALTER TABLE profili ADD COLUMN qr_token VARCHAR(96) NULL AFTER email',
+  'SELECT 1'
+);
+PREPARE stmt_add_profili_qr_token FROM @sql_add_profili_qr_token;
+EXECUTE stmt_add_profili_qr_token;
+DEALLOCATE PREPARE stmt_add_profili_qr_token;
+
+-- 2) backfill token per utenti esistenti senza token
+UPDATE profili
+SET qr_token = LOWER(CONCAT(REPLACE(UUID(), '-', ''), REPLACE(UUID(), '-', '')))
+WHERE qr_token IS NULL OR TRIM(qr_token) = '';
+
+-- 3) vincolo univocita su qr_token
+SET @has_unique_profili_qr_token := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = @db_name
+    AND TABLE_NAME = 'profili'
+    AND COLUMN_NAME = 'qr_token'
+    AND NON_UNIQUE = 0
+);
+SET @sql_add_unique_profili_qr_token := IF(
+  @has_unique_profili_qr_token = 0,
+  'ALTER TABLE profili ADD UNIQUE INDEX uq_profili_qr_token (qr_token)',
+  'SELECT 1'
+);
+PREPARE stmt_add_unique_profili_qr_token FROM @sql_add_unique_profili_qr_token;
+EXECUTE stmt_add_unique_profili_qr_token;
+DEALLOCATE PREPARE stmt_add_unique_profili_qr_token;
+
+-- 4) rimuove eventuale unique su acquisti.qr_code (deve poter ripetersi per utente)
+SET @acquisti_qr_unique_idx := (
+  SELECT INDEX_NAME
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = @db_name
+    AND TABLE_NAME = 'acquisti'
+    AND COLUMN_NAME = 'qr_code'
+    AND NON_UNIQUE = 0
+    AND INDEX_NAME <> 'PRIMARY'
+  ORDER BY INDEX_NAME
+  LIMIT 1
+);
+SET @sql_drop_acquisti_qr_unique := IF(
+  @acquisti_qr_unique_idx IS NULL,
+  'SELECT 1',
+  CONCAT('ALTER TABLE acquisti DROP INDEX `', REPLACE(@acquisti_qr_unique_idx, '`', '``'), '`')
+);
+PREPARE stmt_drop_acquisti_qr_unique FROM @sql_drop_acquisti_qr_unique;
+EXECUTE stmt_drop_acquisti_qr_unique;
+DEALLOCATE PREPARE stmt_drop_acquisti_qr_unique;
+
+-- 5) indice non-unico su acquisti.qr_code (performance lookup/report)
+SET @has_non_unique_acquisti_qr_idx := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = @db_name
+    AND TABLE_NAME = 'acquisti'
+    AND COLUMN_NAME = 'qr_code'
+    AND NON_UNIQUE = 1
+);
+SET @sql_add_non_unique_acquisti_qr_idx := IF(
+  @has_non_unique_acquisti_qr_idx = 0,
+  'CREATE INDEX idx_acquisti_qr_code ON acquisti(qr_code)',
+  'SELECT 1'
+);
+PREPARE stmt_add_non_unique_acquisti_qr_idx FROM @sql_add_non_unique_acquisti_qr_idx;
+EXECUTE stmt_add_non_unique_acquisti_qr_idx;
+DEALLOCATE PREPARE stmt_add_non_unique_acquisti_qr_idx;
+
+-- 6) allinea tutti gli acquisti al token statico utente
+UPDATE acquisti a
+JOIN profili p ON p.id = a.user_id
+SET a.qr_code = p.qr_token
+WHERE p.qr_token IS NOT NULL
+  AND p.qr_token <> ''
+  AND (a.qr_code IS NULL OR a.qr_code <> p.qr_token);
 
 

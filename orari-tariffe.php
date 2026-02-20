@@ -1,10 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
-if (appIsLandingMode() && !appLandingFullAccessActive()) {
-    header('Location: landing.php', true, 302);
-    exit;
-}
+appEnforceFullSiteAccess();
 ?>
 <!DOCTYPE html>
 <html lang="it">

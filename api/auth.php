@@ -247,8 +247,18 @@ function handleLogin(): void
         );
 
         $roleName = strtolower((string)$user['ruolo_nome']);
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            @session_start();
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_regenerate_id(true);
+            $_SESSION['auth_user_id'] = (string)$user['id'];
+            $_SESSION['auth_role'] = $roleName;
+            $_SESSION['auth_email'] = (string)$user['email'];
+        }
+
         $isLandingMode = function_exists('appIsLandingMode') && appIsLandingMode();
-        $isLandingPrivilegedRole = in_array($roleName, ['admin', 'ufficio', 'segreteria'], true);
+        $isLandingPrivilegedRole = in_array($roleName, ['admin', 'ufficio', 'segreteria', 'bagnino'], true);
         if ($isLandingMode) {
             if ($isLandingPrivilegedRole && function_exists('appGrantLandingStaffBypass')) {
                 appGrantLandingStaffBypass(21600);

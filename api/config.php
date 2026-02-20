@@ -466,19 +466,43 @@ function isJwtTokenRevoked(string $token): bool
     return true;
 }
 
+function getSessionAuthenticatedUser(): ?array
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return null;
+    }
+
+    $userId = trim((string)($_SESSION['auth_user_id'] ?? ''));
+    if ($userId === '') {
+        return null;
+    }
+
+    $role = strtolower(trim((string)($_SESSION['auth_role'] ?? '')));
+    if ($role === 'user') {
+        $role = 'utente';
+    }
+
+    return [
+        'user_id' => $userId,
+        'email' => (string)($_SESSION['auth_email'] ?? ''),
+        'role' => $role,
+    ];
+}
+
 function getCurrentUser(): ?array
 {
     $authHeader = getAuthorizationHeader();
-    if (!$authHeader) {
-        return null;
+    if ($authHeader !== '') {
+        $token = extractBearerToken($authHeader);
+        if ($token) {
+            $verified = verifyJWT($token);
+            if (is_array($verified)) {
+                return $verified;
+            }
+        }
     }
 
-    $token = extractBearerToken($authHeader);
-    if (!$token) {
-        return null;
-    }
-
-    return verifyJWT($token);
+    return getSessionAuthenticatedUser();
 }
 
 function requireAuth(): array

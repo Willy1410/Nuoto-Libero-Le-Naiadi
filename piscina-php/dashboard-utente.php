@@ -2,11 +2,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
-
-if (appIsLandingMode() && !appLandingStaffBypassActive()) {
-    header('Location: ../area-riservata.php', true, 302);
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -405,7 +400,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
         function isUnauthorizedMessage(message) {
             const normalized = String(message || '').trim().toLowerCase();
-            return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+            return normalized.includes('non autenticato') || normalized.includes('sessione scaduta');
         }
 
         function forceRelogin(message = 'Sessione scaduta. Accedi di nuovo.') {
@@ -692,14 +687,24 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         }
 
         async function loadMyPurchases() {
-            const data = await apiJson('pacchetti.php?action=my-purchases', { method: 'GET' });
-            const rows = Array.isArray(data.acquisti) ? data.acquisti : [];
-            const confirmed = rows
-                .filter((row) => String(row.stato_pagamento || '').toLowerCase() === 'confirmed')
-                .sort((a, b) => new Date(b.data_conferma || b.data_acquisto) - new Date(a.data_conferma || a.data_acquisto));
+            try {
+                const data = await apiJson('pacchetti.php?action=my-purchases', { method: 'GET' });
+                const rows = Array.isArray(data.acquisti) ? data.acquisti : [];
+                const confirmed = rows
+                    .filter((row) => String(row.stato_pagamento || '').toLowerCase() === 'confirmed')
+                    .sort((a, b) => new Date(b.data_conferma || b.data_acquisto) - new Date(a.data_conferma || a.data_acquisto));
 
-            latestConfirmedPurchase = confirmed[0] || null;
-            renderQrSection();
+                latestConfirmedPurchase = confirmed[0] || null;
+                renderQrSection();
+            } catch (error) {
+                latestConfirmedPurchase = null;
+                activeQrImageSrc = '';
+                const section = byId('qrSection');
+                if (section) {
+                    section.innerHTML = '<p class="muted">QR temporaneamente non disponibile. Riprova tra poco o contatta la segreteria.</p>';
+                }
+                throw error;
+            }
         }
 
         function openRequestModal() {
@@ -799,7 +804,23 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         async function bootstrap() {
             setHeaderUser();
             bindEvents();
-            await Promise.all([loadProfile(), loadProfileRequests(), loadMyPurchases()]);
+            await loadProfile();
+
+            const optionalLoads = await Promise.allSettled([
+                loadProfileRequests(),
+                loadMyPurchases()
+            ]);
+
+            optionalLoads.forEach((result) => {
+                if (result.status !== 'rejected' || authRedirecting) {
+                    return;
+                }
+
+                const message = String(result.reason?.message || '').trim();
+                if (message !== '' && !isUnauthorizedMessage(message)) {
+                    showAlert(message, 'error');
+                }
+            });
         }
 
         bootstrap().catch((error) => {

@@ -2,11 +2,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
-
-if (appIsLandingMode() && !appLandingStaffBypassActive()) {
-    header('Location: ../area-riservata.php', true, 302);
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -246,7 +241,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
     <script>
         const API_URL = '../api';
-        const HOME_URL = <?= json_encode(appIsLandingMode() ? '../landing.php' : '../index.php', JSON_UNESCAPED_UNICODE); ?>;
+        const HOME_URL = '../index.php';
         const token = localStorage.getItem('token');
         let user = null;
         try {
@@ -300,7 +295,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
         function isUnauthorizedMessage(message) {
             const normalized = String(message || '').trim().toLowerCase();
-            return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+            return normalized.includes('non autenticato') || normalized.includes('sessione scaduta');
         }
 
         function forceRelogin(message = 'Sessione scaduta. Accedi di nuovo.') {

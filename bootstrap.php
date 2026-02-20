@@ -19,6 +19,122 @@ if (!function_exists('appIsLandingMode')) {
     }
 }
 
+if (!function_exists('appEnsureSessionStarted')) {
+    function appEnsureSessionStarted(): void
+    {
+        if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+            return;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        ini_set('session.cookie_httponly', '1');
+        ini_set('session.cookie_samesite', 'Lax');
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            ini_set('session.cookie_secure', '1');
+        }
+
+        @session_start();
+    }
+}
+
+if (!function_exists('appCurrentSessionRole')) {
+    function appCurrentSessionRole(): string
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            $sessionName = session_name();
+            if ($sessionName === '' || !isset($_COOKIE[$sessionName])) {
+                return '';
+            }
+            appEnsureSessionStarted();
+        }
+
+        $role = strtolower(trim((string)($_SESSION['auth_role'] ?? '')));
+        if ($role === 'user') {
+            return 'utente';
+        }
+        return $role;
+    }
+}
+
+if (!function_exists('appCurrentSessionUserId')) {
+    function appCurrentSessionUserId(): string
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            $sessionName = session_name();
+            if ($sessionName === '' || !isset($_COOKIE[$sessionName])) {
+                return '';
+            }
+            appEnsureSessionStarted();
+        }
+
+        return trim((string)($_SESSION['auth_user_id'] ?? ''));
+    }
+}
+
+if (!function_exists('appFullSiteAllowedRoles')) {
+    function appFullSiteAllowedRoles(): array
+    {
+        return ['admin', 'ufficio', 'segreteria', 'bagnino'];
+    }
+}
+
+if (!function_exists('appCanAccessFullSite')) {
+    function appCanAccessFullSite(): bool
+    {
+        $role = appCurrentSessionRole();
+        if ($role === 'utente' || $role === 'user') {
+            return false;
+        }
+
+        if ($role === '') {
+            return !appIsLandingMode();
+        }
+
+        return in_array($role, appFullSiteAllowedRoles(), true);
+    }
+}
+
+if (!function_exists('appFullSiteRedirectTarget')) {
+    function appFullSiteRedirectTarget(): string
+    {
+        $role = appCurrentSessionRole();
+        if ($role === 'utente' || $role === 'user') {
+            return 'piscina-php/dashboard-utente.php';
+        }
+
+        if (appIsLandingMode()) {
+            return 'landing.php';
+        }
+
+        if ($role !== '' && !in_array($role, appFullSiteAllowedRoles(), true)) {
+            return 'login.php';
+        }
+
+        return 'landing.php';
+    }
+}
+
+if (!function_exists('appEnforceFullSiteAccess')) {
+    function appEnforceFullSiteAccess(): void
+    {
+        if (appCanAccessFullSite()) {
+            return;
+        }
+
+        $target = appFullSiteRedirectTarget();
+        if (!headers_sent()) {
+            header('Location: ' . $target, true, 302);
+            exit;
+        }
+
+        echo '<script>window.location.href=' . json_encode($target, JSON_UNESCAPED_UNICODE) . ';</script>';
+        exit;
+    }
+}
+
 if (!function_exists('appLandingStaffBypassCookieName')) {
     function appLandingStaffBypassCookieName(): string
     {
@@ -43,7 +159,7 @@ if (!function_exists('appLandingFullAccessRoleCookieName')) {
 if (!function_exists('appLandingFullAccessAllowedRoles')) {
     function appLandingFullAccessAllowedRoles(): array
     {
-        return ['admin', 'ufficio', 'segreteria'];
+        return ['admin', 'ufficio', 'segreteria', 'bagnino'];
     }
 }
 
@@ -153,12 +269,6 @@ if (!function_exists('appLandingStaffBypassActive')) {
     {
         if (!appIsLandingMode()) {
             return false;
-        }
-
-        $requested = (string)($_GET['staff_access'] ?? '') === '1';
-        if ($requested) {
-            appGrantLandingStaffBypass();
-            return true;
         }
 
         return (string)($_COOKIE[appLandingStaffBypassCookieName()] ?? '') === '1';

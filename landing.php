@@ -340,7 +340,7 @@ require_once __DIR__ . '/bootstrap.php';
             </ul>
             <div class="cta-row">
                 <a class="cta-btn cta-primary" href="https://wa.me/393311931737?text=Salve%2C%20desidero%20ricevere%20informazioni%20su%20Nuoto%20Libero%20Le%20Naiadi%20e%20valutare%20un%20appuntamento.%20Resto%20in%20attesa%20di%20un%20vostro%20gentile%20riscontro." target="_blank" rel="noopener">Contattaci ora</a>
-                <a class="cta-btn cta-secondary" href="area-riservata.php">Area riservata</a>
+                <a class="cta-btn cta-secondary" href="login.php">Login / Area riservata</a>
             </div>
             <div class="hours-grid" aria-label="Giorni e orari di apertura">
                 <div class="hours-box">

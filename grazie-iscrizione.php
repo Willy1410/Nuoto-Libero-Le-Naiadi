@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
+appEnforceFullSiteAccess();
 
 function safeText(string $value, int $maxLen = 120): string
 {

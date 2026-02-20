@@ -5,19 +5,27 @@
     const allowedRoles = Array.isArray(config.allowedRoles) && config.allowedRoles.length
         ? config.allowedRoles
         : ['admin'];
+    const normalizedAllowedRoles = allowedRoles
+        .map((role) => String(role || '').trim().toLowerCase())
+        .filter(Boolean);
     const initialSiteMode = String(config.initialSiteMode || 'full').toLowerCase() === 'landing'
         ? 'landing'
         : 'full';
 
-    const token = localStorage.getItem('token');
+    const token = String(localStorage.getItem('token') || '').trim();
     let user = null;
     try {
         user = JSON.parse(localStorage.getItem('user') || 'null');
     } catch (_) {
         user = null;
     }
+    const normalizedUserRole = String(user?.ruolo || user?.role || '').trim().toLowerCase();
+    if (user && normalizedUserRole && user.ruolo !== normalizedUserRole) {
+        user.ruolo = normalizedUserRole;
+        localStorage.setItem('user', JSON.stringify(user));
+    }
 
-    if (!token || !user || !user.ruolo || !allowedRoles.includes(user.ruolo)) {
+    if (!user || !normalizedUserRole || !normalizedAllowedRoles.includes(normalizedUserRole)) {
         window.location.href = '../login.php';
         return;
     }
@@ -397,7 +405,7 @@
 
     function isUnauthorizedMessage(message) {
         const normalized = String(message || '').trim().toLowerCase();
-        return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+        return normalized.includes('non autenticato') || normalized.includes('sessione scaduta');
     }
 
     function redirectToLogin(message = 'Sessione scaduta. Accedi di nuovo.') {
@@ -988,8 +996,9 @@
             el('dashboardTitle').textContent = config.title;
         }
         const name = `${user.nome || ''} ${user.cognome || ''}`.trim() || user.email || 'Utente';
+        const roleLabel = String(user.ruolo || user.role || '-');
         if (el('userName')) {
-            el('userName').textContent = `${name} (${user.ruolo})`;
+            el('userName').textContent = `${name} (${roleLabel})`;
         }
         if (el('reportDateInput')) {
             el('reportDateInput').value = state.reportDate;

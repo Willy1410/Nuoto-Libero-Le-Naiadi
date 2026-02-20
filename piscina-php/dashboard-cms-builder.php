@@ -3,11 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-if (appIsLandingMode() && !appLandingStaffBypassActive()) {
-    header('Location: ../area-riservata.php', true, 302);
-    exit;
-}
-
 $landingModeActive = appIsLandingMode();
 $homeDefaultUrl = $landingModeActive ? '../landing.php' : '../index.php';
 ?>
@@ -283,7 +278,7 @@ $homeDefaultUrl = $landingModeActive ? '../landing.php' : '../index.php';
 
         function isUnauthorizedMessage(message) {
             const normalized = String(message || '').trim().toLowerCase();
-            return normalized === 'non autenticato' || normalized.includes('sessione scaduta');
+            return normalized.includes('non autenticato') || normalized.includes('sessione scaduta');
         }
 
         function forceRelogin(message = 'Sessione scaduta. Accedi di nuovo.') {

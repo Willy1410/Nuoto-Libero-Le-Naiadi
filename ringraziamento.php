@@ -1,3 +1,8 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/bootstrap.php';
+appEnforceFullSiteAccess();
+?>
 <!DOCTYPE html>
 <html lang="it">
 <head>

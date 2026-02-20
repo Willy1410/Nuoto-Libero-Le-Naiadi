@@ -245,7 +245,7 @@ function setSiteModeForStaff(array $staff): void
     }
 
     $staffRole = strtolower((string)($staff['role'] ?? ''));
-    $staffRoleAllowedForFullSite = in_array($staffRole, ['admin', 'ufficio', 'segreteria'], true);
+    $staffRoleAllowedForFullSite = in_array($staffRole, ['admin', 'ufficio', 'segreteria', 'bagnino'], true);
     if ($mode === 'landing') {
         if ($staffRoleAllowedForFullSite && function_exists('appGrantLandingStaffBypass')) {
             appGrantLandingStaffBypass(21600);

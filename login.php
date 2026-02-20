@@ -8,11 +8,6 @@ $homeHref = appIsLandingMode() ? 'landing.php' : 'index.php';
 if ((string)($_GET['clear_staff_access'] ?? '') === '1') {
     appClearLandingStaffBypass();
 }
-
-if (appIsLandingMode() && !appLandingStaffBypassActive()) {
-    header('Location: area-riservata.php', true, 302);
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -101,7 +96,6 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     <script src="js/ui-modal.js"></script>
 <script>
         const API_URL = 'api';
-        const LANDING_STAFF_ONLY = <?= appIsLandingMode() ? 'true' : 'false'; ?>;
         const ROLE_REDIRECTS = {
             admin: 'piscina-php/dashboard-admin.php',
             ufficio: 'piscina-php/dashboard-ufficio.php',
@@ -131,16 +125,13 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             window.location.href = ROLE_REDIRECTS[role] || 'piscina-php/dashboard-utente.php';
         }
 
-        function isStaffRoleName(role) {
-            const value = String(role || '').toLowerCase();
-            return value === 'admin' || value === 'ufficio' || value === 'segreteria';
-        }
-
         function clearAuthStorage() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             sessionStorage.clear();
         }
+
+        let loginSubmitInProgress = false;
 
         function safeParseJson(raw) {
             try {
@@ -151,17 +142,15 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         }
 
         async function tryAutoRedirectWithStoredSession() {
+            let checkedToken = '';
             try {
                 const token = localStorage.getItem('token');
                 const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-                if (!token || !storedUser || !storedUser.ruolo) {
+                const storedRole = String(storedUser?.ruolo || storedUser?.role || '').trim().toLowerCase();
+                if (!token || !storedUser || !storedRole) {
                     return;
                 }
-
-                if (LANDING_STAFF_ONLY && !isStaffRoleName(storedUser.ruolo)) {
-                    clearAuthStorage();
-                    return;
-                }
+                checkedToken = String(token).trim();
 
                 const response = await fetch(`${API_URL}/auth.php?action=me`, {
                     method: 'GET',
@@ -174,21 +163,24 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 const raw = await response.text();
                 const data = safeParseJson(raw);
                 if (!response.ok || !data.success) {
-                    clearAuthStorage();
+                    const currentToken = String(localStorage.getItem('token') || '').trim();
+                    if (!loginSubmitInProgress && checkedToken !== '' && currentToken === checkedToken) {
+                        clearAuthStorage();
+                    }
+                    return;
+                }
+
+                const currentToken = String(localStorage.getItem('token') || '').trim();
+                if (loginSubmitInProgress || checkedToken === '' || currentToken !== checkedToken) {
                     return;
                 }
 
                 const normalizedRole = String(
                     data?.user?.ruolo_nome ||
                     data?.user?.ruolo ||
-                    storedUser.ruolo ||
+                    storedRole ||
                     ''
                 ).toLowerCase();
-
-                if (LANDING_STAFF_ONLY && !isStaffRoleName(normalizedRole)) {
-                    clearAuthStorage();
-                    return;
-                }
 
                 const mergedUser = {
                     ...storedUser,
@@ -204,7 +196,10 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                 localStorage.setItem('user', JSON.stringify(mergedUser));
                 redirectByRole(mergedUser.ruolo);
             } catch (_) {
-                clearAuthStorage();
+                const currentToken = String(localStorage.getItem('token') || '').trim();
+                if (!loginSubmitInProgress && checkedToken !== '' && currentToken === checkedToken) {
+                    clearAuthStorage();
+                }
             }
         }
 
@@ -217,11 +212,14 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            loginSubmitInProgress = true;
 
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Accesso in corso...';
+
+            let loginSucceeded = false;
 
             try {
                 const email = document.getElementById('email').value.trim();
@@ -238,12 +236,6 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
                 if (!response.ok || !data.success) {
                     throw new Error(data.message || 'Credenziali non valide');
-                }
-
-                const roleName = String(data?.user?.ruolo || '').toLowerCase();
-                const isStaffRole = isStaffRoleName(roleName);
-                if (LANDING_STAFF_ONLY && !isStaffRole) {
-                    throw new Error('In modalita landing l\'accesso reale e riservato a admin/ufficio.');
                 }
 
                 localStorage.setItem('token', data.token);
@@ -296,11 +288,16 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
                     localStorage.setItem('user', JSON.stringify(data.user));
                 }
 
+                loginSucceeded = true;
                 redirectByRole(data.user.ruolo);
             } catch (error) {
                 await uiAlert('Errore: ' + error.message, 'Accesso non riuscito');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+            } finally {
+                if (!loginSucceeded) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+                loginSubmitInProgress = false;
             }
         });
 
