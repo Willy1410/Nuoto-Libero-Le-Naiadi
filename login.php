@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-$homeHref = 'landing.php';
+$homeHref = appIsLandingMode() ? 'landing.php' : 'index.php';
 
 if ((string)($_GET['clear_staff_access'] ?? '') === '1') {
     appClearLandingStaffBypass();

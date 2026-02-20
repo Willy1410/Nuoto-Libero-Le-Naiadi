@@ -24,6 +24,11 @@ if (file_exists($envLoaderPath)) {
     }
 }
 
+$bootstrapPath = PROJECT_ROOT . '/bootstrap.php';
+if (file_exists($bootstrapPath)) {
+    require_once $bootstrapPath;
+}
+
 define('LOG_DIR', PROJECT_ROOT . '/logs');
 define('ERROR_LOG_PATH', LOG_DIR . '/error.log');
 define('RATE_LIMIT_DIR', LOG_DIR . '/ratelimit');

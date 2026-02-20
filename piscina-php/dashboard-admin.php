@@ -292,6 +292,8 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         </div>
         <div class="header-actions">
             <button class="btn btn-secondary" id="goHomeBtn" type="button">Home</button>
+            <button class="btn btn-secondary" id="goLandingHomeBtn" type="button" style="display:none;">Home Landing</button>
+            <button class="btn btn-secondary" id="goIndexHomeBtn" type="button" style="display:none;">Home Index</button>
             <button class="btn btn-secondary" id="goCmsBuilderBtn" type="button">CMS Builder-ready</button>
             <button class="btn btn-danger" id="logoutBtn" type="button">Esci</button>
         </div>
@@ -826,7 +828,9 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             title: 'Il mio profilo',
             allowedRoles: ['admin'],
             cmsBuilderUrl: 'dashboard-cms-builder.php',
-            homeUrl: '../landing.php'
+            homeLandingUrl: '../landing.php',
+            homeIndexUrl: '../index.php',
+            initialSiteMode: '<?= appSiteMode(); ?>'
         };
     </script>
     <script src="../js/ui-modal.js"></script>

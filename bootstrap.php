@@ -26,6 +26,39 @@ if (!function_exists('appLandingStaffBypassCookieName')) {
     }
 }
 
+if (!function_exists('appLandingFullAccessCookieName')) {
+    function appLandingFullAccessCookieName(): string
+    {
+        return 'nl_fullsite_access';
+    }
+}
+
+if (!function_exists('appLandingFullAccessRoleCookieName')) {
+    function appLandingFullAccessRoleCookieName(): string
+    {
+        return 'nl_fullsite_role';
+    }
+}
+
+if (!function_exists('appLandingFullAccessAllowedRoles')) {
+    function appLandingFullAccessAllowedRoles(): array
+    {
+        return ['admin', 'ufficio', 'segreteria'];
+    }
+}
+
+if (!function_exists('appNormalizeLandingRole')) {
+    function appNormalizeLandingRole(string $role): string
+    {
+        $normalized = strtolower(trim($role));
+        if ($normalized === 'segreteria') {
+            return 'ufficio';
+        }
+
+        return $normalized;
+    }
+}
+
 if (!function_exists('appLandingStaffBypassCookieOptions')) {
     function appLandingStaffBypassCookieOptions(int $expiresAt): array
     {
@@ -59,6 +92,59 @@ if (!function_exists('appClearLandingStaffBypass')) {
             setcookie($name, '', appLandingStaffBypassCookieOptions(time() - 3600));
         }
         unset($_COOKIE[$name]);
+    }
+}
+
+if (!function_exists('appGrantLandingFullAccess')) {
+    function appGrantLandingFullAccess(string $role, int $ttlSeconds = 1800): void
+    {
+        $normalizedRole = appNormalizeLandingRole($role);
+        if (!in_array($normalizedRole, appLandingFullAccessAllowedRoles(), true)) {
+            appClearLandingFullAccess();
+            return;
+        }
+
+        $expiresAt = time() + max(60, $ttlSeconds);
+        $accessName = appLandingFullAccessCookieName();
+        $roleName = appLandingFullAccessRoleCookieName();
+        if (!headers_sent()) {
+            setcookie($accessName, '1', appLandingStaffBypassCookieOptions($expiresAt));
+            setcookie($roleName, $normalizedRole, appLandingStaffBypassCookieOptions($expiresAt));
+        }
+
+        $_COOKIE[$accessName] = '1';
+        $_COOKIE[$roleName] = $normalizedRole;
+    }
+}
+
+if (!function_exists('appClearLandingFullAccess')) {
+    function appClearLandingFullAccess(): void
+    {
+        $accessName = appLandingFullAccessCookieName();
+        $roleName = appLandingFullAccessRoleCookieName();
+        if (!headers_sent()) {
+            setcookie($accessName, '', appLandingStaffBypassCookieOptions(time() - 3600));
+            setcookie($roleName, '', appLandingStaffBypassCookieOptions(time() - 3600));
+        }
+
+        unset($_COOKIE[$accessName], $_COOKIE[$roleName]);
+    }
+}
+
+if (!function_exists('appLandingFullAccessActive')) {
+    function appLandingFullAccessActive(): bool
+    {
+        if (!appIsLandingMode()) {
+            return false;
+        }
+
+        $hasAccessCookie = (string)($_COOKIE[appLandingFullAccessCookieName()] ?? '') === '1';
+        if (!$hasAccessCookie) {
+            return false;
+        }
+
+        $role = appNormalizeLandingRole((string)($_COOKIE[appLandingFullAccessRoleCookieName()] ?? ''));
+        return in_array($role, appLandingFullAccessAllowedRoles(), true);
     }
 }
 

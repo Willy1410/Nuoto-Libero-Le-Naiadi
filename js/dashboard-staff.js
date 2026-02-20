@@ -5,6 +5,9 @@
     const allowedRoles = Array.isArray(config.allowedRoles) && config.allowedRoles.length
         ? config.allowedRoles
         : ['admin'];
+    const initialSiteMode = String(config.initialSiteMode || 'full').toLowerCase() === 'landing'
+        ? 'landing'
+        : 'full';
 
     const token = localStorage.getItem('token');
     let user = null;
@@ -28,7 +31,7 @@
         packages: [],
         reportDate: new Date().toISOString().slice(0, 10),
         operationalSettings: {
-            siteMode: 'full',
+            siteMode: initialSiteMode,
             scannerEnabled: true,
             scannerH24Mode: false,
             windows: [],
@@ -212,6 +215,42 @@
             : 'full (sito completo)';
     }
 
+    function getLandingHomeUrl() {
+        return config.homeLandingUrl || '../landing.php';
+    }
+
+    function getIndexHomeUrl() {
+        return config.homeIndexUrl || '../index.php';
+    }
+
+    function getCurrentSiteMode() {
+        return state.operationalSettings.siteMode === 'landing' ? 'landing' : 'full';
+    }
+
+    function getCurrentHomeUrl() {
+        return getCurrentSiteMode() === 'landing' ? getLandingHomeUrl() : getIndexHomeUrl();
+    }
+
+    function updateHeaderHomeButtons() {
+        const isLanding = getCurrentSiteMode() === 'landing';
+        const genericHomeButton = el('goHomeBtn');
+        const landingHomeButton = el('goLandingHomeBtn');
+        const indexHomeButton = el('goIndexHomeBtn');
+
+        if (genericHomeButton) {
+            const shouldHideGeneric = isLanding && !!landingHomeButton && !!indexHomeButton;
+            genericHomeButton.style.display = shouldHideGeneric ? 'none' : '';
+            genericHomeButton.textContent = isLanding ? 'Home Landing' : 'Home';
+        }
+
+        if (landingHomeButton) {
+            landingHomeButton.style.display = isLanding ? '' : 'none';
+        }
+        if (indexHomeButton) {
+            indexHomeButton.style.display = isLanding ? '' : 'none';
+        }
+    }
+
     function getGroupedWindowsByDay(windows) {
         const grouped = {};
         for (let day = 1; day <= 7; day += 1) {
@@ -326,6 +365,7 @@
         }
 
         updateSiteModeLabel();
+        updateHeaderHomeButtons();
         renderScannerScheduleTable();
     }
 
@@ -400,6 +440,7 @@
     }
 
     async function performLogout() {
+        const targetUrl = getCurrentHomeUrl();
         try {
             await fetch(`${API_URL}/auth.php?action=logout`, {
                 method: 'POST',
@@ -411,8 +452,17 @@
         } catch (_) {
         }
 
+        try {
+            await fetch('../login.php?clear_staff_access=1', {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+            });
+        } catch (_) {
+        }
+
         clearAuthStorage();
-        window.location.href = '../login.php?clear_staff_access=1';
+        window.location.href = targetUrl;
     }
 
     function openModal(id) {
@@ -1536,6 +1586,7 @@
             : 'full';
         toggle.checked = state.operationalSettings.siteMode === 'landing';
         updateSiteModeLabel();
+        updateHeaderHomeButtons();
         setStatus(data.message || 'Modalita sito aggiornata', 'ok');
     }
 
@@ -1580,19 +1631,29 @@
         if (el('logoutBtn')) {
             el('logoutBtn').addEventListener('click', () => {
                 performLogout().catch(() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    sessionStorage.clear();
-                    window.location.href = '../login.php?clear_staff_access=1';
+                    clearAuthStorage();
+                    window.location.href = getCurrentHomeUrl();
                 });
             });
         }
 
         if (el('goHomeBtn')) {
             el('goHomeBtn').addEventListener('click', () => {
-                window.location.href = config.homeUrl || '../landing.php';
+                window.location.href = getCurrentHomeUrl();
             });
         }
+        if (el('goLandingHomeBtn')) {
+            el('goLandingHomeBtn').addEventListener('click', () => {
+                window.location.href = getLandingHomeUrl();
+            });
+        }
+        if (el('goIndexHomeBtn')) {
+            el('goIndexHomeBtn').addEventListener('click', () => {
+                window.location.href = getIndexHomeUrl();
+            });
+        }
+
+        updateHeaderHomeButtons();
 
         if (el('goCmsBuilderBtn')) {
             el('goCmsBuilderBtn').addEventListener('click', () => {

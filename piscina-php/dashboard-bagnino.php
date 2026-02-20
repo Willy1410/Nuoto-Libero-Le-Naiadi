@@ -246,6 +246,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
 
     <script>
         const API_URL = '../api';
+        const HOME_URL = <?= json_encode(appIsLandingMode() ? '../landing.php' : '../index.php', JSON_UNESCAPED_UNICODE); ?>;
         const token = localStorage.getItem('token');
         let user = null;
         try {
@@ -717,7 +718,7 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
         }
 
         function goHome() {
-            window.location.href = '../landing.php';
+            window.location.href = HOME_URL;
         }
 
         document.getElementById('qrInput').addEventListener('keydown', (event) => {

@@ -244,6 +244,23 @@ function setSiteModeForStaff(array $staff): void
         sendJson(500, ['success' => false, 'message' => 'Impossibile aggiornare .env SITE_MODE']);
     }
 
+    $staffRole = strtolower((string)($staff['role'] ?? ''));
+    $staffRoleAllowedForFullSite = in_array($staffRole, ['admin', 'ufficio', 'segreteria'], true);
+    if ($mode === 'landing') {
+        if ($staffRoleAllowedForFullSite && function_exists('appGrantLandingStaffBypass')) {
+            appGrantLandingStaffBypass(21600);
+        }
+        if ($staffRoleAllowedForFullSite && function_exists('appGrantLandingFullAccess')) {
+            appGrantLandingFullAccess($staffRole, 21600);
+        } elseif (function_exists('appClearLandingFullAccess')) {
+            appClearLandingFullAccess();
+        }
+    } else {
+        if (function_exists('appClearLandingFullAccess')) {
+            appClearLandingFullAccess();
+        }
+    }
+
     logActivity(
         (string)$staff['user_id'],
         'aggiornamento_site_mode',

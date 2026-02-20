@@ -7,6 +7,9 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     header('Location: ../area-riservata.php', true, 302);
     exit;
 }
+
+$landingModeActive = appIsLandingMode();
+$homeDefaultUrl = $landingModeActive ? '../landing.php' : '../index.php';
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -74,7 +77,12 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             <small id="whoami">Utente</small>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" class="btn btn-light" id="homeBtn">Home</button>
+            <?php if ($landingModeActive): ?>
+                <button type="button" class="btn btn-light" id="homeLandingBtn">Home Landing</button>
+                <button type="button" class="btn btn-light" id="homeIndexBtn">Home Index</button>
+            <?php else: ?>
+                <button type="button" class="btn btn-light" id="homeBtn">Home</button>
+            <?php endif; ?>
             <button type="button" class="btn btn-light" id="backBtn">Torna dashboard</button>
             <button type="button" class="btn btn-danger" id="logoutBtn">Esci</button>
         </div>
@@ -228,6 +236,10 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
     <script src="../js/ui-modal.js"></script>
     <script>
         const API_URL = '../api/cms.php';
+        const LANDING_MODE_ACTIVE = <?= $landingModeActive ? 'true' : 'false'; ?>;
+        const HOME_DEFAULT_URL = <?= json_encode($homeDefaultUrl, JSON_UNESCAPED_UNICODE); ?>;
+        const HOME_LANDING_URL = '../landing.php';
+        const HOME_INDEX_URL = '../index.php';
         const token = localStorage.getItem('token');
         let user = null;
         try {
@@ -577,9 +589,26 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             window.location.href = 'dashboard-ufficio.php';
         });
 
-        document.getElementById('homeBtn').addEventListener('click', () => {
-            window.location.href = '../landing.php';
-        });
+        const homeBtn = document.getElementById('homeBtn');
+        if (homeBtn) {
+            homeBtn.addEventListener('click', () => {
+                window.location.href = HOME_DEFAULT_URL;
+            });
+        }
+
+        const homeLandingBtn = document.getElementById('homeLandingBtn');
+        if (homeLandingBtn) {
+            homeLandingBtn.addEventListener('click', () => {
+                window.location.href = HOME_LANDING_URL;
+            });
+        }
+
+        const homeIndexBtn = document.getElementById('homeIndexBtn');
+        if (homeIndexBtn) {
+            homeIndexBtn.addEventListener('click', () => {
+                window.location.href = HOME_INDEX_URL;
+            });
+        }
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             try {
@@ -593,8 +622,17 @@ if (appIsLandingMode() && !appLandingStaffBypassActive()) {
             } catch (_) {
             }
 
+            try {
+                await fetch('../login.php?clear_staff_access=1', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+            } catch (_) {
+            }
+
             clearAuthStorage();
-            window.location.href = '../login.php';
+            window.location.href = LANDING_MODE_ACTIVE ? HOME_LANDING_URL : HOME_DEFAULT_URL;
         });
 
         Promise.all([

@@ -246,6 +246,23 @@ function handleLogin(): void
             (int)$user['ruolo_livello']
         );
 
+        $roleName = strtolower((string)$user['ruolo_nome']);
+        $isLandingMode = function_exists('appIsLandingMode') && appIsLandingMode();
+        $isLandingPrivilegedRole = in_array($roleName, ['admin', 'ufficio', 'segreteria'], true);
+        if ($isLandingMode) {
+            if ($isLandingPrivilegedRole && function_exists('appGrantLandingStaffBypass')) {
+                appGrantLandingStaffBypass(21600);
+            }
+
+            if ($isLandingPrivilegedRole && function_exists('appGrantLandingFullAccess')) {
+                appGrantLandingFullAccess($roleName, 21600);
+            } elseif (function_exists('appClearLandingFullAccess')) {
+                appClearLandingFullAccess();
+            }
+        } elseif (function_exists('appClearLandingFullAccess')) {
+            appClearLandingFullAccess();
+        }
+
         logActivity((string)$user['id'], 'login', 'Login eseguito', 'profili', (string)$user['id']);
 
         dispatchPendingExpiryReminders((string)$user['id']);
@@ -287,6 +304,14 @@ function handleLogout(): void
     if (session_status() === PHP_SESSION_ACTIVE) {
         @session_regenerate_id(true);
     }
+
+    if (function_exists('appClearLandingStaffBypass')) {
+        appClearLandingStaffBypass();
+    }
+    if (function_exists('appClearLandingFullAccess')) {
+        appClearLandingFullAccess();
+    }
+
     sendJson(200, ['success' => true, 'message' => 'Logout effettuato']);
 }
 
