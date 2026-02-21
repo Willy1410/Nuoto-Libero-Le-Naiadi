@@ -856,7 +856,9 @@ function queueEmailFallback(
     string $htmlContent,
     string $textContent = '',
     array $attachments = [],
-    string $reason = ''
+    string $reason = '',
+    string $replyToEmail = '',
+    string $replyToName = ''
 ): bool {
     global $MAIL_CONFIG;
 
@@ -890,6 +892,8 @@ function queueEmailFallback(
         'text' => $textContent,
         'attachments' => $safeAttachments,
         'reason' => $reason,
+        'reply_to_email' => $replyToEmail,
+        'reply_to_name' => $replyToName,
     ];
 
     $fileName = date('Ymd_His') . '_' . substr(hash('sha256', $to . '|' . $subject . '|' . microtime(true)), 0, 12) . '.json';
@@ -949,7 +953,9 @@ function sendEmail(
     string $subject,
     string $htmlContent,
     string $textContent = '',
-    array $attachments = []
+    array $attachments = [],
+    string $replyToEmail = '',
+    string $replyToName = ''
 ): bool
 {
     global $MAIL_CONFIG;
@@ -959,7 +965,7 @@ function sendEmail(
             'to' => $to,
             'subject' => $subject,
         ]);
-        return queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, 'smtp_not_configured');
+        return queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, 'smtp_not_configured', $replyToEmail, $replyToName);
     }
 
     if (!class_exists(PHPMailer::class)) {
@@ -967,7 +973,7 @@ function sendEmail(
             'to' => $to,
             'subject' => $subject,
         ]);
-        return queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, 'phpmailer_missing');
+        return queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, 'phpmailer_missing', $replyToEmail, $replyToName);
     }
 
     try {
@@ -992,6 +998,11 @@ function sendEmail(
         $mail->CharSet = 'UTF-8';
         $mail->setFrom((string)$MAIL_CONFIG['from_email'], (string)$MAIL_CONFIG['from_name']);
         $mail->addAddress($to, $toName);
+        $replyToEmail = trim($replyToEmail);
+        $replyToName = trim($replyToName);
+        if ($replyToEmail !== '' && validateEmail($replyToEmail)) {
+            $mail->addReplyTo($replyToEmail, $replyToName !== '' ? $replyToName : $replyToEmail);
+        }
         $mail->Subject = $subject;
         $mail->isHTML(true);
         $mail->Body = $htmlContent;
@@ -1031,6 +1042,7 @@ function sendEmail(
         logMailEvent('info', 'Email sent', [
             'to' => $to,
             'subject' => $subject,
+            'reply_to' => $replyToEmail !== '' ? $replyToEmail : null,
         ]);
 
         return true;
@@ -1040,7 +1052,7 @@ function sendEmail(
             'subject' => $subject,
             'error' => $e->getMessage(),
         ]);
-        if (queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, (string)$e->getMessage())) {
+        if (queueEmailFallback($to, $toName, $subject, $htmlContent, $textContent, $attachments, (string)$e->getMessage(), $replyToEmail, $replyToName)) {
             return true;
         }
         return false;
@@ -1076,10 +1088,12 @@ function sendBrandedEmail(
     string $bodyHtml,
     string $previewText = '',
     string $textContent = '',
-    array $attachments = []
+    array $attachments = [],
+    string $replyToEmail = '',
+    string $replyToName = ''
 ): bool {
     $html = buildBrandedEmail($title, $bodyHtml, $previewText);
-    return sendEmail($to, $toName, $subject, $html, $textContent, $attachments);
+    return sendEmail($to, $toName, $subject, $html, $textContent, $attachments, $replyToEmail, $replyToName);
 }
 
 function sendTemplateEmail(
@@ -1090,9 +1104,11 @@ function sendTemplateEmail(
     string $bodyHtml,
     string $previewText = '',
     string $textContent = '',
-    array $attachments = []
+    array $attachments = [],
+    string $replyToEmail = '',
+    string $replyToName = ''
 ): bool {
-    return sendBrandedEmail($to, $toName, $subject, $title, $bodyHtml, $previewText, $textContent, $attachments);
+    return sendBrandedEmail($to, $toName, $subject, $title, $bodyHtml, $previewText, $textContent, $attachments, $replyToEmail, $replyToName);
 }
 
 function localAppBaseUrl(): string

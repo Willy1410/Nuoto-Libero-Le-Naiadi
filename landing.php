@@ -463,6 +463,7 @@ require_once __DIR__ . '/bootstrap.php';
                 const lastName = (document.getElementById('landingLastName')?.value || '').trim();
 
                 const payload = {
+                    form_source: 'landing',
                     first_name: firstName,
                     last_name: lastName,
                     name: `${firstName} ${lastName}`.trim(),

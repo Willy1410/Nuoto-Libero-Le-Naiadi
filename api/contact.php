@@ -32,6 +32,7 @@ $phone = sanitizeText((string)($data['phone'] ?? ''), 40);
 $subjectRaw = sanitizeText((string)($data['subject'] ?? ''), 120);
 $subjectOther = sanitizeText((string)($data['subject_other'] ?? ''), 220);
 $message = sanitizeText((string)($data['message'] ?? ''), 4000);
+$formSource = strtolower(sanitizeText((string)($data['form_source'] ?? ''), 40));
 $privacy = filter_var($data['privacy'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
 if (($name === '' && $firstName === '' && $lastName === '') || $email === '' || $subjectRaw === '' || $message === '') {
@@ -87,6 +88,7 @@ $subjectLabel = $subjectMap[$subjectKey];
 $subject = $subjectKey === 'altro'
     ? ($subjectLabel . ' - ' . $subjectOther)
     : $subjectLabel;
+$isLandingSource = $formSource === 'landing';
 
 $adminEmail = sanitizeText((string)($MAIL_CONFIG['admin_email'] ?? ''), 255);
 $adminName = sanitizeText((string)($MAIL_CONFIG['admin_name'] ?? 'Admin'), 120);
@@ -107,13 +109,27 @@ $body = '<p><strong>Nuovo messaggio dal sito</strong></p>'
         : '')
     . '<p><strong>Messaggio:</strong><br>' . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . '</p>';
 
+if ($isLandingSource) {
+    $replyMailto = 'mailto:' . $email . '?subject=' . rawurlencode('Re: [Contatti] ' . $subject);
+    $body .= '<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0;">'
+        . '<p style="margin:0 0 10px 0;"><strong>Risposta rapida:</strong></p>'
+        . '<p style="margin:0 0 12px 0;">'
+        . '<a href="' . htmlspecialchars($replyMailto, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:10px 14px;border-radius:8px;background:#0284c7;color:#ffffff;text-decoration:none;font-weight:700;">Rispondi al cliente</a>'
+        . '</p>'
+        . '<p style="margin:0;font-size:12px;color:#475569;">Se il pulsante non funziona, usa questo link: <a href="' . htmlspecialchars($replyMailto, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</a></p>';
+}
+
 $sent = sendTemplateEmail(
     $adminEmail,
     $adminName,
     '[Contatti] ' . $subject,
     'Nuovo messaggio dal form contatti',
     $body,
-    'Nuovo messaggio da ' . $fullName
+    'Nuovo messaggio da ' . $fullName,
+    '',
+    [],
+    $isLandingSource ? $email : '',
+    $isLandingSource ? $fullName : ''
 );
 
 if (!$sent) {
