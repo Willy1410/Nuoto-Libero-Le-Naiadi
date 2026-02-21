@@ -89,6 +89,9 @@ $subject = $subjectKey === 'altro'
     ? ($subjectLabel . ' - ' . $subjectOther)
     : $subjectLabel;
 $isLandingSource = $formSource === 'landing';
+$senderDisplayName = $isLandingSource
+    ? sanitizeText('Landing - ' . $fullName . ' (' . $email . ')', 180)
+    : '';
 
 $adminEmail = sanitizeText((string)($MAIL_CONFIG['admin_email'] ?? ''), 255);
 $adminName = sanitizeText((string)($MAIL_CONFIG['admin_name'] ?? 'Admin'), 120);
@@ -129,7 +132,8 @@ $sent = sendTemplateEmail(
     '',
     [],
     $isLandingSource ? $email : '',
-    $isLandingSource ? $fullName : ''
+    $isLandingSource ? $fullName : '',
+    $senderDisplayName
 );
 
 if (!$sent) {

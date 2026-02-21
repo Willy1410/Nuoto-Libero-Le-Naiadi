@@ -1,0 +1,234 @@
+NUOTO LIBERO LE NAIADI - GUIDA UFFICIO DEPLOY ARUBA (LANDING)
+Data: 2026-02-20
+Ambiente target: Aruba Hosting + phpMyAdmin Aruba + FileZilla
+Database scelto: Sql1919629_1
+
+====================================================================
+0) OBIETTIVO
+====================================================================
+Portare online il sito in modalita LANDING, con:
+- DB pronto su Aruba (Sql1919629_1)
+- File sito caricati via FileZilla
+- Configurazione .env produzione corretta
+- Form landing che invia email a info@nuotoliberolenaiadi.it
+
+====================================================================
+1) FILE CHIAVE DA USARE
+====================================================================
+1. SQL unico definitivo da importare su Aruba:
+   db/ARUBA_SQL1919629_1_FULL_DEPLOY.sql
+
+2. File di configurazione ambiente (NON su Git):
+   .env  (da creare/modificare direttamente su server Aruba)
+
+3. File principali applicazione:
+   index.php
+   landing.php
+   api/contact.php
+   bootstrap.php
+   api/config.php
+
+====================================================================
+2) DATI DA AVERE PRIMA DI INIZIARE
+====================================================================
+2.1 Dati hosting Aruba (da pannello Aruba -> Hosting Linux -> FTP)
+- Host FTP/FTPS
+- Username FTP
+- Password FTP
+- Porta FTP/FTPS (di solito 21)
+- Cartella webroot (public_html oppure htdocs, dipende dal piano)
+
+2.2 Dati DB Aruba (da pannello Aruba -> Database MySQL)
+- DB host MySQL (esempio: mysqlXX.arenadns.net o simile Aruba)
+- DB name: Sql1919629_1
+- DB user
+- DB password
+- DB port (di solito 3306)
+
+2.3 Dati applicativi (gia definiti)
+- APP_BASE_URL = https://nuotoliberolenaiadi.it
+- SITE_MODE = landing
+- SMTP Aruba configurato per invio mail landing
+
+====================================================================
+3) BACKUP OBBLIGATORIO PRIMA DI QUALSIASI OPERAZIONE
+====================================================================
+3.1 Backup file locali
+- Crea zip completo della cartella progetto.
+
+3.2 Backup DB Aruba attuale
+- Apri phpMyAdmin Aruba.
+- Seleziona Sql1919629_1.
+- Esporta (Quick + SQL).
+- Salva file backup con data/ora.
+
+SE NON HAI BACKUP, NON PROCEDERE.
+
+====================================================================
+4) IMPORT DATABASE SU ARUBA (SQL1919629_1)
+====================================================================
+ATTENZIONE:
+Il file db/ARUBA_SQL1919629_1_FULL_DEPLOY.sql contiene reset tabelle
+applicative (DROP TABLE IF EXISTS). Serve per ripartire puliti.
+
+Passi:
+1. Apri phpMyAdmin Aruba.
+2. Nel menu sinistra, clicca database: Sql1919629_1.
+3. Vai su tab "Importa".
+4. Seleziona file:
+   db/ARUBA_SQL1919629_1_FULL_DEPLOY.sql
+5. Formato: SQL.
+6. Avvia Import.
+7. Attendi completamento senza chiudere pagina.
+8. Verifica che non ci siano errori rossi finali.
+
+Controlli rapidi post-import:
+1. Verifica presenza tabelle chiave:
+   ruoli, profili, pacchetti, acquisti, check_ins,
+   profile_update_requests, impostazioni_operative,
+   password_reset_tokens, documenti_utente, packages, iscrizioni.
+2. Verifica utenti seed:
+   tabella profili deve avere record iniziali.
+
+====================================================================
+5) CARICAMENTO FILE SU ARUBA CON FILEZILLA
+====================================================================
+5.1 Configura connessione sito in FileZilla
+- Protocollo: FTP (o FTPES/Explicit TLS se disponibile nel piano)
+- Host: valore FTP Aruba
+- Porta: 21 (salvo istruzioni Aruba diverse)
+- Utente e password: credenziali FTP Aruba
+
+5.2 Cartella remota
+- Entra nella webroot del dominio (public_html o htdocs).
+
+5.3 Upload progetto
+- Carica tutti i file/cartelle del progetto aggiornato.
+- Non caricare cartelle locali inutili tipo:
+  .git, .vscode, backup zip personali, file temporanei.
+
+5.4 Verifica file presenti su server
+- index.php
+- landing.php
+- login.php
+- api/
+- piscina-php/
+- config/
+- db/ (opzionale in produzione, utile per emergenza)
+- vendor/ (obbligatoria se non fai composer sul server)
+
+====================================================================
+6) CONFIGURAZIONE .ENV IN PRODUZIONE (ARUBA)
+====================================================================
+Crea/modifica il file .env nella root progetto online.
+
+Template PRODUZIONE da compilare:
+
+SITE_MODE=landing
+APP_BASE_URL=https://nuotoliberolenaiadi.it
+
+DB_HOST=INSERIRE_HOST_MYSQL_ARUBA
+DB_PORT=3306
+DB_NAME=Sql1919629_1
+DB_USER=INSERIRE_UTENTE_DB_ARUBA
+DB_PASS=INSERIRE_PASSWORD_DB_ARUBA
+
+JWT_SECRET=INSERIRE_STRINGA_LUNGA_RANDOM_UNICA
+
+MAIL_ENABLED=true
+MAIL_FROM_EMAIL=info@nuotoliberolenaiadi.it
+MAIL_FROM_NAME=Richieste Info / Appuntamento
+MAIL_ADMIN_EMAIL=info@nuotoliberolenaiadi.it
+MAIL_ADMIN_NAME=Segreteria Nuoto Libero Le Naiadi
+MAIL_SMTP_HOST=smtps.aruba.it
+MAIL_SMTP_PORT=465
+MAIL_SMTP_USER=info@nuotoliberolenaiadi.it
+MAIL_SMTP_PASS=INSERIRE_PASSWORD_CASELLA_INFO
+MAIL_SMTP_ENCRYPTION=ssl
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_TIMEOUT=15
+
+IMPORTANTISSIMO:
+- Non caricare .env su GitHub.
+- JWT_SECRET deve essere forte e diverso da default.
+- DB_HOST/USER/PASS devono essere quelli reali Aruba.
+
+====================================================================
+7) PERMESSI CARTELLE RUNTIME
+====================================================================
+Assicurati che queste cartelle siano scrivibili:
+- logs/
+- uploads/
+
+Permessi tipici hosting Linux:
+- 755 oppure 775 (in base al piano Aruba)
+
+====================================================================
+8) TEST FINALI OBBLIGATORI (PASSO-PASSO)
+====================================================================
+8.1 Test routing landing (pubblico non loggato)
+1. Apri https://nuotoliberolenaiadi.it/
+2. Deve mostrare landing.
+3. Apri una pagina pubblica tipo /chi-siamo.php
+4. Deve redirezionare alla landing (in modalita landing).
+
+8.2 Test login admin
+1. Dalla landing clicca Login / Area riservata.
+2. Login admin.
+3. Dashboard deve restare aperta (no loop su login).
+
+8.3 Test form landing contatto
+1. Compila tutti i campi obbligatori.
+2. Invia.
+3. Deve comparire esito positivo/thank you.
+4. Verifica ricezione email su info@nuotoliberolenaiadi.it.
+
+8.4 Test log backend (se accessibili)
+1. Controlla logs/mail.log.
+2. Deve comparire "Email sent" senza errori SMTP.
+
+====================================================================
+9) SE QUALCOSA NON FUNZIONA
+====================================================================
+9.1 Errore DB connessione
+- Ricontrolla DB_HOST/DB_NAME/DB_USER/DB_PASS in .env.
+- Verifica DB_NAME esatto: Sql1919629_1.
+
+9.2 Form landing non invia
+- Controlla MAIL_* in .env.
+- Verifica password casella info corretta.
+- Controlla logs/mail.log.
+
+9.3 Loop login -> login
+- Svuota cache browser.
+- Ricontrolla file aggiornati su server (api/config.php, login.php, js/dashboard-staff.js).
+
+====================================================================
+10) CHECKLIST RAPIDA DA SPUNTARE
+====================================================================
+[ ] Backup file + backup DB fatti
+[ ] Import SQL unico completato senza errori
+[ ] Upload FileZilla completato
+[ ] .env produzione impostato con DB Aruba reali
+[ ] SITE_MODE=landing confermato
+[ ] SMTP Aruba funzionante
+[ ] Landing online visibile
+[ ] Login admin stabile
+[ ] Form landing invia email ricevute su info@
+
+====================================================================
+11) CONTENUTO DA PORTARE IN UFFICIO (PROMEMORIA)
+====================================================================
+Porta con te:
+1. Questo file stampato (versione TXT/PDF).
+2. File SQL:
+   db/ARUBA_SQL1919629_1_FULL_DEPLOY.sql
+3. Credenziali Aruba:
+   - Pannello hosting
+   - FTP
+   - phpMyAdmin
+   - DB Sql1919629_1
+   - Casella email info@nuotoliberolenaiadi.it
+4. Valori .env produzione (senza errori di battitura).
+
+Fine guida.

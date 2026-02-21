@@ -75,7 +75,7 @@ function ensureEnrollmentsTable(): void
 
 function submitEnrollment(): void
 {
-    global $pdo;
+    global $pdo, $MAIL_CONFIG;
 
     ensureEnrollmentsTable();
     enforceRateLimit('iscrizioni-submit', 12, 900);
@@ -94,6 +94,11 @@ function submitEnrollment(): void
     $note = sanitizeText((string)($data['note'] ?? ''), 1500);
     $termsAccepted = (bool)($data['terms_accept'] ?? $data['termsAccept'] ?? false);
     $privacyAccepted = (bool)($data['privacy_accept'] ?? $data['privacyAccept'] ?? false);
+    $marketingAccepted = (bool)($data['marketing_accept'] ?? $data['marketingAccept'] ?? false);
+    $selectedPackageName = sanitizeText((string)($data['package_name'] ?? ''), 160);
+    $selectedTotal = is_numeric($data['package_price'] ?? null) ? (float)$data['package_price'] : 0.0;
+    $selectedPackageFee = is_numeric($data['package_fee'] ?? null) ? (float)$data['package_fee'] : 0.0;
+    $selectedRegistrationFee = is_numeric($data['registration_fee'] ?? null) ? (float)$data['registration_fee'] : 0.0;
 
     if ($nome === '' || $cognome === '' || $email === '' || $telefono === '') {
         sendJson(400, ['success' => false, 'message' => 'Compila nome, cognome, email e telefono']);
@@ -167,6 +172,66 @@ function submitEnrollment(): void
 
         logActivity(null, 'iscrizione_submit', 'Nuova iscrizione ricevuta: ' . $email, 'iscrizioni', $enrollmentId);
 
+        $packageSummary = resolveEnrollmentPackageSummary($requestedPackageId);
+        $selectedLabel = $selectedPackageName !== ''
+            ? $selectedPackageName
+            : (string)($packageSummary['name'] ?? 'Pacchetto non specificato');
+        $customerFullName = trim($nome . ' ' . $cognome);
+        $adminEmail = sanitizeText((string)($MAIL_CONFIG['admin_email'] ?? ''), 255);
+        $adminName = sanitizeText((string)($MAIL_CONFIG['admin_name'] ?? 'Segreteria'), 120);
+        $adminMailSent = false;
+
+        if ($adminEmail !== '' && validateEmail($adminEmail)) {
+            $adminBody = '<p><strong>Nuova richiesta da Abbonamenti (pacchetti.php)</strong></p>'
+                . '<p><strong>Riferimento iscrizione:</strong> <code>' . htmlspecialchars($enrollmentId, ENT_QUOTES, 'UTF-8') . '</code><br>'
+                . '<strong>Stato:</strong> pending</p>'
+                . '<p><strong>Nome:</strong> ' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '<br>'
+                . '<strong>Cognome:</strong> ' . htmlspecialchars($cognome, ENT_QUOTES, 'UTF-8') . '<br>'
+                . '<strong>Email cliente:</strong> ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '<br>'
+                . '<strong>Telefono:</strong> ' . htmlspecialchars($telefono, ENT_QUOTES, 'UTF-8') . '</p>'
+                . '<p><strong>Abbonamento selezionato:</strong> ' . htmlspecialchars($selectedLabel, ENT_QUOTES, 'UTF-8') . '<br>'
+                . '<strong>Quota iscrizione/tesseramento:</strong> EUR ' . number_format($selectedRegistrationFee, 2, ',', '.') . '<br>'
+                . '<strong>Quota pacchetto:</strong> EUR ' . number_format($selectedPackageFee, 2, ',', '.') . '<br>'
+                . '<strong>Totale richiesta:</strong> EUR ' . number_format($selectedTotal, 2, ',', '.') . '<br>'
+                . '<strong>requested_package_id:</strong> ' . ($requestedPackageId !== null ? (int)$requestedPackageId : '-') . '</p>';
+
+            if (is_array($packageSummary) && $packageSummary !== []) {
+                $adminBody .= '<p><strong>Dettaglio pacchetto backend:</strong> '
+                    . htmlspecialchars((string)$packageSummary['name'], ENT_QUOTES, 'UTF-8')
+                    . ' | ingressi: ' . (int)$packageSummary['entries_count']
+                    . ' | prezzo: EUR ' . number_format((float)$packageSummary['price'], 2, ',', '.')
+                    . '</p>';
+            }
+
+            $adminBody .= '<p><strong>Termini accettati:</strong> ' . ($termsAccepted ? 'SI' : 'NO') . '<br>'
+                . '<strong>Privacy accettata:</strong> ' . ($privacyAccepted ? 'SI' : 'NO') . '<br>'
+                . '<strong>Marketing:</strong> ' . ($marketingAccepted ? 'SI' : 'NO') . '</p>';
+
+            if ($note !== '') {
+                $adminBody .= '<p><strong>Note cliente:</strong><br>' . nl2br(htmlspecialchars($note, ENT_QUOTES, 'UTF-8')) . '</p>';
+            }
+
+            $adminSenderName = sanitizeText('Abbonamenti - ' . $customerFullName . ' (' . $email . ')', 180);
+            $adminMailSent = sendTemplateEmail(
+                $adminEmail,
+                $adminName,
+                '[Abbonamenti] Nuova richiesta iscrizione - ' . $customerFullName,
+                'Nuova richiesta abbonamento',
+                $adminBody,
+                'Nuova richiesta da ' . $customerFullName,
+                '',
+                [],
+                $email,
+                $customerFullName,
+                $adminSenderName
+            );
+        } else {
+            logMailEvent('warning', 'Configurazione admin_email non valida per notifica abbonamenti', [
+                'admin_email' => $adminEmail,
+                'iscrizione_id' => $enrollmentId,
+            ]);
+        }
+
         $body = '<p>Ciao <strong>' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '</strong>,</p>'
             . '<p>abbiamo ricevuto la tua richiesta di iscrizione.</p>'
             . '<p><strong>Stato:</strong> pending<br>'
@@ -188,10 +253,63 @@ function submitEnrollment(): void
             'iscrizione_id' => $enrollmentId,
             'stato' => 'pending',
             'mail_sent' => $mailSent,
+            'admin_mail_sent' => $adminMailSent,
         ]);
     } catch (Throwable $e) {
         error_log('submitEnrollment error: ' . $e->getMessage());
         sendJson(500, ['success' => false, 'message' => 'Errore invio iscrizione']);
+    }
+}
+
+function resolveEnrollmentPackageSummary(?int $packageId): ?array
+{
+    global $pdo;
+
+    if ($packageId === null || $packageId <= 0) {
+        return null;
+    }
+
+    try {
+        if (packagesTableAvailableLocal()) {
+            $stmt = $pdo->prepare(
+                'SELECT id, name, entries_count, price
+                 FROM packages
+                 WHERE id = ?
+                 LIMIT 1'
+            );
+            $stmt->execute([$packageId]);
+            $row = $stmt->fetch();
+            if ($row) {
+                return [
+                    'id' => (int)$row['id'],
+                    'name' => (string)$row['name'],
+                    'entries_count' => (int)$row['entries_count'],
+                    'price' => (float)$row['price'],
+                ];
+            }
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT id, nome, num_ingressi, prezzo
+             FROM pacchetti
+             WHERE id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$packageId]);
+        $legacy = $stmt->fetch();
+        if (!$legacy) {
+            return null;
+        }
+
+        return [
+            'id' => (int)$legacy['id'],
+            'name' => (string)$legacy['nome'],
+            'entries_count' => (int)$legacy['num_ingressi'],
+            'price' => (float)$legacy['prezzo'],
+        ];
+    } catch (Throwable $e) {
+        error_log('resolveEnrollmentPackageSummary error: ' . $e->getMessage());
+        return null;
     }
 }
 
